@@ -120,7 +120,7 @@ def parseDstat(fname):
     write_list = []
     recv_list = []
     send_list = []
-    for i in range(6):
+    for i in range(5):
         next(csvfile)
     reader = csv.DictReader(csvfile)
     header = reader.fieldnames
@@ -188,5 +188,6 @@ def stop_resource_profiling():
     return res, res_free
 
 def clear_cache():
-    os.system("echo 3 > /proc/sys/vm/drop_caches")
+    #os.system("sudo echo 3 > /proc/sys/vm/drop_caches")
+    os.system("sudo ./drop_cache.sh")
     print("Cleared Page Cache...")
