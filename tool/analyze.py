@@ -10,8 +10,9 @@ stats = defaultdict(lambda: defaultdict(dict))
 stats2 = defaultdict(lambda: defaultdict(dict))
 
 gpu_map = {
-        "p2.2xlarge" : "gpus-1",
-        "p2.8xlarge" : "gpus-8"}
+        "p2.xlarge" : "gpus-1",
+        "p2.8xlarge" : "gpus-8",
+        "p2.16xlarge" : "gpus-16"}
 
 instances = []
 
@@ -20,16 +21,17 @@ def process_json(model, gpu, json_path):
     with open(json_path) as fd:
         dagJson = json.load(fd)
 
-    stats[model][gpu]["SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
-    stats[model][gpu]["SPEED_DISK"]  = dagJson["SPEED_DISK"]
-    stats[model][gpu]["SPEED_CACHED"] = dagJson["SPEED_CACHED"]
+    stats[model][gpu]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
+    stats[model][gpu]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
+    stats[model][gpu]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
     stats[model][gpu]["DISK_THR"] = dagJson["DISK_THR"]
     stats[model][gpu]["MEM_THR"] = dagJson["MEM_THR"]
-    stats[model][gpu]["TRAIN_TIME"] = dagJson["RUN2"]["TRAIN"]
+    stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
+    stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-    stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME"] * 100
-    stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME"] * 100
+    stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
+    stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
     
     stats2[gpu][model]["SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats2[gpu][model]["SPEED_DISK"]  = dagJson["SPEED_DISK"]
@@ -93,6 +95,8 @@ def compare():
 
 
     fig1, axs1 = plt.subplots(2, 1)
+    fig2, axs2 = plt.subplots(2, 1)
+    fig3, axs3 = plt.subplots(2, 1)
 
     X = [model for model in stats.keys()]
     X_axis = np.arange(len(X))
@@ -105,9 +109,20 @@ def compare():
         
         Y_PREP_STALL_PCT = [stats[model][gpu]["PREP_STALL_PCT"] for model in X]
         Y_FETCH_STALL_PCT = [stats[model][gpu]["FETCH_STALL_PCT"] for model in X]
+        Y_TRAIN_TIME_DISK = [stats[model][gpu]["TRAIN_TIME_DISK"] for model in X]
+        Y_TRAIN_TIME_CACHED = [stats[model][gpu]["TRAIN_TIME_CACHED"] for model in X]
+        Y_TRAIN_SPEED_DISK = [stats[model][gpu]["TRAIN_SPEED_DISK"] for model in X]
+        Y_TRAIN_SPEED_CACHED = [stats[model][gpu]["TRAIN_SPEED_CACHED"] for model in X]
 
         axs1[0].bar(X_axis-0.2 + diff , Y_PREP_STALL_PCT, 0.2, label = instance)
         axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
+
+        axs2[0].bar(X_axis-0.2 + diff , Y_TRAIN_TIME_DISK, 0.2, label = instance)
+        axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label = instance)
+
+        axs3[0].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
+        axs3[1].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
+
 
         diff += 0.2
 
@@ -126,7 +141,41 @@ def compare():
     axs1[1].set_title("Fetch stall comparison")
     axs1[1].legend()
 
-    fig1.suptitle("Stall comparison" )
+    fig1.suptitle("Stall comparison" , fontsize=20, fontweight ="bold")
+    
+    axs2[0].set_xticks(X_axis)
+    axs2[0].set_xticklabels(X)
+    axs2[0].set_xlabel("Models")
+    axs2[0].set_ylabel("Time")
+    axs2[0].set_title("Training time disk comparison")
+    axs2[0].legend()
+
+    axs2[1].set_xticks(X_axis)
+    axs2[1].set_xticklabels(X)
+    axs2[1].set_xlabel("Models")
+    axs2[1].set_ylabel("Time")
+    axs2[1].set_title("Training time cached comparison")
+    axs2[1].legend()
+
+    fig2.suptitle("Training time comparison" , fontsize=20, fontweight ="bold")
+
+    axs3[0].set_xticks(X_axis)
+    axs3[0].set_xticklabels(X)
+    axs3[0].set_xlabel("Models")
+    axs3[0].set_ylabel("Samples/sec")
+    axs3[0].set_title("Training speed disk comparison")
+    axs3[0].legend()
+
+    axs3[1].set_xticks(X_axis)
+    axs3[1].set_xticklabels(X)
+    axs3[1].set_xlabel("Models")
+    axs3[1].set_ylabel("Samples/sec")
+    axs3[1].set_title("Training speed cached comparison")
+    axs3[1].legend()
+
+    fig3.suptitle("Training speed comparison", fontsize=20, fontweight ="bold")
+
+
     plt.show()
 
 
