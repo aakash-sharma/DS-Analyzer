@@ -268,13 +268,13 @@ def run_with_data(cached=False):
             raise subprocess.CalledProcessError(returncode=process.returncode,
                                                 cmd=process.args)
 
-    res_dstat, res_free = utils.stop_resource_profiling()
+    res_dstat, res_free, res_nvidia = utils.stop_resource_profiling()
     utils.move_logs(log_path)
     if not cached:
         print("FINISHED STEP 2 : PREPROCESS + FETCH ")
     else:
         print("FINISHED STEP 3 : PREPROCESS ONLY")
-    return log_path, res_dstat, res_free
+    return log_path, res_dstat, res_free, res_nvidia
 
 
 def run_mem_test(cmd):
@@ -367,9 +367,10 @@ def main():
         #Drop cache here
         utils.clear_cache()
 
-        log_path, res_dstat, res_free = run_with_data()    
+        log_path, res_dstat, res_free, res_nvidia = run_with_data()
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
+        gpu_util, gpu_mem_util = res_nvidia
 
         print("\nParsing Step 2 results ...")
         run2_stats = []
@@ -389,6 +390,8 @@ def main():
         args.stats["RUN2"]["CPU"] = 100 - idle
         args.stats["RUN2"]["MEM"] = pmem + shm
         args.stats["RUN2"]["PCACHE"] = page_cache
+        args.stats["RUN2"]["GPU_UTIL"] = gpu_util
+        args.stats["RUN2"]["GPU_MEM_UTIL"] = gpu_mem_util
 
         args.stats["DISK_THR"] = args.stats["RUN2"]["READ"]
         args.stats["SPEED_DISK"] = args.stats["RUN2"]["SPEED"]
@@ -404,6 +407,7 @@ def main():
         log_path, res_dstat, res_free = run_with_data(cached = True)    
         idle, wait, read, write, recv, send = res_dstat
         pmem, shm,page_cache, total = res_free
+        gpu_util, gpu_mem_util = res_nvidia
         print("\nParsing Step 3 results ...")
         run3_stats = []
         for i in range(0,num_gpu):
@@ -422,6 +426,8 @@ def main():
         args.stats["RUN3"]["CPU"] = 100 - idle
         args.stats["RUN3"]["MEM"] = pmem + shm
         args.stats["RUN3"]["PCACHE"] = page_cache
+        args.stats["RUN3"]["GPU_UTIL"] = gpu_util
+        args.stats["RUN3"]["GPU_MEM_UTIL"] = gpu_mem_util
 
         args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
 

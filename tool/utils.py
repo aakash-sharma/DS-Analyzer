@@ -144,7 +144,21 @@ def parseDstat(fname):
     #print(mean_read)
     return (mean_idle, mean_wait, mssh ean_read, mean_write, mean_recv, mean_send)
 
-#Format : None, total, used, free, shared, cache, avail    
+def parseNvidia(fname):
+    csvfile = open(fname, "r")
+    gpu_util_list = []
+    gpu_mem_util_list = []
+    reader = csv.DictReader(csvfile)
+    header = reader.fieldnames
+    for row in reader:
+        gpu_util_list.append(float(row["utilization.gpu [%]"]))
+        gpu_mem_util_list.append(float(row["utilization.memory [%]"]))
+
+    mean_gpu_util = statistics.mean(gpu_util_list)
+    mean_gpu_mem_util = statistics.mean(gpu_mem_util_list)
+    return (mean_gpu_util, mean_gpu_mem_util)
+
+#Format : None, total, used, free, shared, cache, avail
 def parseFree(fname):
     csvfile = open(fname, "r")   
     reader = csv.DictReader(csvfile) 
@@ -174,10 +188,9 @@ def parseFree(fname):
     max_total = max(total_list)
     return (max_pmem, max_shm, max_page_cache, max_total)
 
-
 def start_resource_profiling():
     os.system("dstat -cdnm --output all-utils.csv 2>&1 >> redirect-dstat.log &")
-    os.system("nvidia-smi --query-gpu=timestamp,index,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,pcie.link.gen.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used --format=csv -l 1 -f nvidia.out 2>&1 >> redirect-nvidia-smi.log &")
+    os.system("nvidia-smi --query-gpu=timestamp,index,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,pcie.link.gen.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used --format=csv -l 1 -f nvidia.csv 2>&1 >> redirect-nvidia-smi.out &")
     os.system("./free.sh &")
 
 def stop_resource_profiling():
@@ -186,8 +199,9 @@ def stop_resource_profiling():
     os.system("pkill -f free")
     os.system("./parseFree.sh free.out")
     res = parseDstat('all-utils.csv')
+    res_nvidia = parseNvidia('nvidia.csv')
     res_free = parseFree('free.csv')
-    return res, res_free
+    return res, res_free, res_nvidia
 
 def clear_cache():
     #os.system("sudo echo 3 > /proc/sys/vm/drop_caches")
