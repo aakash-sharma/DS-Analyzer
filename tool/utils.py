@@ -142,7 +142,7 @@ def parseDstat(fname):
     #total_recv = sum(recv_list)
     #total_send = sum(send_list)
     #print(mean_read)
-    return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send)
+    return (mean_idle, mean_wait, mssh ean_read, mean_write, mean_recv, mean_send)
 
 #Format : None, total, used, free, shared, cache, avail    
 def parseFree(fname):
@@ -177,10 +177,12 @@ def parseFree(fname):
 
 def start_resource_profiling():
     os.system("dstat -cdnm --output all-utils.csv 2>&1 >> redirect-dstat.log &")
+    os.system("nvidia-smi --query-gpu=timestamp,index,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,pcie.link.gen.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used --format=csv -l 1 -f nvidia.out 2>&1 >> redirect-nvidia-smi.log &")
     os.system("./free.sh &")
 
 def stop_resource_profiling():
     os.system("pkill -f dstat")
+    os.system("pkill -f nvidia-smi")
     os.system("pkill -f free")
     os.system("./parseFree.sh free.out")
     res = parseDstat('all-utils.csv')
