@@ -159,8 +159,15 @@ def parseNvidia(fname):
         if row[" utilization.memory [%]"] is None:
             print(row)
             continue
-        gpu_util_pct_list.append(float(row[" utilization.gpu [%]"].split(' ')[1]))
-        gpu_mem_util_pct_list.append(float(row[" utilization.memory [%]"].split(' ')[1]))
+        try:
+            gpu_util_pct = float(row[" utilization.gpu [%]"].split(' ')[1])
+            gpu_mem_util_pct = float(row[" utilization.memory [%]"].split(' ')[1])
+            gpu_util_pct_list.append(gpu_util_pct)
+            gpu_mem_util_pct_list.append(gpu_mem_util_pct)
+
+        except Exception as e:
+            print(e)
+            pass
 
     mean_gpu_pct_util = statistics.mean(gpu_util_pct_list)
     mean_gpu_mem_pct_util = statistics.mean(gpu_mem_util_pct_list)
