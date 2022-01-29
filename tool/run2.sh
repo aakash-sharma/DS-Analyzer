@@ -5,7 +5,7 @@ CPU=$2
 SAMPLES=$3
 batch=$((SAMPLES / 256))
 
-for arch in 'alexnet' 'resnet18' 'shufflenet_v2_x0_5' 'mobilenet_v2' 'squeezenet1_0'; do
+for arch in 'alexnet' 'resnet18' 'shufflenet_v2_x0_5' 'mobilenet_v2'; do
          for batch in 256; do
 	     echo "==============================================="
 	     echo " $batch $arch"
