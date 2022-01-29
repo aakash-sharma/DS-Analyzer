@@ -142,21 +142,30 @@ def parseDstat(fname):
     #total_recv = sum(recv_list)
     #total_send = sum(send_list)
     #print(mean_read)
-    return (mean_idle, mean_wait, mssh ean_read, mean_write, mean_recv, mean_send)
+    return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send)
 
 def parseNvidia(fname):
     csvfile = open(fname, "r")
-    gpu_util_list = []
-    gpu_mem_util_list = []
+    gpu_util_pct_list = []
+    gpu_mem_util_pct_list = []
     reader = csv.DictReader(csvfile)
     header = reader.fieldnames
     for row in reader:
-        gpu_util_list.append(float(row["utilization.gpu [%]"]))
-        gpu_mem_util_list.append(float(row["utilization.memory [%]"]))
+        if row is None:
+            continue
+        if row[" utilization.gpu [%]"] is None:
+            print(row)
+            continue
+        if row[" utilization.memory [%]"] is None:
+            print(row)
+            continue
+        gpu_util_pct_list.append(float(row[" utilization.gpu [%]"].split(' ')[1]))
+        gpu_mem_util_pct_list.append(float(row[" utilization.memory [%]"].split(' ')[1]))
 
-    mean_gpu_util = statistics.mean(gpu_util_list)
-    mean_gpu_mem_util = statistics.mean(gpu_mem_util_list)
-    return (mean_gpu_util, mean_gpu_mem_util)
+    mean_gpu_pct_util = statistics.mean(gpu_util_pct_list)
+    mean_gpu_mem_pct_util = statistics.mean(gpu_mem_util_pct_list)
+    print(mean_gpu_pct_util, mean_gpu_mem_pct_util)
+    return (mean_gpu_pct_util, mean_gpu_mem_pct_util)
 
 #Format : None, total, used, free, shared, cache, avail
 def parseFree(fname):

@@ -358,7 +358,6 @@ def main():
         
         print_as_table(args.stats["RUN1"])
 
-
     # Stage 2 : Run with both fetch and pre-processing on 
     if resume and 'RUN2' in args.stats:
         print_as_table(args.stats["RUN2"])
@@ -398,13 +397,12 @@ def main():
 
         print_as_table(args.stats["RUN2"])
 
-
     # Stage 3 : Run with only pre-processing
     if resume and 'RUN3' in args.stats:
         print_as_table(args.stats["RUN3"])
         print("STEP 3 already done. Continuing to step 4\n")
     else:
-        log_path, res_dstat, res_free = run_with_data(cached = True)    
+        log_path, res_dstat, res_free, res_nvidia = run_with_data(cached = True)    
         idle, wait, read, write, recv, send = res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -432,7 +430,6 @@ def main():
         args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
 
         print_as_table(args.stats["RUN3"])
-
 
 
     # Stage 4 : Run memory throughput test
