@@ -28,11 +28,20 @@ def process_json(model, gpu, json_path):
     stats[model][gpu]["MEM_THR"] = dagJson["MEM_THR"]
     stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
     stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
+    stats[model][gpu]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
+    stats[model][gpu]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
+    stats[model][gpu]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
+    stats[model][gpu]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
+    stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
+    stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
+
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
+
     stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
-    
+
+    '''
     stats2[gpu][model]["SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats2[gpu][model]["SPEED_DISK"]  = dagJson["SPEED_DISK"]
     stats2[gpu][model]["SPEED_CACHED"] = dagJson["SPEED_CACHED"]
@@ -41,7 +50,7 @@ def process_json(model, gpu, json_path):
     stats2[gpu][model]["TRAIN_TIME"] = dagJson["RUN2"]["TRAIN"]
     stats2[gpu][model]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats2[gpu][model]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-
+    '''
 
 def plotModels(instance):
 
@@ -97,6 +106,8 @@ def compare():
     fig1, axs1 = plt.subplots(2, 1)
     fig2, axs2 = plt.subplots(2, 1)
     fig3, axs3 = plt.subplots(2, 1)
+    fig4, axs4 = plt.subplots(3, 1)
+    fig5, axs5 = plt.subplots(3, 1)
 
     X = [model for model in stats.keys()]
     X_axis = np.arange(len(X))
@@ -113,6 +124,12 @@ def compare():
         Y_TRAIN_TIME_CACHED = [stats[model][gpu]["TRAIN_TIME_CACHED"] for model in X]
         Y_TRAIN_SPEED_DISK = [stats[model][gpu]["TRAIN_SPEED_DISK"] for model in X]
         Y_TRAIN_SPEED_CACHED = [stats[model][gpu]["TRAIN_SPEED_CACHED"] for model in X]
+        Y_CPU_UTIL_DISK_PCT = [stats[model][gpu]["CPU_UTIL_DISK_PCT"] for model in X]
+        Y_CPU_UTIL_CACHED_PCT = [stats[model][gpu]["CPU_UTIL_CACHED_PCT"] for model in X]
+        Y_GPU_UTIL_DISK_PCT = [stats[model][gpu]["GPU_UTIL_DISK_PCT"] for model in X]
+        Y_GPU_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_UTIL_CACHED_PCT"] for model in X]
+        Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] for model in X]
+        Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] for model in X]
 
         axs1[0].bar(X_axis-0.2 + diff , Y_PREP_STALL_PCT, 0.2, label = instance)
         axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
@@ -123,6 +140,13 @@ def compare():
         axs3[0].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
         axs3[1].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
 
+        axs4[0].bar(X_axis-0.2 + diff , Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
+        axs4[1].bar(X_axis-0.2 + diff , Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
+        axs4[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_DISK_PCT, 0.2, label = instance)
+
+        axs5[0].bar(X_axis-0.2 + diff , Y_CPU_UTIL_CACHED_PCT, 0.2, label = instance)
+        axs5[1].bar(X_axis-0.2 + diff , Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
+        axs5[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
 
         diff += 0.2
 
@@ -175,7 +199,51 @@ def compare():
 
     fig3.suptitle("Training speed comparison", fontsize=20, fontweight ="bold")
 
+    axs4[0].set_xticks(X_axis)
+    axs4[0].set_xticklabels(X)
+    axs4[0].set_xlabel("Models")
+    axs4[0].set_ylabel("Average CPU utilization")
+    axs4[0].set_title("CPU utilization comparison")
+    axs4[0].legend()
 
+    axs4[1].set_xticks(X_axis)
+    axs4[1].set_xticklabels(X)
+    axs4[1].set_xlabel("Models")
+    axs4[1].set_ylabel("Average GPU utilization")
+    axs4[1].set_title("GPU utilization comparison")
+    axs4[1].legend()
+
+    axs4[2].set_xticks(X_axis)
+    axs4[2].set_xticklabels(X)
+    axs4[2].set_xlabel("Models")
+    axs4[2].set_ylabel("Average GPU memory utilization")
+    axs4[2].set_title("GPU memory utilization comparison")
+    axs4[2].legend()
+
+    fig4.suptitle("CPU and GPU utilization DISK comparison", fontsize=20, fontweight ="bold")
+
+    axs5[0].set_xticks(X_axis)
+    axs5[0].set_xticklabels(X)
+    axs5[0].set_xlabel("Models")
+    axs5[0].set_ylabel("Average CPU utilization")
+    axs5[0].set_title("CPU utilization comparison")
+    axs5[0].legend()
+
+    axs5[1].set_xticks(X_axis)
+    axs5[1].set_xticklabels(X)
+    axs5[1].set_xlabel("Models")
+    axs5[1].set_ylabel("Average GPU utilization")
+    axs5[1].set_title("GPU utilization comparison")
+    axs5[1].legend()
+
+    axs5[2].set_xticks(X_axis)
+    axs5[2].set_xticklabels(X)
+    axs5[2].set_xlabel("Models")
+    axs5[2].set_ylabel("Average GPU memory utilization")
+    axs5[2].set_title("GPU memory utilization comparison")
+    axs5[2].legend()
+
+    fig5.suptitle("CPU and GPU utilization CACHED comparison", fontsize=20, fontweight ="bold")
     plt.show()
 
 
