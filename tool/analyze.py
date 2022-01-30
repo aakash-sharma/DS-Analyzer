@@ -186,23 +186,26 @@ def main():
 
     for instance in sys.argv[1:]:
         instances.append(instance)
-        result_path = "results-" + instance + "/" + "dali-gpu"
+        result_path1 = "results-" + instance + "/" + "dali-gpu"
+        result_path2 = "results-" + instance + "/" + "dali-cpu"
 
-        model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
+        for result_path in [result_path1, result_path2]:
 
-        for model_path in model_paths:
-            model = model_path.split('/')[-1]
-            model_path_ = model_path + "/jobs-1"
-            gpu_paths = [os.path.join(model_path_, o) for o in os.listdir(model_path_) if os.path.isdir(os.path.join(model_path_,o))]
-            for gpu_path in gpu_paths:
-                gpu = gpu_path.split('/')[-1]
-                cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
-                for cpu_path in cpu_paths:
-                    json_path = cpu_path + "/MODEL.json"
-                    if not os.path.isfile(json_path):
-                        continue
+            model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
 
-                    process_json(model, gpu, json_path)
+            for model_path in model_paths:
+                model = model_path.split('/')[-1]
+                model_path_ = model_path + "/jobs-1"
+                gpu_paths = [os.path.join(model_path_, o) for o in os.listdir(model_path_) if os.path.isdir(os.path.join(model_path_,o))]
+                for gpu_path in gpu_paths:
+                    gpu = gpu_path.split('/')[-1]
+                    cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
+                    for cpu_path in cpu_paths:
+                        json_path = cpu_path + "/MODEL.json"
+                        if not os.path.isfile(json_path):
+                            continue
+
+                        process_json(model, gpu, json_path)
 
         #plotModels(instance)
 
