@@ -104,8 +104,8 @@ def compare():
 
 
     fig1, axs1 = plt.subplots(2, 1)
-    fig2, axs2 = plt.subplots(2, 1)
-    fig3, axs3 = plt.subplots(2, 1)
+    fig2, axs2 = plt.subplots(3, 1)
+    fig3, axs3 = plt.subplots(3, 1)
     fig4, axs4 = plt.subplots(3, 1)
     fig5, axs5 = plt.subplots(3, 1)
 
@@ -122,6 +122,8 @@ def compare():
         Y_FETCH_STALL_PCT = [stats[model][gpu]["FETCH_STALL_PCT"] for model in X]
         Y_TRAIN_TIME_DISK = [stats[model][gpu]["TRAIN_TIME_DISK"] for model in X]
         Y_TRAIN_TIME_CACHED = [stats[model][gpu]["TRAIN_TIME_CACHED"] for model in X]
+        Y_DISK_THR = [stats[model][gpu]["DISK_THR"] for model in X]
+        Y_TRAIN_SPEED_INGESTION = [stats[model][gpu]["TRAIN_SPEED_INGESTION"] for model in X]
         Y_TRAIN_SPEED_DISK = [stats[model][gpu]["TRAIN_SPEED_DISK"] for model in X]
         Y_TRAIN_SPEED_CACHED = [stats[model][gpu]["TRAIN_SPEED_CACHED"] for model in X]
         Y_CPU_UTIL_DISK_PCT = [stats[model][gpu]["CPU_UTIL_DISK_PCT"] for model in X]
@@ -136,9 +138,11 @@ def compare():
 
         axs2[0].bar(X_axis-0.2 + diff , Y_TRAIN_TIME_DISK, 0.2, label = instance)
         axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label = instance)
+        axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label = instance)
 
-        axs3[0].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
-        axs3[1].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
+        axs3[0].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
+        axs3[1].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
+        axs3[2].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
 
         axs4[0].bar(X_axis-0.2 + diff , Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
         axs4[1].bar(X_axis-0.2 + diff , Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
@@ -166,56 +170,71 @@ def compare():
     axs1[1].legend()
 
     fig1.suptitle("Stall comparison" , fontsize=20, fontweight ="bold")
+    fig1.savefig("stall_comparison.png")
     
     axs2[0].set_xticks(X_axis)
     axs2[0].set_xticklabels(X)
-    axs2[0].set_xlabel("Models")
+    #axs2[0].set_xlabel("Models")
     axs2[0].set_ylabel("Time")
     axs2[0].set_title("Training time disk comparison")
     axs2[0].legend()
 
     axs2[1].set_xticks(X_axis)
     axs2[1].set_xticklabels(X)
-    axs2[1].set_xlabel("Models")
+    #axs2[1].set_xlabel("Models")
     axs2[1].set_ylabel("Time")
     axs2[1].set_title("Training time cached comparison")
     axs2[1].legend()
+
+    axs2[2].set_xticks(X_axis)
+    axs2[2].set_xticklabels(X)
+    #axs2[1].set_xlabel("Models")
+    axs2[2].set_ylabel("Throughput")
+    axs2[2].set_title("Disk throughput comparison")
+    axs2[2].legend()
 
     fig2.suptitle("Training time comparison" , fontsize=20, fontweight ="bold")
 
     axs3[0].set_xticks(X_axis)
     axs3[0].set_xticklabels(X)
-    axs3[0].set_xlabel("Models")
+    #axs3[0].set_xlabel("Models")
     axs3[0].set_ylabel("Samples/sec")
-    axs3[0].set_title("Training speed disk comparison")
+    axs3[0].set_title("Training speed ingestion comparison")
     axs3[0].legend()
 
     axs3[1].set_xticks(X_axis)
     axs3[1].set_xticklabels(X)
-    axs3[1].set_xlabel("Models")
+    #axs3[1].set_xlabel("Models")
     axs3[1].set_ylabel("Samples/sec")
-    axs3[1].set_title("Training speed cached comparison")
+    axs3[1].set_title("Training speed disk comparison")
     axs3[1].legend()
+
+    axs3[2].set_xticks(X_axis)
+    axs3[2].set_xticklabels(X)
+    #axs3[2].set_xlabel("Models")
+    axs3[2].set_ylabel("Samples/sec")
+    axs3[2].set_title("Training speed cached comparison")
+    axs3[2].legend()
 
     fig3.suptitle("Training speed comparison", fontsize=20, fontweight ="bold")
 
     axs4[0].set_xticks(X_axis)
     axs4[0].set_xticklabels(X)
-    axs4[0].set_xlabel("Models")
+    #axs4[0].set_xlabel("Models")
     axs4[0].set_ylabel("Average CPU utilization")
     axs4[0].set_title("CPU utilization comparison")
     axs4[0].legend()
 
     axs4[1].set_xticks(X_axis)
     axs4[1].set_xticklabels(X)
-    axs4[1].set_xlabel("Models")
+    #axs4[1].set_xlabel("Models")
     axs4[1].set_ylabel("Average GPU utilization")
     axs4[1].set_title("GPU utilization comparison")
     axs4[1].legend()
 
     axs4[2].set_xticks(X_axis)
     axs4[2].set_xticklabels(X)
-    axs4[2].set_xlabel("Models")
+    #axs4[2].set_xlabel("Models")
     axs4[2].set_ylabel("Average GPU memory utilization")
     axs4[2].set_title("GPU memory utilization comparison")
     axs4[2].legend()
@@ -224,21 +243,21 @@ def compare():
 
     axs5[0].set_xticks(X_axis)
     axs5[0].set_xticklabels(X)
-    axs5[0].set_xlabel("Models")
+    #axs5[0].set_xlabel("Models")
     axs5[0].set_ylabel("Average CPU utilization")
     axs5[0].set_title("CPU utilization comparison")
     axs5[0].legend()
 
     axs5[1].set_xticks(X_axis)
     axs5[1].set_xticklabels(X)
-    axs5[1].set_xlabel("Models")
+    #axs5[1].set_xlabel("Models")
     axs5[1].set_ylabel("Average GPU utilization")
     axs5[1].set_title("GPU utilization comparison")
     axs5[1].legend()
 
     axs5[2].set_xticks(X_axis)
     axs5[2].set_xticklabels(X)
-    axs5[2].set_xlabel("Models")
+    #axs5[2].set_xlabel("Models")
     axs5[2].set_ylabel("Average GPU memory utilization")
     axs5[2].set_title("GPU memory utilization comparison")
     axs5[2].legend()
@@ -252,10 +271,12 @@ def main():
     if len(sys.argv) <= 1:
         return
 
-    for instance in sys.argv[1:]:
+    result_dir = sys.argv[1]
+
+    for instance in sys.argv[2:]:
         instances.append(instance)
-        result_path1 = "results-" + instance + "/" + "dali-gpu"
-        result_path2 = "results-" + instance + "/" + "dali-cpu"
+        result_path1 = result_dir + "/" + instance + "/" + "dali-gpu"
+        result_path2 = result_dir + "/" + instance + "/" + "dali-cpu"
 
         for result_path in [result_path1, result_path2]:
 
