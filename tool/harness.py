@@ -339,11 +339,14 @@ def main():
          All these numbers exclude any warmup batches specified 
         """
         run1_stats = []
-        for i in range(0,num_gpu):
+        local_gpus = args.nproc_per_node
+        print('LOCAL GPUs ',local_gpus)
+
+        for i in range(0,local_gpus):
             json_file =  log_path + 'profile-' + str(i) + '.json'
             run1_stats.append(json.load(open(json_file)))
             
-        if len(run1_stats) != num_gpu:
+        if len(run1_stats) != local_gpus:
             print("Something went wrong in run1")
             sys.exit(1)
     
@@ -373,11 +376,14 @@ def main():
 
         print("\nParsing Step 2 results ...")
         run2_stats = []
-        for i in range(0,num_gpu):
+        local_gpus = args.nproc_per_node
+        print('LOCAL GPUs ',local_gpus)
+
+        for i in range(0,local_gpus):
             json_file =  log_path + 'profile-' + str(i) + '.json'
             run2_stats.append(json.load(open(json_file)))
             
-        if len(run2_stats) != num_gpu:
+        if len(run2_stats) != local_gpus:
             print("Something went wrong in run1")
             sys.exit(1)
     
@@ -408,11 +414,14 @@ def main():
         gpu_util, gpu_mem_util = res_nvidia
         print("\nParsing Step 3 results ...")
         run3_stats = []
-        for i in range(0,num_gpu):
+        local_gpus = args.nproc_per_node
+        print('LOCAL GPUs ',local_gpus)
+
+        for i in range(0,local_gpus):
             json_file =  log_path + 'profile-' + str(i) + '.json'
             run3_stats.append(json.load(open(json_file)))
             
-        if len(run3_stats) != num_gpu:
+        if len(run3_stats) != local_gpus:
             print("Something went wrong in run1")
             sys.exit(1)
     
