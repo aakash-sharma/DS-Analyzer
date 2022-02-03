@@ -317,7 +317,7 @@ def main():
     if args.distributed:
         # shared param/delay all reduce turns off bucketing in DDP, for lower latency runs this can improve perf
         # for the older version of APEX please use shared_param, for newer one it is delay_allreduce
-        model = DDP(model, delay_allreduce=True)
+        model = DDP(model, delay_allreduce=True)#" Delay all communication to the end of the backward pass. This disables overlapping communication with computation"
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
@@ -490,12 +490,14 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         # compute output
         output = model(input_var)
+        #single_node loss is this:
         loss = criterion(output, target_var)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
 
         if args.distributed:
+            #Communication happens here
             reduced_loss = reduce_tensor(loss.data)
             prec1 = reduce_tensor(prec1)
             prec5 = reduce_tensor(prec5)
