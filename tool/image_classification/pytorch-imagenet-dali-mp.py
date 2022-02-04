@@ -102,6 +102,7 @@ parser.add_argument('--noeval', action='store_true')
 parser.add_argument('--amp',action='store_true',help='Run model AMP (automatic mixed precision) mode.')
 parser.add_argument("--nnodes", default=1, type=int)
 parser.add_argument("--node_rank", default=0, type=int)
+parser.add_argument("--delay_allreduce", default=True, type=bool)
 
 #profiler
 parser.add_argument('--data-profile', action='store_true', default=True,
@@ -317,7 +318,7 @@ def main():
     if args.distributed:
         # shared param/delay all reduce turns off bucketing in DDP, for lower latency runs this can improve perf
         # for the older version of APEX please use shared_param, for newer one it is delay_allreduce
-        model = DDP(model, delay_allreduce=True)#" Delay all communication to the end of the backward pass. This disables overlapping communication with computation"
+        model = DDP(model, args.delay_allreduce)#" Delay all communication to the end of the backward pass. This disables overlapping communication with computation"
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()

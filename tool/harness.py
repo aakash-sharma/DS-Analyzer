@@ -119,7 +119,7 @@ def parse_args():
 
 args = parse_args()
 
-def run_synthetic(): 
+def run_synthetic(delay_allreduce=True): 
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -171,6 +171,7 @@ def run_synthetic():
                    "--precreate",
                    "--tensor_path={}".format(args.tensor_path),
                    "--arch={}".format(args.arch),
+                   "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
                    "--epochs={}".format(args.epochs)] + args.training_script_args
 
@@ -186,6 +187,7 @@ def run_synthetic():
                    "--classes={}".format(args.classes),
                    "--num_minibatches={}".format(args.num_minibatches),
                    "--arch={}".format(args.arch),
+                   "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
                    "--epochs={}".format(args.epochs)] + args.training_script_args
 
@@ -440,15 +442,36 @@ def main():
 
         print_as_table(args.stats["RUN3"])
 
+    # Stage 4 : Run with synthetic dataset and overlap
+    if resume and 'RUN4' in args.stats:
+        print_as_table(args.stats["RUN4"])
+        print("STEP 4 already done")
 
-    # Stage 4 : Run memory throughput test
-    if resume and 'MEM_THR' in args.stats:
-        print("Memory bandwidth estimation already done. Continuing to step 5\n")
     else:
-        cmd = "./memtest " + str(args.workers*args.nproc_per_node) 
-        thr = run_mem_test(cmd)
-        args.stats["MEM_THR"] = thr
+        log_path = run_synthetic(False)
 
+        print("Parsing Step 1 results ...")
+        local_gpus = args.nproc_per_node
+        print('LOCAL GPUs ', local_gpus)
+
+        for i in range(0, local_gpus):
+            json_file = log_path + 'profile-' + str(i) + '.json'
+            run1_stats.append(json.load(open(json_file)))
+
+        if len(run1_stats) != local_gpus:
+            print("Something went wrong in run1")
+            sys.exit(1)
+
+        args.stats["RUN4"], stddev_map = aggregate_run1_maps(run1_stats)
+        args.stats["RUN4"]["SPEED"] = args.stats["RUN4"]["SAMPLES"] / args.stats["RUN4"]["COMPUTE"]
+        args.stats["SPEED_INGESTION"] = args.stats["RUN4"]["SPEED"]
+
+        for value in list(stddev_map.values()):
+            if value > 1:
+                print("High STDDEV in values. Run for more minibatches for stable results")
+                # sys.exit(1)
+
+        print_as_table(args.stats["RUN4"])
 
     if resume and 'AVG_SAMPLE_SIZE' in args.stats:
         print("Datasets statistics already collected. Continuing to step 6\n")
