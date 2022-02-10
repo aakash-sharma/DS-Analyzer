@@ -112,7 +112,7 @@ def move_logs(log_path):
 
 #Format : ----CPU---------------------,--Disk-----,--N/w-----,--------Memory----------
 #Format : usr, sys, idl, wai, hiq, siq, read, writ, recv, send, used, buff, cach, free
-def parseDstat(fname):
+def parseDstat(fname, rerun = False):
     csvfile = open(fname, "r")
     idle_list = []
     wai_list = []
@@ -142,9 +142,12 @@ def parseDstat(fname):
     #total_recv = sum(recv_list)
     #total_send = sum(send_list)
     #print(mean_read)
-    return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send)
+    if not rerun:
+        return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send)
+    else:
+        return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send, idle_list)
 
-def parseNvidia(fname):
+def parseNvidia(fname, rerun = False):
     csvfile = open(fname, "r")
     gpu_util_pct_list = []
     gpu_mem_util_pct_list = []
@@ -172,7 +175,10 @@ def parseNvidia(fname):
     mean_gpu_pct_util = statistics.mean(gpu_util_pct_list)
     mean_gpu_mem_pct_util = statistics.mean(gpu_mem_util_pct_list)
     print(mean_gpu_pct_util, mean_gpu_mem_pct_util)
-    return (mean_gpu_pct_util, mean_gpu_mem_pct_util)
+    if not rerun:
+        return (mean_gpu_pct_util, mean_gpu_mem_pct_util)
+    else:
+        return (mean_gpu_pct_util, mean_gpu_mem_pct_util, gpu_util_pct_list, gpu_mem_util_pct_list)
 
 #Format : None, total, used, free, shared, cache, avail
 def parseFree(fname):

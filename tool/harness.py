@@ -110,6 +110,7 @@ def parse_args():
     parser.add_argument("--num_minibatches", default=50, type=int)
     parser.add_argument("--full_epoch", default=False, action='store_true')
     parser.add_argument("--resume_json", default=None, type=str)
+    parser.add_argument("--resume_dir", default=None, type=str)
     parser.add_argument("--prefix", default="", type=str)
 
 
@@ -304,10 +305,106 @@ def get_dataset_stats(dir_path):
 
    return size, samples
 
+def run_stats_only(resume_path, local_gpus):
+    run1_stats = []
+    run1_path = resume_path + 'run1-synthetic/' 
+
+    for i in range(0, local_gpus):
+        json_file = run1_path + 'profile-' + str(i) + '.json'
+        run1_stats.append(json.load(open(json_file)))
+
+    if len(run1_stats) != local_gpus:
+        print("Something went wrong in run1")
+        sys.exit(1)
+
+    args.stats["RUN1"], stddev_map = aggregate_run1_maps(run1_stats)
+    args.stats["RUN1"]["SPEED"] = args.stats["RUN1"]["SAMPLES"] / args.stats["RUN1"]["COMPUTE"]
+    args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
+
+    for value in list(stddev_map.values()):
+        if value > 1:
+            print("High STDDEV in values. Run for more minibatches for stable results")
+            # sys.exit(1)
+
+    print_as_table(args.stats["RUN1"])
+
+    run2_stats = []
+    run2_path = resume_path + 'run2-fetch-preprocess/'
+    for i in range(0, local_gpus):
+        json_file = run2_path + 'profile-' + str(i) + '.json'
+        run2_stats.append(json.load(open(json_file)))
+
+    if len(run2_stats) != local_gpus:
+        print("Something went wrong in run1")
+        sys.exit(1)
+
+    res_dstat = utils.parseDstat(run2_path + 'all-utils.csv', True)
+    res_nvidia = utils.parseNvidia(run2_path + 'nvidia.csv', True)
+    res_free = utils.parseFree(run2_path + 'free.csv')
+    idle, wait, read, write, recv, send, idle_list = res_dstat
+    pmem, shm, page_cache, total = res_free
+    gpu_util, gpu_mem_util, gpu_util_pct_list, gpu_mem_util_pct_list = res_nvidia
+
+    args.stats["RUN2"], stddev_map = aggregate_run1_maps(run2_stats)
+    args.stats["RUN2"]["SPEED"] = args.stats["RUN2"]["SAMPLES"] / args.stats["RUN2"]["TRAIN"]
+    args.stats["RUN2"]["RECV"] = recv
+    args.stats["RUN2"]["SEND"] = send
+    args.stats["RUN2"]["READ"] = read
+    args.stats["RUN2"]["CPU"] = 100 - idle
+    args.stats["RUN2"]["MEM"] = pmem + shm
+    args.stats["RUN2"]["PCACHE"] = page_cache
+    args.stats["RUN2"]["GPU_UTIL"] = gpu_util
+    args.stats["RUN2"]["GPU_MEM_UTIL"] = gpu_mem_util
+    args.stats["RUN2"]["IDLE_LIST"] = idle_list
+    args.stats["RUN2"]["GPU_UTIL_LIST"] = gpu_util_pct_list
+    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
+
+    args.stats["DISK_THR"] = args.stats["RUN2"]["READ"]
+    args.stats["SPEED_DISK"] = args.stats["RUN2"]["SPEED"]
+
+#    print_as_table(args.stats["RUN2"])
+
+    run3_stats = []
+    run3_path = resume_path + 'run3-preprocess/'
+    for i in range(0, local_gpus):
+        json_file = run3_path + 'profile-' + str(i) + '.json'
+        run3_stats.append(json.load(open(json_file)))
+
+    if len(run3_stats) != local_gpus:
+        print("Something went wrong in run1")
+        sys.exit(1)
+
+    res_dstat = utils.parseDstat(run3_path + 'all-utils.csv', True)
+    res_nvidia = utils.parseNvidia(run3_path + 'nvidia.csv', True)
+    res_free = utils.parseFree(run3_path + 'free.csv')
+    idle, wait, read, write, recv, send, idle_list = res_dstat
+    pmem, shm, page_cache, total = res_free
+    gpu_util, gpu_mem_util, gpu_util_pct_list, gpu_mem_util_pct_list  = res_nvidia
+
+    args.stats["RUN3"], stddev_map = aggregate_run1_maps(run3_stats)
+    args.stats["RUN3"]["SPEED"] = args.stats["RUN3"]["SAMPLES"] / args.stats["RUN3"]["TRAIN"]
+    args.stats["RUN3"]["RECV"] = recv
+    args.stats["RUN3"]["SEND"] = send
+    args.stats["RUN3"]["READ"] = read
+    args.stats["RUN3"]["CPU"] = 100 - idle
+    args.stats["RUN3"]["MEM"] = pmem + shm
+    args.stats["RUN3"]["PCACHE"] = page_cache
+    args.stats["RUN3"]["GPU_UTIL"] = gpu_util
+    args.stats["RUN3"]["GPU_MEM_UTIL"] = gpu_mem_util
+    args.stats["RUN3"]["IDLE_LIST"] = idle_list
+    args.stats["RUN2"]["GPU_UTIL_LIST"] = gpu_util_pct_list
+    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
+
+    args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
+
+    json_outfile = resume_path + 'MODEL2.json'
+    with open(json_outfile, 'w') as jf:
+        json.dump(args.stats, jf)
+
 
 def main():
     print_header(args)
-    num_gpu = args.nproc_per_node * args.nnodes  
+    num_gpu = args.nproc_per_node * args.nnodes
     args.stats = {}
     resume = False
     if not (args.resume_json is None):
@@ -318,6 +415,18 @@ def main():
             sys.exit(1)
         with open(args.resume_json, 'r') as jf:
             args.stats = json.load(jf)
+
+    if not (args.resume_dir is None):
+        resume = True
+        print("Only calculating statistics from existing profile directory at {}".format(args.resume_dir))
+        if not os.path.exists(args.resume_dir):
+            print("Incorrect resume stat path")
+            sys.exit(1)
+        else:
+            resume_path = args.resume_dir + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
+            run_stats_only(resume_path, args.nproc_per_node)
+            sys.exit(0)
+            
 
     final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
 
@@ -481,7 +590,7 @@ def main():
         args.stats["TOTAL_SAMPLES"] = int(total_samples)
         
 
-    # Finally dump all stats to a json which can be querried later
+    # Finally dump all stats to a json which can be queried later
     json_outfile = final_log_path + 'MODEL.json'
     with open(json_outfile, 'w') as jf:
         json.dump(args.stats, jf)
