@@ -392,8 +392,8 @@ def run_stats_only(resume_path, local_gpus):
     args.stats["RUN3"]["GPU_UTIL"] = gpu_util
     args.stats["RUN3"]["GPU_MEM_UTIL"] = gpu_mem_util
     args.stats["RUN3"]["CPU_LIST"] = [100 - idle for idle in idle_list]
-    args.stats["RUN2"]["GPU_UTIL_LIST"] = gpu_util_pct_list
-    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
+    args.stats["RUN3"]["GPU_UTIL_LIST"] = gpu_util_pct_list
+    args.stats["RUN3"]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
 
     args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
 
