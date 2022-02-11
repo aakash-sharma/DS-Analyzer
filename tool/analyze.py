@@ -53,6 +53,12 @@ def process_json2(model, gpu, json_path):
     stats[model][gpu]["DISK_THR"] = dagJson["DISK_THR"]
     stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
     stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
+    stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
+    stats[model][gpu]["MEM_DISK"] = dagJson["RUN2"]["MEM"]
+    stats[model][gpu]["PCACHE_DISK"] = dagJson["RUN2"]["PCACHE"]
+    stats[model][gpu]["MEM_CACHED"] = dagJson["RUN3"]["MEM"]
+    stats[model][gpu]["PCACHE_CACHED"] = dagJson["RUN3"]["PCACHE"]
+
     stats[model][gpu]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
     stats[model][gpu]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
     stats[model][gpu]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
@@ -69,7 +75,6 @@ def process_json2(model, gpu, json_path):
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-
     stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
 
@@ -294,6 +299,8 @@ def compare_models():
     max_dstat_len = 0
     max_nvidia_len = 0
 
+    X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
+
     for model in models:
 
         for instance in instances:
@@ -306,18 +313,20 @@ def compare_models():
             max_dstat_len = max(max_dstat_len, len(stats[model][gpu]["CPU_UTIL_CACHED_LIST"]))
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_DISK_LIST"]))
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_CACHED_LIST"]))
-        fig1, axs1 = plt.subplots(2, 1, figsize=(15,15))
-        fig2, axs2 = plt.subplots(2, 1, figsize=(15,15))
-        fig3, axs3 = plt.subplots(2, 1, figsize=(15,15))
+
+        fig1, axs1 = plt.subplots(2, 2, figsize=(20,20))
+        fig2, axs2 = plt.subplots(2, 2, figsize=(20,20))
 
         X_dstat_axis = np.arange(max_dstat_len)
         X_nvidia_axis = np.arange(max_nvidia_len)
-
+        X_metrics_axis = np.arange(4)
+        diff = 0
 
         for instance in instances:
             
             gpu = gpu_map[instance]
             style = None
+            diff = 0
 
             if instance == "p2.8xlarge":
                 style = 'r--'
@@ -325,11 +334,24 @@ def compare_models():
                 style = 'b--'
 
             overlapping = 0.50
+        
+            Y_METRICS_DISK = []
+            Y_METRICS_CACHED = []
 
+            Y_METRICS_DISK.append(stats[model][gpu]["DISK_THR"])
+            Y_METRICS_DISK.append(stats[model][gpu]["TRAIN_SPEED_DISK"])
+            Y_METRICS_DISK.append(stats[model][gpu]["MEM_DISK"])
+            Y_METRICS_DISK.append(stats[model][gpu]["PCACHE_DISK"])
+            Y_METRICS_CACHED.append(stats[model][gpu]["DISK_THR"])
+            Y_METRICS_CACHED.append(stats[model][gpu]["TRAIN_SPEED_CACHED"])
+            Y_METRICS_CACHED.append(stats[model][gpu]["MEM_CACHED"])
+            Y_METRICS_CACHED.append(stats[model][gpu]["PCACHE_CACHED"])
             Y_CPU_UTIL_DISK = stats[model][gpu]["CPU_UTIL_DISK_LIST"]
             Y_CPU_UTIL_CACHED = stats[model][gpu]["CPU_UTIL_CACHED_LIST"]
+
             Y_GPU_UTIL_DISK = stats[model][gpu]["GPU_UTIL_DISK_LIST"]
             Y_GPU_UTIL_CACHED = stats[model][gpu]["GPU_UTIL_CACHED_LIST"]
+
             Y_GPU_MEM_UTIL_DISK = stats[model][gpu]["GPU_MEM_UTIL_DISK_LIST"]
             Y_GPU_MEM_UTIL_CACHED = stats[model][gpu]["GPU_MEM_UTIL_CACHED_LIST"]
 
@@ -346,57 +368,70 @@ def compare_models():
             if len(Y_GPU_MEM_UTIL_CACHED) < max_nvidia_len:
                 Y_GPU_MEM_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_CACHED)))
 
-            axs1[0].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
-#            axs1[0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, label = instance)
-            axs1[1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
-#            axs1[1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, label = instance)
+            print(X_metrics_axis, Y_METRICS_CACHED)
 
-            axs2[0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
-            axs2[1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+            axs1[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
+            axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+            axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+            axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
 
-            axs3[0].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
-            axs3[1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
+            axs2[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_DISK, 0.2, label = instance)
+            axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+            axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+            axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
 
+            diff += 0.2
 
-        axs1[0].set_xlabel("Time")
-        axs1[0].set_ylabel("Percentage")
-        axs1[0].set_title("CPU utilization comparison Disk")
-        axs1[0].legend()
+        axs1[0,0].set_xticks(X_metrics_axis)
+        axs1[0,0].set_xticklabels(X)
+        axs1[0,0].set_xlabel("Metrics")
+        axs1[0,0].set_ylabel("Values")
+        axs1[0,0].set_title("Metric comparison cached")
+        axs1[0,0].legend()
 
-        axs1[1].set_xlabel("Time")
-        axs1[1].set_ylabel("Percentage")
-        axs1[1].set_title("CPU utilization comparison cached")
-        axs1[1].legend()
+        axs1[0,1].set_xlabel("Time")
+        axs1[0,1].set_ylabel("Percentage")
+        axs1[0,1].set_title("CPU utilization comparison cached")
+        axs1[0,1].legend()
 
-        fig1.suptitle("CPU utilization comparison - " + model , fontsize=20, fontweight ="bold")
-        fig1.savefig("figures/CPU_util-" + model)
-        
-        axs2[0].set_xlabel("Time")
-        axs2[0].set_ylabel("Percentage")
-        axs2[0].set_title("GPU utilization comparison Disk")
-        axs2[0].legend()
+        axs1[1,0].set_xlabel("Time")
+        axs1[1,0].set_ylabel("Percentage")
+        axs1[1,0].set_title("GPU utilization comparison cached")
+        axs1[1,0].legend()
 
-        axs2[1].set_xlabel("Time")
-        axs2[1].set_ylabel("Percentage")
-        axs2[1].set_title("GPU utilization comparison cached")
-        axs2[1].legend()
+        axs1[1,1].set_xlabel("Time")
+        axs1[1,1].set_ylabel("Percentage")
+        axs2[1,1].set_title("GPU memeory utilization comparison cached")
+        axs1[1,1].legend()
 
-        fig2.suptitle("GPU utilization comparison - " + model , fontsize=20, fontweight ="bold")
-        fig2.savefig("figures/GPU_util-" + model)
+        fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
+        fig1.savefig("figures/cached_comparison - " + model)
 
-        axs3[0].set_xlabel("Time")
-        axs3[0].set_ylabel("Percentage")
-        axs3[0].set_title("GPU Memory utilization comparison Disk")
-        axs3[0].legend()
+        axs2[0,0].set_xticks(X_metrics_axis)
+        axs2[0,0].set_xticklabels(X)
+        axs2[0,0].set_xlabel("Metrics")
+        axs2[0,0].set_ylabel("Values")
+        axs2[0,0].set_title("Metric comparison cached")
+        axs2[0,0].legend()
 
-        axs3[1].set_xlabel("Time")
-        axs3[1].set_ylabel("Percentage")
-        axs3[1].set_title("GPU Memory utilization comparison cached")
-        axs3[1].legend()
+        axs2[0,1].set_xlabel("Time")
+        axs2[0,1].set_ylabel("Percentage")
+        axs2[0,1].set_title("CPU utilization comparison cached")
+        axs2[0,1].legend()
 
-        fig3.suptitle("GPU Memory utilization comparison - " + model , fontsize=20, fontweight ="bold")
-        fig3.savefig("figures/GPU_mem_util-" + model)
-#    plt.show()
+        axs2[1,0].set_xlabel("Time")
+        axs2[1,0].set_ylabel("Percentage")
+        axs2[1,0].set_title("GPU utilization comparison cached")
+        axs2[1,0].legend()
+
+        axs2[1,1].set_xlabel("Time")
+        axs2[1,1].set_ylabel("Percentage")
+        axs2[1,1].set_title("GPU memeory utilization comparison cached")
+        axs2[1,1].legend()
+
+        fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
+        fig2.savefig("figures/disk_comparison - " + model)
+
 
 def main():
 
