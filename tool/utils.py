@@ -145,7 +145,7 @@ def parseDstat(fname, rerun = False):
     if not rerun:
         return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send)
     else:
-        return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send, idle_list)
+        return (mean_idle, mean_wait, mean_read, mean_write, mean_recv, mean_send, idle_list, wai_list, read_list, write_list, recv_list, send_list)
 
 def parseNvidia(fname, rerun = False):
     csvfile = open(fname, "r")

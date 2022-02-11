@@ -338,31 +338,10 @@ def run_stats_only(resume_path, local_gpus):
         print("Something went wrong in run1")
         sys.exit(1)
 
-    res_dstat = utils.parseDstat(run2_path + 'all-utils.csv', True)
-    res_nvidia = utils.parseNvidia(run2_path + 'nvidia.csv', True)
-    res_free = utils.parseFree(run2_path + 'free.csv')
-    idle, wait, read, write, recv, send, idle_list = res_dstat
-    pmem, shm, page_cache, total = res_free
-    gpu_util, gpu_mem_util, gpu_util_pct_list, gpu_mem_util_pct_list = res_nvidia
-
     args.stats["RUN2"], stddev_map = aggregate_run1_maps(run2_stats)
-    args.stats["RUN2"]["SPEED"] = args.stats["RUN2"]["SAMPLES"] / args.stats["RUN2"]["TRAIN"]
-    args.stats["RUN2"]["RECV"] = recv
-    args.stats["RUN2"]["SEND"] = send
-    args.stats["RUN2"]["READ"] = read
-    args.stats["RUN2"]["CPU"] = 100 - idle
-    args.stats["RUN2"]["MEM"] = pmem + shm
-    args.stats["RUN2"]["PCACHE"] = page_cache
-    args.stats["RUN2"]["GPU_UTIL"] = gpu_util
-    args.stats["RUN2"]["GPU_MEM_UTIL"] = gpu_mem_util
-    args.stats["RUN2"]["CPU_LIST"] = [100 - idle for idle in idle_list]
-    args.stats["RUN2"]["GPU_UTIL_LIST"] = gpu_util_pct_list
-    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
-
+    populate_run_stats("RUN2", run2_path)
     args.stats["DISK_THR"] = args.stats["RUN2"]["READ"]
     args.stats["SPEED_DISK"] = args.stats["RUN2"]["SPEED"]
-
-#    print_as_table(args.stats["RUN2"])
 
     run3_stats = []
     run3_path = resume_path + 'run3-preprocess/'
@@ -374,32 +353,40 @@ def run_stats_only(resume_path, local_gpus):
         print("Something went wrong in run1")
         sys.exit(1)
 
-    res_dstat = utils.parseDstat(run3_path + 'all-utils.csv', True)
-    res_nvidia = utils.parseNvidia(run3_path + 'nvidia.csv', True)
-    res_free = utils.parseFree(run3_path + 'free.csv')
-    idle, wait, read, write, recv, send, idle_list = res_dstat
-    pmem, shm, page_cache, total = res_free
-    gpu_util, gpu_mem_util, gpu_util_pct_list, gpu_mem_util_pct_list  = res_nvidia
-
     args.stats["RUN3"], stddev_map = aggregate_run1_maps(run3_stats)
-    args.stats["RUN3"]["SPEED"] = args.stats["RUN3"]["SAMPLES"] / args.stats["RUN3"]["TRAIN"]
-    args.stats["RUN3"]["RECV"] = recv
-    args.stats["RUN3"]["SEND"] = send
-    args.stats["RUN3"]["READ"] = read
-    args.stats["RUN3"]["CPU"] = 100 - idle
-    args.stats["RUN3"]["MEM"] = pmem + shm
-    args.stats["RUN3"]["PCACHE"] = page_cache
-    args.stats["RUN3"]["GPU_UTIL"] = gpu_util
-    args.stats["RUN3"]["GPU_MEM_UTIL"] = gpu_mem_util
-    args.stats["RUN3"]["CPU_LIST"] = [100 - idle for idle in idle_list]
-    args.stats["RUN3"]["GPU_UTIL_LIST"] = gpu_util_pct_list
-    args.stats["RUN3"]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
-
+    populate_run_stats("RUN3", run3_path)
     args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
 
     json_outfile = resume_path + 'MODEL2.json'
     with open(json_outfile, 'w') as jf:
         json.dump(args.stats, jf)
+
+def populate_run_stats(run, run_path):
+
+    res_dstat = utils.parseDstat(run_path + 'all-utils.csv', True)
+    res_nvidia = utils.parseNvidia(run_path + 'nvidia.csv', True)
+    res_free = utils.parseFree(run_path + 'free.csv')
+    idle, wait, read, write, recv, send, idle_list, wai_list, read_list, write_list, recv_list, send_list = res_dstat
+    pmem, shm, page_cache, total = res_free
+    gpu_util, gpu_mem_util, gpu_util_pct_list, gpu_mem_util_pct_list = res_nvidia
+
+    args.stats[run]["SPEED"] = args.stats[run]["SAMPLES"] / args.stats[run]["TRAIN"]
+    args.stats[run]["RECV"] = recv
+    args.stats[run]["SEND"] = send
+    args.stats[run]["READ"] = read
+    args.stats[run]["WRITE"] = write
+    args.stats[run]["IO_WAIT"] = wait
+    args.stats[run]["CPU"] = 100 - idle
+    args.stats[run]["MEM"] = pmem + shm
+    args.stats[run]["PCACHE"] = page_cache
+    args.stats[run]["GPU_UTIL"] = gpu_util
+    args.stats[run]["GPU_MEM_UTIL"] = gpu_mem_util
+    args.stats[run]["CPU_LIST"] = [100 - idle for idle in idle_list]
+    args.stats[run]["GPU_UTIL_LIST"] = gpu_util_pct_list
+    args.stats[run]["GPU_MEM_UTIL_LIST"] = gpu_mem_util_pct_list
+    args.stats[run]["IO_WAIT_LIST"] = wai_list
+    args.stats[run]["READ_LIST"] = read_list
+    args.stats[run]["WRITE_LIST"] = write_list
 
 
 def main():
