@@ -41,16 +41,39 @@ def process_json(model, gpu, json_path):
     stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
 
-    '''
-    stats2[gpu][model]["SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
-    stats2[gpu][model]["SPEED_DISK"]  = dagJson["SPEED_DISK"]
-    stats2[gpu][model]["SPEED_CACHED"] = dagJson["SPEED_CACHED"]
-    stats2[gpu][model]["DISK_THR"] = dagJson["DISK_THR"]
-    stats2[gpu][model]["MEM_THR"] = dagJson["MEM_THR"]
-    stats2[gpu][model]["TRAIN_TIME"] = dagJson["RUN2"]["TRAIN"]
-    stats2[gpu][model]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
-    stats2[gpu][model]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-    '''
+
+def process_json2(model, gpu, json_path):
+
+    with open(json_path) as fd:
+        dagJson = json.load(fd)
+
+    stats[model][gpu]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
+    stats[model][gpu]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
+    stats[model][gpu]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
+    stats[model][gpu]["DISK_THR"] = dagJson["DISK_THR"]
+    stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
+    stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
+    stats[model][gpu]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
+    stats[model][gpu]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
+    stats[model][gpu]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
+    stats[model][gpu]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
+    stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
+    stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
+
+    stats[model][gpu]["CPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["CPU_LIST"]
+    stats[model][gpu]["CPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["CPU_LIST"]
+    stats[model][gpu]["GPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_UTIL_LIST"]
+    stats[model][gpu]["GPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_UTIL_LIST"]
+    stats[model][gpu]["GPU_MEM_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_MEM_UTIL_LIST"]
+    stats[model][gpu]["GPU_MEM_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_MEM_UTIL_LIST"]
+
+    stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
+    stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
+
+    stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
+    stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
+
+
 
 def plotModels(instance):
 
@@ -265,6 +288,76 @@ def compare():
     fig5.suptitle("CPU and GPU utilization CACHED comparison", fontsize=20, fontweight ="bold")
     plt.show()
 
+def compare_models():
+
+    models = list(stats.keys())
+    max_dstat_len = 0
+    max_nvidia_len = 0
+
+    for instance in instances:
+
+        gpu = gpu_map[instance]
+
+        for model in models:
+
+            if gpu not in stats[model]:
+                del stats[model]
+                continue
+
+            max_dstat_len = max(max_dstat_len, len(stats[model][gpu]["CPU_UTIL_DISK_LIST"]))
+            max_dstat_len = max(max_dstat_len, len(stats[model][gpu]["CPU_UTIL_CACHED_LIST"]))
+            max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_DISK_LIST"]))
+            max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_CACHED_LIST"]))
+
+    fig1, axs1 = plt.subplots(2, 1)
+#    fig2, axs2 = plt.subplots(2, 1)
+#    fig3, axs3 = plt.subplots(2, 1)
+#    fig4, axs4 = plt.subplots(2, 1)
+#    fig5, axs5 = plt.subplots(2, 1)
+
+    X_dstat_axis = np.arange(max_dstat_len)
+    X_nvidia_axis = np.arange(max_nvidia_len)
+
+
+    for instance in instances:
+        
+        gpu = gpu_map[instance]
+
+        Y_CPU_UTIL_DISK = stats[model][gpu]["CPU_UTIL_DISK_LIST"]
+        Y_CPU_UTIL_CACHED = stats[model][gpu]["CPU_UTIL_CACHED_LIST"]
+        Y_GPU_UTIL_DISK = stats[model][gpu]["GPU_UTIL_DISK_LIST"]
+        Y_GPU_UTIL_CACHED = stats[model][gpu]["GPU_UTIL_CACHED_LIST"]
+
+        if len(Y_CPU_UTIL_DISK) < max_dstat_len:
+            Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
+        if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
+            Y_CPU_UTIL_CACHED.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_CACHED)))
+        if len(Y_GPU_UTIL_DISK) < max_nvidia_len:
+            Y_GPU_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_DISK)))
+        if len(Y_GPU_UTIL_CACHED) < max_nvidia_len:
+            Y_GPU_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_CACHED)))
+
+        axs1[0].plot(X_dstat_axis, Y_CPU_UTIL_DISK, label = instance)
+        axs1[0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, label = instance)
+        axs1[1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, label = instance)
+        axs1[1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, label = instance)
+
+
+    axs1[0].set_xlabel("Time")
+    axs1[0].set_ylabel("Percentage")
+    axs1[0].set_title("CPU/GPU utilization comparison")
+    axs1[0].legend()
+
+
+    axs1[1].set_xlabel("Time")
+    axs1[1].set_ylabel("Percentage")
+    axs1[1].set_title("CPU/GPU utilization comparison")
+    axs1[1].legend()
+
+    fig1.suptitle("Stall comparison" , fontsize=20, fontweight ="bold")
+    fig1.savefig("stall_comparison.png")
+    
+    plt.show()
 
 def main():
 
@@ -291,14 +384,15 @@ def main():
                     cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
                     for cpu_path in cpu_paths:
                         json_path = cpu_path + "/MODEL.json"
+                        json_path2 = cpu_path + "/MODEL2.json"
                         if not os.path.isfile(json_path):
                             continue
 
                         process_json(model, gpu, json_path)
+                        process_json2(model, gpu, json_path2)
 
-        #plotModels(instance)
-
-    compare()
+#    compare()
+    compare_models()
 
 
 if __name__ == "__main__":
