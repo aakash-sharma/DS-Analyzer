@@ -314,8 +314,8 @@ def compare_models():
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_DISK_LIST"]))
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_CACHED_LIST"]))
 
-        fig1, axs1 = plt.subplots(2, 2, figsize=(20,20))
-        fig2, axs2 = plt.subplots(2, 2, figsize=(20,20))
+        fig1, axs1 = plt.subplots(2, 2, figsize=(30,20))
+        fig2, axs2 = plt.subplots(2, 2, figsize=(30,20))
 
         X_dstat_axis = np.arange(max_dstat_len)
         X_nvidia_axis = np.arange(max_nvidia_len)
@@ -326,7 +326,6 @@ def compare_models():
             
             gpu = gpu_map[instance]
             style = None
-            diff = 0
 
             if instance == "p2.8xlarge":
                 style = 'r--'
@@ -368,9 +367,9 @@ def compare_models():
             if len(Y_GPU_MEM_UTIL_CACHED) < max_nvidia_len:
                 Y_GPU_MEM_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_CACHED)))
 
-            print(X_metrics_axis, Y_METRICS_CACHED)
+            print(X_metrics_axis+ diff, Y_METRICS_CACHED)
 
-            axs1[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
+            axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
             axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
             axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
             axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
@@ -401,7 +400,7 @@ def compare_models():
 
         axs1[1,1].set_xlabel("Time")
         axs1[1,1].set_ylabel("Percentage")
-        axs2[1,1].set_title("GPU memeory utilization comparison cached")
+        axs2[1,1].set_title("GPU memory utilization comparison cached")
         axs1[1,1].legend()
 
         fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
