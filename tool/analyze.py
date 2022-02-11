@@ -310,8 +310,8 @@ def compare_models():
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_CACHED_LIST"]))
 
     fig1, axs1 = plt.subplots(2, 1)
-#    fig2, axs2 = plt.subplots(2, 1)
-#    fig3, axs3 = plt.subplots(2, 1)
+    fig2, axs2 = plt.subplots(2, 1)
+    fig3, axs3 = plt.subplots(2, 1)
 #    fig4, axs4 = plt.subplots(2, 1)
 #    fig5, axs5 = plt.subplots(2, 1)
 
@@ -322,11 +322,22 @@ def compare_models():
     for instance in instances:
         
         gpu = gpu_map[instance]
+        print(instance)
+        style = None
+
+        if instance == "p2.8xlarge":
+            style = 'r--'
+        elif instance == "p2.16xlarge":
+            style = 'b--'
+
+        overlapping = 0.50
 
         Y_CPU_UTIL_DISK = stats[model][gpu]["CPU_UTIL_DISK_LIST"]
         Y_CPU_UTIL_CACHED = stats[model][gpu]["CPU_UTIL_CACHED_LIST"]
         Y_GPU_UTIL_DISK = stats[model][gpu]["GPU_UTIL_DISK_LIST"]
         Y_GPU_UTIL_CACHED = stats[model][gpu]["GPU_UTIL_CACHED_LIST"]
+        Y_GPU_MEM_UTIL_DISK = stats[model][gpu]["GPU_MEM_UTIL_DISK_LIST"]
+        Y_GPU_MEM_UTIL_CACHED = stats[model][gpu]["GPU_MEM_UTIL_CACHED_LIST"]
 
         if len(Y_CPU_UTIL_DISK) < max_dstat_len:
             Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
@@ -336,27 +347,58 @@ def compare_models():
             Y_GPU_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_DISK)))
         if len(Y_GPU_UTIL_CACHED) < max_nvidia_len:
             Y_GPU_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_CACHED)))
+        if len(Y_GPU_MEM_UTIL_DISK) < max_nvidia_len:
+            Y_GPU_MEM_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_DISK)))
+        if len(Y_GPU_MEM_UTIL_CACHED) < max_nvidia_len:
+            Y_GPU_MEM_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_CACHED)))
 
-        axs1[0].plot(X_dstat_axis, Y_CPU_UTIL_DISK, label = instance)
-        axs1[0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, label = instance)
-        axs1[1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, label = instance)
-        axs1[1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, label = instance)
+        axs1[0].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+#        axs1[0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, label = instance)
+        axs1[1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+#        axs1[1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, label = instance)
+
+        axs2[0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+        axs2[1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+
+        axs3[0].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
+        axs3[1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
 
 
     axs1[0].set_xlabel("Time")
     axs1[0].set_ylabel("Percentage")
-    axs1[0].set_title("CPU/GPU utilization comparison")
+    axs1[0].set_title("CPU utilization comparison Disk")
     axs1[0].legend()
-
 
     axs1[1].set_xlabel("Time")
     axs1[1].set_ylabel("Percentage")
-    axs1[1].set_title("CPU/GPU utilization comparison")
+    axs1[1].set_title("CPU utilization comparison cached")
     axs1[1].legend()
 
-    fig1.suptitle("Stall comparison" , fontsize=20, fontweight ="bold")
-    fig1.savefig("stall_comparison.png")
+    fig1.suptitle("CPU utilization comparison" , fontsize=20, fontweight ="bold")
     
+    axs2[0].set_xlabel("Time")
+    axs2[0].set_ylabel("Percentage")
+    axs2[0].set_title("GPU utilization comparison Disk")
+    axs2[0].legend()
+
+    axs2[1].set_xlabel("Time")
+    axs2[1].set_ylabel("Percentage")
+    axs2[1].set_title("GPU utilization comparison cached")
+    axs2[1].legend()
+
+    fig2.suptitle("GPU utilization comparison" , fontsize=20, fontweight ="bold")
+
+    axs3[0].set_xlabel("Time")
+    axs3[0].set_ylabel("Percentage")
+    axs3[0].set_title("GPU Memory utilization comparison Disk")
+    axs3[0].legend()
+
+    axs3[1].set_xlabel("Time")
+    axs3[1].set_ylabel("Percentage")
+    axs3[1].set_title("GPU Memory utilization comparison cached")
+    axs3[1].legend()
+
+    fig3.suptitle("GPU Memory utilization comparison" , fontsize=20, fontweight ="bold")
     plt.show()
 
 def main():
