@@ -386,7 +386,6 @@ def compare_models():
             if len(Y_GPU_UTIL_DISK) < max_nvidia_len:
                 Y_GPU_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_DISK)))
             if len(Y_GPU_UTIL_CACHED) < max_nvidia_len:
-                print(len(X_nvidia_axis), len(Y_GPU_UTIL_CACHED))
                 Y_GPU_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_CACHED)))
             if len(Y_GPU_MEM_UTIL_DISK) < max_nvidia_len:
                 Y_GPU_MEM_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_DISK)))
@@ -436,15 +435,15 @@ def compare_models():
         axs1[1,1].legend()
 
         axs1[2,0].set_xticks(X_metrics_io_axis)
-        axs1[2,0].set_xticklabels(X)
+        axs1[2,0].set_xticklabels(X_IO)
         axs1[2,0].set_xlabel("Metrics")
         axs1[2,0].set_ylabel("Values")
-        axs1[2,0].set_title("Metric comparison cached")
+        axs1[2,0].set_title("IO Metric comparison cached")
         axs1[2,0].legend()
 
         axs1[2,1].set_xlabel("Time")
         axs1[2,1].set_ylabel("Percentage")
-        axs2[2,1].set_title("io wait percentage cached")
+        axs1[2,1].set_title("IO wait percentage cached")
         axs1[2,1].legend()
 
         fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
@@ -473,10 +472,10 @@ def compare_models():
         axs2[1,1].legend()
 
         axs2[2,0].set_xticks(X_metrics_io_axis)
-        axs2[2,0].set_xticklabels(X)
+        axs2[2,0].set_xticklabels(X_IO)
         axs2[2,0].set_xlabel("Metrics")
         axs2[2,0].set_ylabel("Values")
-        axs2[2,0].set_title("Metric comparison disk")
+        axs2[2,0].set_title("IO Metric comparison disk")
         axs2[2,0].legend()
 
         axs2[2,1].set_xlabel("Time")
