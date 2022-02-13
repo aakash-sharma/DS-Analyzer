@@ -12,6 +12,7 @@ stats2 = defaultdict(lambda: defaultdict(dict))
 gpu_map = {
         "p2.xlarge" : "gpus-1",
         "p2.8xlarge" : "gpus-8",
+        "p2.16xlarge-io1" : "gpus-16",
         "p2.16xlarge" : "gpus-16"}
 
 instances = []
@@ -25,7 +26,7 @@ def process_json(model, gpu, json_path):
     stats[model][gpu]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
     stats[model][gpu]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
     stats[model][gpu]["DISK_THR"] = dagJson["DISK_THR"]
-    stats[model][gpu]["MEM_THR"] = dagJson["MEM_THR"]
+    #stats[model][gpu]["MEM_THR"] = dagJson["MEM_THR"]
     stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
     stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
     stats[model][gpu]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
@@ -58,6 +59,10 @@ def process_json2(model, gpu, json_path):
     stats[model][gpu]["PCACHE_DISK"] = dagJson["RUN2"]["PCACHE"]
     stats[model][gpu]["MEM_CACHED"] = dagJson["RUN3"]["MEM"]
     stats[model][gpu]["PCACHE_CACHED"] = dagJson["RUN3"]["PCACHE"]
+    stats[model][gpu]["READ_WRITE_DISK"] = dagJson["RUN2"]["READ"] + dagJson["RUN2"]["WRITE"]
+    stats[model][gpu]["IO_WAIT_DISK"] = dagJson["RUN2"]["IO_WAIT"]
+    stats[model][gpu]["READ_WRITE_CACHED"] = dagJson["RUN3"]["READ"] + dagJson["RUN3"]["WRITE"]
+    stats[model][gpu]["IO_WAIT_CACHED"] = dagJson["RUN3"]["IO_WAIT"]
 
     stats[model][gpu]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
     stats[model][gpu]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
@@ -72,6 +77,10 @@ def process_json2(model, gpu, json_path):
     stats[model][gpu]["GPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_UTIL_LIST"]
     stats[model][gpu]["GPU_MEM_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_MEM_UTIL_LIST"]
     stats[model][gpu]["GPU_MEM_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_MEM_UTIL_LIST"]
+    stats[model][gpu]["READ_WRITE_LIST_DISK"] = dagJson["RUN2"]["READ_LIST"] + dagJson["RUN2"]["WRITE_LIST"]
+    stats[model][gpu]["READ_WRITE_LIST_CACHED"] = dagJson["RUN3"]["READ_LIST"] + dagJson["RUN3"]["WRITE_LIST"]
+    stats[model][gpu]["IO_WAIT_LIST_DISK"] = dagJson["RUN2"]["IO_WAIT_LIST"]
+    stats[model][gpu]["IO_WAIT_LIST_CACHED"] = dagJson["RUN3"]["IO_WAIT_LIST"]
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
@@ -300,6 +309,9 @@ def compare_models():
     max_nvidia_len = 0
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
+    X_IO = ["Read Write", "IOWait"]
+
+#    models = ["alexnet"]
 
     for model in models:
 
@@ -314,12 +326,13 @@ def compare_models():
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_DISK_LIST"]))
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_CACHED_LIST"]))
 
-        fig1, axs1 = plt.subplots(2, 2, figsize=(30,20))
-        fig2, axs2 = plt.subplots(2, 2, figsize=(30,20))
+        fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
+        fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
 
         X_dstat_axis = np.arange(max_dstat_len)
         X_nvidia_axis = np.arange(max_nvidia_len)
-        X_metrics_axis = np.arange(4)
+        X_metrics_axis = np.arange(len(X))
+        X_metrics_io_axis = np.arange(len(X_IO))
         diff = 0
 
         for instance in instances:
@@ -336,15 +349,24 @@ def compare_models():
         
             Y_METRICS_DISK = []
             Y_METRICS_CACHED = []
+            Y_METRICS_IO_DISK = []
+            Y_METRICS_IO_CACHED = []
 
+            print(model)
             Y_METRICS_DISK.append(stats[model][gpu]["DISK_THR"])
             Y_METRICS_DISK.append(stats[model][gpu]["TRAIN_SPEED_DISK"])
             Y_METRICS_DISK.append(stats[model][gpu]["MEM_DISK"])
             Y_METRICS_DISK.append(stats[model][gpu]["PCACHE_DISK"])
+            Y_METRICS_IO_DISK.append(stats[model][gpu]["READ_WRITE_DISK"])
+            Y_METRICS_IO_DISK.append(stats[model][gpu]["IO_WAIT_DISK"])
+            
             Y_METRICS_CACHED.append(stats[model][gpu]["DISK_THR"])
             Y_METRICS_CACHED.append(stats[model][gpu]["TRAIN_SPEED_CACHED"])
             Y_METRICS_CACHED.append(stats[model][gpu]["MEM_CACHED"])
             Y_METRICS_CACHED.append(stats[model][gpu]["PCACHE_CACHED"])
+            Y_METRICS_IO_CACHED.append(stats[model][gpu]["READ_WRITE_CACHED"])
+            Y_METRICS_IO_CACHED.append(stats[model][gpu]["IO_WAIT_CACHED"])
+
             Y_CPU_UTIL_DISK = stats[model][gpu]["CPU_UTIL_DISK_LIST"]
             Y_CPU_UTIL_CACHED = stats[model][gpu]["CPU_UTIL_CACHED_LIST"]
 
@@ -353,6 +375,9 @@ def compare_models():
 
             Y_GPU_MEM_UTIL_DISK = stats[model][gpu]["GPU_MEM_UTIL_DISK_LIST"]
             Y_GPU_MEM_UTIL_CACHED = stats[model][gpu]["GPU_MEM_UTIL_CACHED_LIST"]
+
+            Y_IO_WAIT_LIST_DISK = stats[model][gpu]["IO_WAIT_LIST_DISK"]
+            Y_IO_WAIT_LIST_CACHED = stats[model][gpu]["IO_WAIT_LIST_CACHED"]
 
             if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                 Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
@@ -366,18 +391,25 @@ def compare_models():
                 Y_GPU_MEM_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_DISK)))
             if len(Y_GPU_MEM_UTIL_CACHED) < max_nvidia_len:
                 Y_GPU_MEM_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_CACHED)))
+            if len(Y_IO_WAIT_LIST_DISK) < max_dstat_len:
+                Y_IO_WAIT_LIST_DISK.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_DISK)))
+            if len(Y_IO_WAIT_LIST_CACHED) < max_dstat_len:
+                Y_IO_WAIT_LIST_CACHED.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_CACHED)))
 
-            print(X_metrics_axis+ diff, Y_METRICS_CACHED)
-
+            print(len(X_dstat_axis), len(Y_CPU_UTIL_CACHED))
             axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
             axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
             axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
             axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
+            axs1[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
+            axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
 
             axs2[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_DISK, 0.2, label = instance)
             axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
             axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
             axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
+            axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
+            axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
             diff += 0.2
 
@@ -402,6 +434,18 @@ def compare_models():
         axs1[1,1].set_ylabel("Percentage")
         axs2[1,1].set_title("GPU memory utilization comparison cached")
         axs1[1,1].legend()
+
+        axs1[2,0].set_xticks(X_metrics_io_axis)
+        axs1[2,0].set_xticklabels(X)
+        axs1[2,0].set_xlabel("Metrics")
+        axs1[2,0].set_ylabel("Values")
+        axs1[2,0].set_title("Metric comparison cached")
+        axs1[2,0].legend()
+
+        axs1[2,1].set_xlabel("Time")
+        axs1[2,1].set_ylabel("Percentage")
+        axs2[2,1].set_title("io wait percentage cached")
+        axs1[2,1].legend()
 
         fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
         fig1.savefig("figures/cached_comparison - " + model)
@@ -428,6 +472,18 @@ def compare_models():
         axs2[1,1].set_title("GPU memeory utilization comparison cached")
         axs2[1,1].legend()
 
+        axs2[2,0].set_xticks(X_metrics_io_axis)
+        axs2[2,0].set_xticklabels(X)
+        axs2[2,0].set_xlabel("Metrics")
+        axs2[2,0].set_ylabel("Values")
+        axs2[2,0].set_title("Metric comparison disk")
+        axs2[2,0].legend()
+
+        axs2[2,1].set_xlabel("Time")
+        axs2[2,1].set_ylabel("Percentage")
+        axs2[2,1].set_title("io wait percentage disk")
+        axs2[2,1].legend()
+
         fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
         fig2.savefig("figures/disk_comparison - " + model)
 
@@ -445,8 +501,10 @@ def main():
         result_path2 = result_dir + "/" + instance + "/" + "dali-cpu"
 
         for result_path in [result_path1, result_path2]:
-
-            model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
+            try:
+                model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
+            except:
+                continue
 
             for model_path in model_paths:
                 model = model_path.split('/')[-1]
