@@ -48,6 +48,7 @@ from synthetic_data import get_shared_image_classification_tensors
 from utils import aggregate_run1_maps, print_as_table, print_header
 import multiprocessing
 import json
+import statistics
 
 def parse_args():
     """
@@ -342,6 +343,8 @@ def run_stats_only(resume_path, local_gpus):
     populate_run_stats("RUN2", run2_path)
     args.stats["DISK_THR"] = args.stats["RUN2"]["READ"]
     args.stats["SPEED_DISK"] = args.stats["RUN2"]["SPEED"]
+    args.stats["RUN2"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN2"]["GPU_UTIL_LIST"], local_gpus)
+    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = avg_list(args.stats["RUN2"]["GPU_MEM_UTIL_LIST"], local_gpus)
 
     run3_stats = []
     run3_path = resume_path + 'run3-preprocess/'
@@ -356,6 +359,8 @@ def run_stats_only(resume_path, local_gpus):
     args.stats["RUN3"], stddev_map = aggregate_run1_maps(run3_stats)
     populate_run_stats("RUN3", run3_path)
     args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
+    args.stats["RUN3"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_UTIL_LIST"], local_gpus)
+    args.stats["RUN3"]["GPU_MEM_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_MEM_UTIL_LIST"], local_gpus)
 
     json_outfile = resume_path + 'MODEL2.json'
     with open(json_outfile, 'w') as jf:
@@ -387,6 +392,15 @@ def populate_run_stats(run, run_path):
     args.stats[run]["IO_WAIT_LIST"] = wai_list
     args.stats[run]["READ_LIST"] = read_list
     args.stats[run]["WRITE_LIST"] = write_list
+
+def avg_list(gpu_list, num_gpus):
+    new_list = []
+    i = 0
+    for j in range(num_gpus, len(gpu_list), num_gpus):
+        new_list.append(statistics.mean(gpu_list[i:j]))
+        i += num_gpus
+
+    return new_list
 
 
 def main():

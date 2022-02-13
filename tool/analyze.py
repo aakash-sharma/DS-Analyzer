@@ -386,6 +386,7 @@ def compare_models():
             if len(Y_GPU_UTIL_DISK) < max_nvidia_len:
                 Y_GPU_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_DISK)))
             if len(Y_GPU_UTIL_CACHED) < max_nvidia_len:
+                print(len(X_nvidia_axis), len(Y_GPU_UTIL_CACHED))
                 Y_GPU_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_CACHED)))
             if len(Y_GPU_MEM_UTIL_DISK) < max_nvidia_len:
                 Y_GPU_MEM_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_DISK)))
@@ -396,7 +397,6 @@ def compare_models():
             if len(Y_IO_WAIT_LIST_CACHED) < max_dstat_len:
                 Y_IO_WAIT_LIST_CACHED.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_CACHED)))
 
-            print(len(X_dstat_axis), len(Y_CPU_UTIL_CACHED))
             axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
             axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
             axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
