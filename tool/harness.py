@@ -112,6 +112,7 @@ def parse_args():
     parser.add_argument("--full_epoch", default=False, action='store_true')
     parser.add_argument("--resume_json", default=None, type=str)
     parser.add_argument("--resume_dir", default=None, type=str)
+    parser.add_argument("--distributed", default=False, type=bool)
     parser.add_argument("--prefix", default="", type=str)
 
 
@@ -474,7 +475,7 @@ def main():
         print_as_table(args.stats["RUN1"])
 
     # Stage 2 : Run with both fetch and pre-processing on 
-    if resume and 'RUN2' in args.stats:
+    if not args.distributed or (resume and 'RUN4' in args.stats):
         print_as_table(args.stats["RUN2"])
         print("STEP 2 already done. Continuing to step 3\n")
     else:
@@ -560,7 +561,7 @@ def main():
     else:
         log_path = run_synthetic(False)
 
-        print("Parsing Step 1 results ...")
+        print("Parsing Step 4 results ...")
         local_gpus = args.nproc_per_node
         print('LOCAL GPUs ', local_gpus)
 
