@@ -475,7 +475,7 @@ def main():
         print_as_table(args.stats["RUN1"])
 
     # Stage 2 : Run with both fetch and pre-processing on 
-    if not args.distributed or (resume and 'RUN4' in args.stats):
+    if resume and 'RUN2' in args.stats:
         print_as_table(args.stats["RUN2"])
         print("STEP 2 already done. Continuing to step 3\n")
     else:
@@ -554,8 +554,8 @@ def main():
         print_as_table(args.stats["RUN3"])
 
     # Stage 4 : Run with synthetic dataset and overlap
-    if resume and 'RUN4' in args.stats:
-        print_as_table(args.stats["RUN4"])
+    if not args.distributed or (resume and 'RUN4' in args.stats):
+        #print_as_table(args.stats["RUN4"])
         print("STEP 4 already done")
 
     else:
