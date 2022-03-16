@@ -121,6 +121,8 @@ cudnn.benchmark = True
 
 compute_time_list = []
 data_time_list = []
+fwd_prop_time_list = []
+bwd_prop_time_list = []
 
 
 class HybridTrainPipe(Pipeline):
@@ -452,7 +454,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
     end = time.time()
     args.dprof.start_data_tick()
-    dataset_time = compute_time = 0
+    dataset_time = compute_time = fwd_prop_time = bwd_prop_time = 0
 
     for i, data in enumerate(train_loader):
         if args.synthetic:
@@ -476,7 +478,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # measure data loading time
         data_time.update(time.time() - end)
         dataset_time += (time.time() - end)
-        compute_start = time.time()
+        compute_start = fwd_prop_start = time.time()
 
         input_var = Variable(input)
         target_var = Variable(target)
@@ -498,7 +500,6 @@ def train(train_loader, model, criterion, optimizer, epoch):
         prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
 
         if args.distributed:
-            #Communication happens here
             reduced_loss = reduce_tensor(loss.data)
             prec1 = reduce_tensor(prec1)
             prec5 = reduce_tensor(prec5)
