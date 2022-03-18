@@ -10,7 +10,8 @@ stats = defaultdict(lambda: defaultdict(dict))
 stats2 = defaultdict(lambda: defaultdict(dict))
 
 gpu_map = {
-        "p2.xlarge" : "gpus-1",
+        "p2.xlarge" : "gpus-10",
+        "chameleon.xlarge" : "gpus-11",
         "p2.8xlarge" : "gpus-8",
         "p2.16xlarge-io1" : "gpus-16",
         "p2.16xlarge" : "gpus-16"}
@@ -35,6 +36,7 @@ def process_json(model, gpu, json_path):
     stats[model][gpu]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
     stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
     stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
+    stats[model][gpu]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
@@ -140,11 +142,12 @@ def compare():
                 del stats[model]
 
 
-    fig1, axs1 = plt.subplots(2, 1)
-    fig2, axs2 = plt.subplots(3, 1)
-    fig3, axs3 = plt.subplots(3, 1)
-    fig4, axs4 = plt.subplots(3, 1)
-    fig5, axs5 = plt.subplots(3, 1)
+    fig1, axs1 = plt.subplots(2, 1, figsize=(30,20))
+    fig2, axs2 = plt.subplots(3, 1, figsize=(30,20))
+    fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
+    fig4, axs4 = plt.subplots(3, 1, figsize=(30,20))
+    fig5, axs5 = plt.subplots(3, 1, figsize=(30,20))
+    fig6, axs6 = plt.subplots(1, 1, figsize=(30,20))
 
     X = [model for model in stats.keys()]
     X_axis = np.arange(len(X))
@@ -154,6 +157,7 @@ def compare():
     for instance in instances:
         
         gpu = gpu_map[instance]
+        print(gpu)
         
         Y_PREP_STALL_PCT = [stats[model][gpu]["PREP_STALL_PCT"] for model in X]
         Y_FETCH_STALL_PCT = [stats[model][gpu]["FETCH_STALL_PCT"] for model in X]
@@ -169,6 +173,7 @@ def compare():
         Y_GPU_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_UTIL_CACHED_PCT"] for model in X]
         Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] for model in X]
         Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] for model in X]
+        Y_MEMCPY_TIME = [stats[model][gpu]["MEMCPY"] for model in X]
 
         axs1[0].bar(X_axis-0.2 + diff , Y_PREP_STALL_PCT, 0.2, label = instance)
         axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
@@ -189,6 +194,10 @@ def compare():
         axs5[1].bar(X_axis-0.2 + diff , Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
         axs5[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
 
+        axs6[0].bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
+
+        print(Y_GPU_UTIL_CACHED_PCT)
+
         diff += 0.2
 
     axs1[0].set_xticks(X_axis)
@@ -207,7 +216,7 @@ def compare():
     axs1[1].legend()
 
     fig1.suptitle("Stall comparison" , fontsize=20, fontweight ="bold")
-    fig1.savefig("stall_comparison.png")
+    fig1.savefig("figures/stall_comparison")
     
     axs2[0].set_xticks(X_axis)
     axs2[0].set_xticklabels(X)
@@ -231,6 +240,7 @@ def compare():
     axs2[2].legend()
 
     fig2.suptitle("Training time comparison" , fontsize=20, fontweight ="bold")
+    fig2.savefig("figures/training_time")
 
     axs3[0].set_xticks(X_axis)
     axs3[0].set_xticklabels(X)
@@ -254,6 +264,7 @@ def compare():
     axs3[2].legend()
 
     fig3.suptitle("Training speed comparison", fontsize=20, fontweight ="bold")
+    fig3.savefig("figures/training_speed")
 
     axs4[0].set_xticks(X_axis)
     axs4[0].set_xticklabels(X)
@@ -277,6 +288,7 @@ def compare():
     axs4[2].legend()
 
     fig4.suptitle("CPU and GPU utilization DISK comparison", fontsize=20, fontweight ="bold")
+    fig4.savefig("figures/cpu_gpu_util_disk")
 
     axs5[0].set_xticks(X_axis)
     axs5[0].set_xticklabels(X)
@@ -300,6 +312,13 @@ def compare():
     axs5[2].legend()
 
     fig5.suptitle("CPU and GPU utilization CACHED comparison", fontsize=20, fontweight ="bold")
+    fig5.savefig("figures/cpu_gpu_util_cached")
+
+    axs6[0].set_xticks(X_axis)
+    axs6[0].set_xticklabels(X)
+    axs6[0].set_ylabel("memcpy time")
+    axs6[0].set_title("memcpy")
+    axs6[0].legend()
     plt.show()
 
 def compare_models():
@@ -340,9 +359,9 @@ def compare_models():
             gpu = gpu_map[instance]
             style = None
 
-            if instance == "p2.8xlarge":
+            if instance == "p2.xlarge":
                 style = 'r--'
-            elif instance == "p2.16xlarge":
+            elif instance == "chameleon.xlarge":
                 style = 'b--'
 
             overlapping = 0.50
@@ -352,7 +371,8 @@ def compare_models():
             Y_METRICS_IO_DISK = []
             Y_METRICS_IO_CACHED = []
 
-            print(model)
+            print(model, gpu)
+
             Y_METRICS_DISK.append(stats[model][gpu]["DISK_THR"])
             Y_METRICS_DISK.append(stats[model][gpu]["TRAIN_SPEED_DISK"])
             Y_METRICS_DISK.append(stats[model][gpu]["MEM_DISK"])
@@ -409,6 +429,7 @@ def compare_models():
             axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
             axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
             axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
+            print(Y_METRICS_IO_DISK)
 
             diff += 0.2
 
@@ -494,6 +515,7 @@ def main():
 
     result_dir = sys.argv[1]
 
+    itr = 0
     for instance in sys.argv[2:]:
         instances.append(instance)
         result_path1 = result_dir + "/" + instance + "/" + "dali-gpu"
@@ -510,7 +532,8 @@ def main():
                 model_path_ = model_path + "/jobs-1"
                 gpu_paths = [os.path.join(model_path_, o) for o in os.listdir(model_path_) if os.path.isdir(os.path.join(model_path_,o))]
                 for gpu_path in gpu_paths:
-                    gpu = gpu_path.split('/')[-1]
+                    gpu = gpu_path.split('/')[-1] + str(itr)
+                    print(gpu)
                     cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
                     for cpu_path in cpu_paths:
                         json_path = cpu_path + "/MODEL.json"
@@ -520,8 +543,9 @@ def main():
 
                         process_json(model, gpu, json_path)
                         process_json2(model, gpu, json_path2)
+        itr += 1
 
-#    compare()
+    compare()
     compare_models()
 
 
