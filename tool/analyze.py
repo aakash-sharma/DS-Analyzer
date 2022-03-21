@@ -13,7 +13,6 @@ gpu_map = {
         "p2.xlarge" : "gpus-10",
         "chameleon.xlarge" : "gpus-11",
         "p2.8xlarge" : "gpus-8",
-        "p2.16xlarge-io1" : "gpus-16",
         "p2.16xlarge" : "gpus-16"}
 
 instances = []
@@ -27,7 +26,7 @@ def process_json(model, gpu, json_path):
     stats[model][gpu]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
     stats[model][gpu]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
     stats[model][gpu]["DISK_THR"] = dagJson["DISK_THR"]
-    #stats[model][gpu]["MEM_THR"] = dagJson["MEM_THR"]
+    stats[model][gpu]["MEM_THR"] = dagJson["MEM_THR"]
     stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
     stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
     stats[model][gpu]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
@@ -147,7 +146,7 @@ def compare():
     fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
     fig4, axs4 = plt.subplots(3, 1, figsize=(30,20))
     fig5, axs5 = plt.subplots(3, 1, figsize=(30,20))
-    fig6, axs6 = plt.subplots(1, 1, figsize=(30,20))
+    fig6, axs6 = plt.subplots(2, 1, figsize=(30,20))
 
     X = [model for model in stats.keys()]
     X_axis = np.arange(len(X))
@@ -173,7 +172,8 @@ def compare():
         Y_GPU_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_UTIL_CACHED_PCT"] for model in X]
         Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] for model in X]
         Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] for model in X]
-        Y_MEMCPY_TIME = [stats[model][gpu]["MEMCPY"] for model in X]
+        Y_MEMCPY_TIME = [stats[model][gpu]["MEMCPY_TIME"] for model in X]
+        Y_MEM_THR = [stats[model][gpu]["MEM_THR"] for model in X]
 
         axs1[0].bar(X_axis-0.2 + diff , Y_PREP_STALL_PCT, 0.2, label = instance)
         axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
@@ -195,6 +195,7 @@ def compare():
         axs5[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
 
         axs6[0].bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
+        axs6[1].bar(X_axis-0.2 + diff , Y_MEM_THR, 0.2, label = instance)
 
         print(Y_GPU_UTIL_CACHED_PCT)
 
@@ -319,6 +320,13 @@ def compare():
     axs6[0].set_ylabel("memcpy time")
     axs6[0].set_title("memcpy")
     axs6[0].legend()
+
+    axs6[1].set_xticks(X_axis)
+    axs6[1].set_xticklabels(X)
+    axs6[1].set_ylabel("memthr")
+    axs6[1].set_title("memthr")
+    axs6[1].legend()
+
     plt.show()
 
 def compare_models():
@@ -532,7 +540,8 @@ def main():
                 model_path_ = model_path + "/jobs-1"
                 gpu_paths = [os.path.join(model_path_, o) for o in os.listdir(model_path_) if os.path.isdir(os.path.join(model_path_,o))]
                 for gpu_path in gpu_paths:
-                    gpu = gpu_path.split('/')[-1] + str(itr)
+                    #gpu = gpu_path.split('/')[-1] + str(itr)
+                    gpu = gpu_path.split('/')[-1] 
                     print(gpu)
                     cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
                     for cpu_path in cpu_paths:
@@ -546,7 +555,7 @@ def main():
         itr += 1
 
     compare()
-    compare_models()
+#    compare_models()
 
 
 if __name__ == "__main__":
