@@ -4,6 +4,7 @@ import time
 from tqdm import tqdm
 import json
 import logging
+import torch
 #from instant import inline
 from colorama import Fore
 
@@ -61,6 +62,8 @@ class DataStallProfiler():
         self.running_time = time.time()
         self.train_time = time.time()
         self.warmup = 5
+        self.start = torch.cuda.Event(enable_timing=True)
+        self.end = torch.cuda.Event(enable_timing=True)
 
         self.stream = SuppressStream(sys.stdout, self.log_outfile)       
         self.stream_err = SuppressStream(sys.stderr, self.err_outfile)     
@@ -112,13 +115,33 @@ class DataStallProfiler():
         json.dump(stats, self.pout)
         self.pout.close()
 
+    def start_memcpy_tick2(self):
+        if self.iter < self.warmup:
+            return
+
+        self.active_sub = True
+        self.start.record()
+        torch.cuda.synchronize()
+
+    def stop_memcpy_tick2(self):
+        if self.iter < self.warmup:
+            return
+        if self.active:
+            torch.cuda.synchronize()
+            self.end.record()
+            self.memcpy_time = self.start.elapsed_time(self.end)
+            self.total_memcpy_time += self.memcpy_time
+            self.active_sub = False
+        else:
+            print("ERR in iter {} MEMCPY".format(self.iter))
+            raise Exception("Timer stopeed without starting")
+
     def start_memcpy_tick(self):
         if self.iter < self.warmup:
             return
         self.active_sub = True
-        self.memcpy_time = time.time() 
-        
-        
+        self.memcpy_time = time.time()
+
     def stop_memcpy_tick(self):
         if self.iter < self.warmup:
             return
@@ -164,7 +187,7 @@ class DataStallProfiler():
             return
         if self.active:
             self.compute_time = time.time() - self.compute_time
-            self.num_samples += (self.args.world_size * self.args.batch_size) 
+            self.num_samples += (self.args.world_size * self.args.batch_size)
             self.batch_count += 1
             self.active = False
             #Write both data and compute time to file
