@@ -115,7 +115,7 @@ class DataStallProfiler():
         json.dump(stats, self.pout)
         self.pout.close()
 
-    def start_memory_tick_(self):
+    def start_memcpy_tick2(self):
         if self.iter < self.warmup:
             return
 
@@ -123,7 +123,7 @@ class DataStallProfiler():
         self.start.record()
         torch.cuda.synchronize()
 
-    def stop_memory_tick_(self):
+    def stop_memcpy_tick2(self):
         if self.iter < self.warmup:
             return
         if self.active:
