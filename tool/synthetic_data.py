@@ -28,11 +28,13 @@ class SyntheticClassificationIterator(object):
     def __next__(self):     
         self.iter_num += 1         
         if self.iter_num < self.args.num_minibatches:   
-            self.args.dprof.start_memcpy_tick()  
-            images, target = self.tensor_bank[self.iter_num] 
+            self.args.dprof.start_memcpy_tick_()
+
+            images, target = self.tensor_bank[self.iter_num]
             images = images.cuda(self.dev) 
-            target = target.cuda(self.dev) 
-            self.args.dprof.stop_memcpy_tick()  
+            target = target.cuda(self.dev)
+
+            self.args.dprof.stop_memcpy_tick_()
             return images, target   
         else:        
             raise StopIteration    
