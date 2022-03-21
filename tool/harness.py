@@ -114,6 +114,7 @@ def parse_args():
     parser.add_argument("--resume_dir", default=None, type=str)
     parser.add_argument("--distributed", default=False, type=bool)
     parser.add_argument("--prefix", default="", type=str)
+    parser.add_argument("--steps", default=["RUN1", "RUN2", "RUN3"], type=list)
 
 
     # rest from the training program
@@ -409,6 +410,7 @@ def main():
     num_gpu = args.nproc_per_node * args.nnodes
     args.stats = {}
     resume = False
+    steps = args.steps
     if not (args.resume_json is None):
         resume = True
         print("Resuming from existing profile stats at {}".format(args.resume_json))
@@ -433,7 +435,9 @@ def main():
     final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
 
     # Stage 1 : Run with synthetic dataset
-    if resume and 'RUN1' in args.stats:
+    if not "RUN1" in args.steps:
+        print("STEP1 is omitted")
+    elif resume and 'RUN1' in args.stats:
         print_as_table(args.stats["RUN1"])
         print("STEP 1 already done. Continuing to step 2")
 
@@ -475,7 +479,9 @@ def main():
         print_as_table(args.stats["RUN1"])
 
     # Stage 2 : Run with both fetch and pre-processing on 
-    if resume and 'RUN2' in args.stats:
+    if not "RUN2" in args.steps:
+        print("STEP2 is omitted")
+    elif resume and 'RUN2' in args.stats:
         print_as_table(args.stats["RUN2"])
         print("STEP 2 already done. Continuing to step 3\n")
     else:
@@ -517,7 +523,9 @@ def main():
         print_as_table(args.stats["RUN2"])
 
     # Stage 3 : Run with only pre-processing
-    if resume and 'RUN3' in args.stats:
+    if not "RUN3" in args.steps:
+        print("STEP3 is omitted")
+    elif resume and 'RUN3' in args.stats:
         print_as_table(args.stats["RUN3"])
         print("STEP 3 already done. Continuing to step 4\n")
     else:
@@ -554,7 +562,9 @@ def main():
         print_as_table(args.stats["RUN3"])
 
     # Stage 4 : Run with synthetic dataset and overlap
-    if not args.distributed or (resume and 'RUN4' in args.stats):
+    if not "RUN4" in args.steps:
+        print("STEP4 is omitted")
+    elif not args.distributed or (resume and 'RUN4' in args.stats):
         #print_as_table(args.stats["RUN4"])
         print("STEP 4 already done")
 
