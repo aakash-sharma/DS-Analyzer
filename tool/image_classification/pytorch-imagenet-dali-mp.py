@@ -454,7 +454,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
     end = time.time()
     args.dprof.start_data_tick()
-    dataset_time = compute_time = fwd_prop_time = bwd_prop_time = 0
+    dataset_time = compute_time = compute_bwd_time = 0
 
     for i, data in enumerate(train_loader):
         if args.synthetic:
@@ -478,7 +478,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # measure data loading time
         data_time.update(time.time() - end)
         dataset_time += (time.time() - end)
-        compute_start = fwd_prop_start = time.time()
+        compute_start = time.time()
 
         input_var = Variable(input)
         target_var = Variable(target)
@@ -511,6 +511,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         top5.update(to_python_float(prec5), input.size(0))
 
         # compute gradient and do SGD step
+        args.dprof.start_compute_bwd_tick()
         optimizer.zero_grad()
         if args.fp16:
             optimizer.backward(loss)
@@ -525,6 +526,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         torch.cuda.synchronize()
 
         #-----------------Stop compute, start data------#
+        args.dprof.stop_compute_bwd_tick()
         args.dprof.stop_compute_tick()
         args.dprof.start_data_tick()
         #-----------------------------------------------#

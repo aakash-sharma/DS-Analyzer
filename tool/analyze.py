@@ -36,6 +36,7 @@ def process_json(model, gpu, json_path):
     stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
     stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
     stats[model][gpu]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
+    stats[model][gpu]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
@@ -173,7 +174,7 @@ def compare():
         Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] for model in X]
         Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] for model in X]
         Y_MEMCPY_TIME = [stats[model][gpu]["MEMCPY_TIME"] for model in X]
-        Y_MEM_THR = [stats[model][gpu]["MEM_THR"] for model in X]
+        Y_COMPUTE_TIME = [stats[model][gpu]["COMPUTE_TIME"] for model in X]
 
         axs1[0].bar(X_axis-0.2 + diff , Y_PREP_STALL_PCT, 0.2, label = instance)
         axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
@@ -195,7 +196,7 @@ def compare():
         axs5[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
 
         axs6[0].bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
-        axs6[1].bar(X_axis-0.2 + diff , Y_MEM_THR, 0.2, label = instance)
+        axs6[1].bar(X_axis-0.2 + diff , Y_COMPUTE_TIME, 0.2, label = instance)
 
         print(Y_GPU_UTIL_CACHED_PCT)
 

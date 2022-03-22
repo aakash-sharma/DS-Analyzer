@@ -50,11 +50,14 @@ class DataStallProfiler():
         self.data_time = 0
         self.memcpy_time = 0
         self.compute_time = 0
+        self.compute_bwd_time = 0
         self.total_data_time = 0
         self.total_compute_time = 0
         self.total_memcpy_time = 0
+        self.total_compute_bwd_time = 0
         self.active = False
         self.active_sub = False
+        self.active_bwd = False
         self.iter = 0
         self.batch_count = 0
         self.num_samples = 0 
@@ -109,6 +112,7 @@ class DataStallProfiler():
         stats["MEMCPY"] = self.total_memcpy_time
         stats["DATA"] = self.total_data_time
         stats["COMPUTE"] = self.total_compute_time
+        stats["COMPUTE_BWD"] = self.total_compute_bwd_time
         stats["TRAIN"] = self.train_time
         stats["BATCHES"] = self.batch_count
         stats["SAMPLES"] = self.num_samples
@@ -197,6 +201,33 @@ class DataStallProfiler():
                 line = str(self.iter) + "," + str(self.memcpy_time) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
             self.time_logger.write(line)
             self.total_compute_time += self.compute_time
+        else:
+            print("ERR in iter {} COMP".format(self.iter))
+            raise Exception("Timer stopeed without starting")
+
+    def start_compute_bwd_tick(self):
+        if self.iter < self.warmup:
+            return
+        self.active_bwd = True
+        self.compute_bwd_time = time.time()
+
+    def stop_compute_bwd_tick(self):
+        if self.id == 0:
+            self.bar.update(1)
+        if self.iter < self.warmup:
+            return
+        if self.active:
+            self.compute_bwd_time = time.time() - self.compute_bwd_time
+            self.num_samples += (self.args.world_size * self.args.batch_size)
+            self.batch_count += 1
+            self.active_bwd = False
+            #Write both data and compute time to file
+            if not self.args.synthetic:
+                line = str(self.iter) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
+            else:
+                line = str(self.iter) + "," + str(self.memcpy_time) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
+            self.time_logger.write(line)
+            self.total_compute_bwd_time += self.compute_bwd_time
         else:
             print("ERR in iter {} COMP".format(self.iter))
             raise Exception("Timer stopeed without starting")
