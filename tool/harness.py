@@ -114,7 +114,7 @@ def parse_args():
     parser.add_argument("--resume_dir", default=None, type=str)
     parser.add_argument("--distributed", default=False, type=bool)
     parser.add_argument("--prefix", default="", type=str)
-    parser.add_argument("--steps", default=["RUN1", "RUN2", "RUN3"], type=list)
+    parser.add_argument("--steps", default=["RUN1", "RUN2", "RUN3"], nargs='+')
 
 
     # rest from the training program
@@ -411,6 +411,7 @@ def main():
     args.stats = {}
     resume = False
     steps = args.steps
+    print(steps)
     if not (args.resume_json is None):
         resume = True
         print("Resuming from existing profile stats at {}".format(args.resume_json))
