@@ -308,9 +308,12 @@ def get_dataset_stats(dir_path):
 
    return size, samples
 
-def run_stats_only(resume_path, local_gpus):
+def run_stats_only(resume_path, local_gpus, num_nodes):
     run1_stats = []
-    run1_path = resume_path + 'run1-synthetic/' 
+    args.stats["LOCAL_GPUS"] = local_gpus
+    args.stats["NUM_NODES"] = num_nodes
+
+    run1_path = resume_path + 'run1-synthetic/'
 
     for i in range(0, local_gpus):
         json_file = run1_path + 'profile-' + str(i) + '.json'
@@ -429,11 +432,14 @@ def main():
             sys.exit(1)
         else:
             resume_path = args.resume_dir + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
-            run_stats_only(resume_path, args.nproc_per_node)
+            run_stats_only(resume_path, args.nproc_per_node, args.nnodes)
             sys.exit(0)
             
 
     final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
+
+    args.stats["LOCAL_GPUS"] = args.nproc_per_node
+    args.stats["NUM_NODES"] = args.nnodes
 
     # Stage 1 : Run with synthetic dataset
     if not "RUN1" in args.steps:
