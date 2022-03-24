@@ -1,0 +1,1 @@
+python harness.py --nproc_per_node=1 -j 2 -a resnet18 -b 256 --num_minibatches 50 --steps RUN0 RUN1 RUN2 --prefix results/test/ image_classification/pytorch-imagenet-dali-mp.py --amp --data-profile --noeval /home/ubuntu/ImageNet_Datasets
