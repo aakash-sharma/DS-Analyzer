@@ -124,6 +124,7 @@ def parse_args():
 args = parse_args()
 
 def run_synthetic_singleGPU():
+    current_env = os.environ.copy()
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -184,7 +185,7 @@ def run_synthetic_singleGPU():
     log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
 
     utils.move_logs(log_path)
-    print("FINISHED STEP 1 : SYNTHETIC WORKLOAD")
+    print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
     return log_path
 
 def run_synthetic(delay_allreduce=True):
@@ -524,7 +525,7 @@ def main():
         print("STEP 0 already done. Continuing to step 1")
 
     else:
-        log_path = run_synthetic()
+        log_path = run_synthetic_singleGPU()
         print("Parsing Step 0 results ...")
         run0_stats = []
         json_file = log_path + 'profile-0.json'
