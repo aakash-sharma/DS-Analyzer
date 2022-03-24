@@ -123,7 +123,71 @@ def parse_args():
 
 args = parse_args()
 
-def run_synthetic(delay_allreduce=True): 
+def run_synthetic_singleGPU():
+    # world size in terms of number of processes
+    dist_world_size = args.nproc_per_node * args.nnodes
+
+    if args.precreate:
+        print("Precreating tensors in {}".format(args.tensor_path))
+        if not os.path.exists(args.tensor_path):
+            os.makedirs(args.tensor_path)
+        procs = []
+        for i in range(5):
+            procs.append(multiprocessing.Process(target=get_shared_image_classification_tensors, args=(
+                args.batch_size, int(args.num_minibatches/ (dist_world_size * 5)), i * int(args.num_minibatches / (dist_world_size * 5)), args.classes,
+                args.tensor_path)))
+            procs[i].start()
+
+        for i in range(5):
+            procs[i].join()
+
+        args.use_precreate = True
+
+    processes = []
+
+    # spawn the processes
+    if args.use_env:
+        cmd = [sys.executable, "-u",
+               args.training_script] + args.training_script_args
+    elif args.use_precreate:
+        cmd = [sys.executable,
+               "-u",
+               args.training_script,
+               "--batch-size={}".format(args.batch_size),
+               "--workers={}".format(args.workers),
+               "--classes={}".format(args.classes),
+               "--num_minibatches={}".format(args.num_minibatches),
+               "--precreate",
+               "--tensor_path={}".format(args.tensor_path),
+               "--arch={}".format(args.arch),
+               "--synthetic",
+               "--epochs={}".format(args.epochs)] + args.training_script_args
+
+    else:
+        cmd = [sys.executable,
+               "-u",
+               args.training_script,
+               "--batch-size={}".format(args.batch_size),
+               "--workers={}".format(args.workers),
+               "--classes={}".format(args.classes),
+               "--num_minibatches={}".format(args.num_minibatches),
+               "--arch={}".format(args.arch),
+               "--synthetic",
+               "--epochs={}".format(args.epochs)] + args.training_script_args
+
+    process = subprocess.Popen(cmd, env=current_env)
+
+    process.wait()
+    if process.returncode != 0:
+        raise subprocess.CalledProcessError(returncode=process.returncode,
+                                            cmd=process.args)
+    log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
+
+    utils.move_logs(log_path)
+    print("FINISHED STEP 1 : SYNTHETIC WORKLOAD")
+    return log_path
+
+def run_synthetic(delay_allreduce=True):
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -441,6 +505,37 @@ def main():
     args.stats["LOCAL_GPUS"] = args.nproc_per_node
     args.stats["NUM_NODES"] = args.nnodes
 
+    """
+     JSON is of the following format : All times are total for BATCHES num batches
+     1. MEMCPY - Time to memcpy the synthetic tensors to GPU DRAM
+     2. DATA - Total time for a batch to be ready at GPU - Includes the memcpy time 
+     3. COMPUTE - Total GPU computation time the batch   
+     4. TRAIN - Total training time, sum of data and compute
+     5. BATCHES - The number of batches whose collective times are shown above
+     6. SAMPLES - Total samples used in this profiling phase
+     All these numbers exclude any warmup batches specified 
+    """
+
+    # Stage 0 : Run with synthetic dataset on single GPU
+    if not "RUN0" in args.steps:
+        print("STEP0 is omitted")
+    elif resume and 'RUN0' in args.stats:
+        print_as_table(args.stats["RUN0"])
+        print("STEP 0 already done. Continuing to step 1")
+
+    else:
+        log_path = run_synthetic()
+        print("Parsing Step 0 results ...")
+        run0_stats = []
+        json_file = log_path + 'profile-0.json'
+        run0_stats.append(json.load(open(json_file)))
+
+        args.stats["RUN0"], stddev_map = aggregate_run1_maps(run0_stats)
+        args.stats["RUN0"]["SPEED"] = args.stats["RUN0"]["SAMPLES"] / args.stats["RUN0"]["COMPUTE"]
+        args.stats["SPEED_INGESTION"] = args.stats["RUN0"]["SPEED"]
+
+        print_as_table(args.stats["RUN0"])
+
     # Stage 1 : Run with synthetic dataset
     if not "RUN1" in args.steps:
         print("STEP1 is omitted")
@@ -451,17 +546,6 @@ def main():
     else:
         log_path = run_synthetic()
         print("Parsing Step 1 results ...")
-    
-        """
-         JSON is of the following format : All times are total for BATCHES num batches
-         1. MEMCPY - Time to memcpy the synthetic tensors to GPU DRAM
-         2. DATA - Total time for a batch to be ready at GPU - Includes the memcpy time 
-         3. COMPUTE - Total GPU computation time the batch   
-         4. TRAIN - Total training time, sum of data and compute
-         5. BATCHES - The number of batches whose collective times are shown above
-         6. SAMPLES - Total samples used in this profiling phase
-         All these numbers exclude any warmup batches specified 
-        """
         run1_stats = []
         local_gpus = args.nproc_per_node
         print('LOCAL GPUs ',local_gpus)
