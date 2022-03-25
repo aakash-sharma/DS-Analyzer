@@ -182,7 +182,8 @@ def run_synthetic_singleGPU():
     if process.returncode != 0:
         raise subprocess.CalledProcessError(returncode=process.returncode,
                                             cmd=process.args)
-    log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
+#    log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
+    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) +  "/run0-synthetic_singleGPU/"
 
     utils.move_logs(log_path)
     print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
