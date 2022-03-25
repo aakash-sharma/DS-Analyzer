@@ -114,7 +114,7 @@ def parse_args():
     parser.add_argument("--resume_dir", default=None, type=str)
     parser.add_argument("--distributed", default=False, type=bool)
     parser.add_argument("--prefix", default="", type=str)
-    parser.add_argument("--steps", default=["RUN1", "RUN2", "RUN3"], nargs='+')
+    parser.add_argument("--steps", default=["RUN0", "RUN1", "RUN2", "RUN3"], nargs='+')
 
 
     # rest from the training program
