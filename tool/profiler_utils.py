@@ -44,9 +44,9 @@ class DataStallProfiler():
         time_outfile = 'time-' + self.args.suffix + '.csv'
         self.time_logger = open(time_outfile, 'w')
         if self.args.synthetic:
-            self.time_logger.write("Iter, Memcpy Time,  Data time, Compute time \n")
+            self.time_logger.write("Iter, Memcpy Time,  Data time, Compute time, Compute backward time  \n")
         else:
-            self.time_logger.write("Iter, Data time, Compute time \n")
+            self.time_logger.write("Iter, Data time, Compute time, Compute backward time \n")
         self.data_time = 0
         self.memcpy_time = 0
         self.compute_time = 0
@@ -196,9 +196,9 @@ class DataStallProfiler():
             self.active = False
             #Write both data and compute time to file
             if not self.args.synthetic:
-                line = str(self.iter) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
+                line = str(self.iter) + "," + str(self.data_time) + "," + str(self.compute_time) + "," + str(self.compute_bwd_time) + "\n"
             else:
-                line = str(self.iter) + "," + str(self.memcpy_time) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
+                line = str(self.iter) + "," + str(self.memcpy_time) + "," + str(self.data_time) + "," + str(self.compute_time) + "," + str(self.compute_bwd_time) + "\n"
             self.time_logger.write(line)
             self.total_compute_time += self.compute_time
         else:
@@ -212,21 +212,11 @@ class DataStallProfiler():
         self.compute_bwd_time = time.time()
 
     def stop_compute_bwd_tick(self):
-        if self.id == 0:
-            self.bar.update(1)
         if self.iter < self.warmup:
             return
         if self.active:
             self.compute_bwd_time = time.time() - self.compute_bwd_time
-            self.num_samples += (self.args.world_size * self.args.batch_size)
-            self.batch_count += 1
             self.active_bwd = False
-            #Write both data and compute time to file
-            if not self.args.synthetic:
-                line = str(self.iter) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
-            else:
-                line = str(self.iter) + "," + str(self.memcpy_time) + "," + str(self.data_time) + "," + str(self.compute_time) + "\n"
-            self.time_logger.write(line)
             self.total_compute_bwd_time += self.compute_bwd_time
         else:
             print("ERR in iter {} COMP".format(self.iter))
