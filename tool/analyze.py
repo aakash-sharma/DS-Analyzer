@@ -4,6 +4,9 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
+import csv
+import statistics
+import glob
 
 
 stats = defaultdict(lambda: defaultdict(dict))
@@ -95,46 +98,47 @@ def process_json2(model, gpu, json_path):
     stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
 
+def process_csv(model, gpu, csv_path):
+
+    stats[model][gpu]["DATA_TIME_LIST"] = []
+    stats[model][gpu]["COMPUTE_TIME_LIST"] = []
+    stats[model][gpu]["COMPUTE_TIME_FWD_LIST"] = []
+    stats[model][gpu]["COMPUTE_TIME_BWD_LIST"] = []
+
+    files = glob.glob(csv_path + 'time*.csv')
+    csv_readers = []
+
+    for csv_file in files:
+        csv_reader = csv.reader(open(csv_file))
+        next(csv_reader)
+        csv_readers.append(csv_reader)
+
+    num_lines = min(len(open(files[i]).readlines()) for i in range(len(files)))
+
+    for i in range(num_lines-1):
+        
+        data_time = []
+        compute_time = []
+        compute_fwd_time = []
+        compute_bwd_time = []
+
+        for csv_reader in csv_readers:
+
+            row = next(csv_reader)
+
+            data_time.append(float(row[1]))
+            compute_time.append(float(row[2]))
+            compute_fwd_time.append(float(row[2]) - float(row[3]))
+            compute_bwd_time.append(float(row[3]))
+
+        stats[model][gpu]["DATA_TIME_LIST"].append(statistics.mean(data_time))
+        stats[model][gpu]["COMPUTE_TIME_LIST"].append(statistics.mean(compute_time))
+        stats[model][gpu]["COMPUTE_TIME_FWD_LIST"].append(statistics.mean(compute_fwd_time))
+        stats[model][gpu]["COMPUTE_TIME_BWD_LIST"].append(statistics.mean(compute_bwd_time))
 
 
-def plotModels(instance):
 
-    fig1, axs1 = plt.subplots(2, 1)
-    
-    gpu = gpu_map[instance]
-    X = [model for model in stats.keys()]
-    X_axis = np.arange(len(X))
-
-    Y_PREP_STALL_TIME = [stats[model][gpu]["PREP_STALL_TIME"] for model in X]
-    Y_FETCH_STALL_TIME = [stats[model][gpu]["FETCH_STALL_TIME"] for model in X]
-    Y_TRAIN_TIME = [stats[model][gpu]["TRAIN_TIME"] for model in X]
-    Y_PREP_STALL_PCT = [stats[model][gpu]["PREP_STALL_PCT"] for model in X]
-    Y_FETCH_STALL_PCT = [stats[model][gpu]["FETCH_STALL_PCT"] for model in X]
-
-    axs1[0].bar(X_axis-0.2, Y_TRAIN_TIME, 0.2, label = 'Train time')
-    axs1[0].bar(X_axis, Y_PREP_STALL_TIME, 0.2, label = 'Prep stall time')
-    axs1[0].bar(X_axis+0.2, Y_FETCH_STALL_TIME, 0.2, label = 'Fetch stall time')
-
-    axs1[1].bar(X_axis-0.2, Y_PREP_STALL_PCT, 0.2, label = 'Prep stall %')
-    axs1[1].bar(X_axis, Y_FETCH_STALL_PCT, 0.2, label = 'Fetch stall %')
-
-    axs1[0].set_xticks(X_axis)
-    axs1[0].set_xticklabels(X)
-    axs1[0].set_xlabel("Models")
-    axs1[0].set_ylabel("Time")
-    axs1[0].legend()
-    
-
-    axs1[1].set_xticks(X_axis)
-    axs1[1].set_xticklabels(X)
-    axs1[1].set_xlabel("Models")
-    axs1[1].set_ylabel("Percentage")
-    axs1[1].legend()
-
-    fig1.suptitle("Stall analysis " + instance)
-    plt.show()
-
-def compare():
+def compare_instances():
 
     models = list(stats.keys())
 
@@ -340,16 +344,18 @@ def compare():
     fig6.suptitle("Time comparison", fontsize=20, fontweight ="bold")
     fig6.savefig("figures/memcpy_compute_time_comparison")
 
-    plt.show()
+#    plt.show()
 
 def compare_models():
 
     models = list(stats.keys())
     max_dstat_len = 0
     max_nvidia_len = 0
+    max_itrs = 0
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read Write", "IOWait"]
+    X_ITR = ["Data time", "Fwd Prop Time", "Bwd Prop Time"]
 
 #    models = ["alexnet"]
 
@@ -361,28 +367,35 @@ def compare_models():
                 del stats[model]
                 continue
 
+
             max_dstat_len = max(max_dstat_len, len(stats[model][gpu]["CPU_UTIL_DISK_LIST"]))
             max_dstat_len = max(max_dstat_len, len(stats[model][gpu]["CPU_UTIL_CACHED_LIST"]))
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_DISK_LIST"]))
             max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu]["GPU_UTIL_CACHED_LIST"]))
+            max_itrs = max(max_itrs, len(stats[model][gpu]["DATA_TIME_LIST"]))
 
         fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
         fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
+        fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
 
         X_dstat_axis = np.arange(max_dstat_len)
         X_nvidia_axis = np.arange(max_nvidia_len)
         X_metrics_axis = np.arange(len(X))
         X_metrics_io_axis = np.arange(len(X_IO))
+        X_itrs_axis = np.arange(max_itrs)
         diff = 0
 
         for instance in instances:
             
             gpu = gpu_map[instance]
+            if gpu not in stats[model]:
+                continue
+
             style = None
 
-            if instance == "p2.xlarge":
+            if instance == "p2.8xlarge":
                 style = 'r--'
-            elif instance == "chameleon.xlarge":
+            elif instance == "p2.16xlarge":
                 style = 'b--'
 
             overlapping = 0.50
@@ -420,6 +433,10 @@ def compare_models():
             Y_IO_WAIT_LIST_DISK = stats[model][gpu]["IO_WAIT_LIST_DISK"]
             Y_IO_WAIT_LIST_CACHED = stats[model][gpu]["IO_WAIT_LIST_CACHED"]
 
+            Y_DATA_TIME_LIST = stats[model][gpu]["DATA_TIME_LIST"]
+            Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu]["COMPUTE_TIME_FWD_LIST"]
+            Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu]["COMPUTE_TIME_BWD_LIST"]
+
             if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                 Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
             if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
@@ -436,6 +453,12 @@ def compare_models():
                 Y_IO_WAIT_LIST_DISK.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_DISK)))
             if len(Y_IO_WAIT_LIST_CACHED) < max_dstat_len:
                 Y_IO_WAIT_LIST_CACHED.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_CACHED)))
+            if len(Y_DATA_TIME_LIST) < max_itrs:
+                Y_DATA_TIME_LIST.extend([0] * (max_itrs - len(Y_DATA_TIME_LIST)))
+            if len(Y_COMPUTE_TIME_FWD_LIST) < max_itrs:
+                Y_COMPUTE_TIME_FWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_FWD_LIST)))
+            if len(Y_COMPUTE_TIME_BWD_LIST) < max_itrs:
+                Y_COMPUTE_TIME_BWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_BWD_LIST)))
 
             axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
             axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
@@ -450,7 +473,11 @@ def compare_models():
             axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
             axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
             axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
-            print(Y_METRICS_IO_DISK)
+
+            axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
+            axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
+            axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
+#            axs3.bar(X_itrs_axis - 0.2 + diff, Y_DATA_TIME_LIST, 0.2, label = instance)
 
             diff += 0.2
 
@@ -528,6 +555,26 @@ def compare_models():
         fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
         fig2.savefig("figures/disk_comparison - " + model)
 
+        axs3[0].set_xlabel("Iterations")
+        axs3[0].set_ylabel("Avg Time (seconds)")
+        axs3[0].set_title("Data load time comparison")
+        axs3[0].legend()
+
+        axs3[1].set_xlabel("Iterations")
+        axs3[1].set_ylabel("Fwd Propogation Time (seconds)")
+        axs3[1].set_title("Fwd Propgation time comparison")
+        axs3[1].legend()
+
+        axs3[2].set_xlabel("Iterations")
+        axs3[2].set_ylabel("Bwd Propogation Time (seconds)")
+        axs3[2].set_title("Bwd Propgation time comparison")
+        axs3[2].legend()
+
+        fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
+        fig3.savefig("figures/itr_time_comparison - " + model)
+
+#        plt.show()
+
 
 def main():
 
@@ -566,10 +613,13 @@ def main():
                         #process_json(model, gpu, json_path2)
                         process_json(model, gpu, json_path)
                         process_json2(model, gpu, json_path2)
+
+                        csv_path = cpu_path + "/run3-preprocess/"
+                        process_csv(model, gpu, csv_path)
         itr += 1
 
-    compare()
-#    compare_models()
+    compare_instances()
+    compare_models()
 
 
 if __name__ == "__main__":
