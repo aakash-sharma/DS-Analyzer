@@ -20,6 +20,8 @@ gpu_map = {
 
 instances = []
 
+#def take_avg(sample, 
+
 def process_json(model, gpu, json_path):
 
     with open(json_path) as fd:
@@ -376,7 +378,8 @@ def compare_models():
 
         fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
         fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
-        fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
+        #fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
+        fig3, axs3 = plt.subplots(figsize=(60,40))
 
         X_dstat_axis = np.arange(max_dstat_len)
         X_nvidia_axis = np.arange(max_nvidia_len)
@@ -395,8 +398,10 @@ def compare_models():
 
             if instance == "p2.8xlarge":
                 style = 'r--'
+                color = ['green', 'red', 'blue']
             elif instance == "p2.16xlarge":
                 style = 'b--'
+                color = ['orange', 'cyan', 'purple']
 
             overlapping = 0.50
         
@@ -474,12 +479,18 @@ def compare_models():
             axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
             axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
-            axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
-            axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
-            axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
-#            axs3.bar(X_itrs_axis - 0.2 + diff, Y_DATA_TIME_LIST, 0.2, label = instance)
+            #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
+            #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
+            #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
+
+            xtra_space = 0            
+
+            axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_DATA_TIME_LIST, 0.2, color = color[0]) 
+            axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
+            axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
 
             diff += 0.2
+            xtra_space += 0.05
 
         axs1[0,0].set_xticks(X_metrics_axis)
         axs1[0,0].set_xticklabels(X)
@@ -555,6 +566,7 @@ def compare_models():
         fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
         fig2.savefig("figures/disk_comparison - " + model)
 
+        """
         axs3[0].set_xlabel("Iterations")
         axs3[0].set_ylabel("Avg Time (seconds)")
         axs3[0].set_title("Data load time comparison")
@@ -569,11 +581,18 @@ def compare_models():
         axs3[2].set_ylabel("Bwd Propogation Time (seconds)")
         axs3[2].set_title("Bwd Propgation time comparison")
         axs3[2].legend()
+        """
+
+        axs3.set_xlabel("Iterations")
+        axs3.set_ylabel("Avg Time (seconds)")
+        axs3.set_title("Data load time comparison")
+        axs3.legend()
+
 
         fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
         fig3.savefig("figures/itr_time_comparison - " + model)
 
-#        plt.show()
+        plt.show()
 
 
 def main():
