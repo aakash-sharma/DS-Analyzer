@@ -183,7 +183,7 @@ def run_synthetic_singleGPU():
         raise subprocess.CalledProcessError(returncode=process.returncode,
                                             cmd=process.args)
 #    log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
-    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) +  "/run0-synthetic_singleGPU/"
+    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run0-synthetic_singleGPU/"
 
     utils.move_logs(log_path)
     print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
@@ -269,7 +269,7 @@ def run_synthetic(delay_allreduce=True):
         if process.returncode != 0:
             raise subprocess.CalledProcessError(returncode=process.returncode,
                                                 cmd=process.args)
-    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) +  "/run1-synthetic/"
+    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run1-synthetic/"
 
     
     utils.move_logs(log_path)
@@ -280,9 +280,9 @@ def run_synthetic(delay_allreduce=True):
 def run_with_data(cached=False):
     dist_world_size = args.nproc_per_node * args.nnodes
     if not cached: 
-        log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(dist_world_size) +  "/cpus-" + str(args.workers) + "/run2-fetch-preprocess/"
+        log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(dist_world_size) +  "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run2-fetch-preprocess/"
     else:
-        log_path = os.getcwd() + "/" +  args.prefix + "/" + args.arch + "/jobs-1"+ "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/run3-preprocess/"
+        log_path = os.getcwd() + "/" +  args.prefix + "/" + args.arch + "/jobs-1"+ "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run3-preprocess/"
       
     # set PyTorch distributed related environmental variables
     current_env = os.environ.copy()
@@ -502,7 +502,7 @@ def main():
             sys.exit(0)
             
 
-    final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
+    final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/"
 
     args.stats["LOCAL_GPUS"] = args.nproc_per_node
     args.stats["NUM_NODES"] = args.nnodes
