@@ -375,17 +375,19 @@ def get_dataset_stats(dir_path):
    return size, samples
 
 def run_stats_only(resume_path, local_gpus, num_nodes):
-    run1_stats = []
     args.stats["LOCAL_GPUS"] = local_gpus
     args.stats["NUM_NODES"] = num_nodes
+    num_gpu = local_gpus * num_nodes
 
-    run1_path = resume_path + 'run1-synthetic/'
+    run1_stats = []
 
-    for i in range(0, local_gpus):
-        json_file = run1_path + 'profile-' + str(i) + '.json'
-        run1_stats.append(json.load(open(json_file)))
+    for rank in range(num_nodes):
+        run1_path = resume_path + 'rank-' + str(rank) + '/run1-synthetic/'
+        for i in range(local_gpus):
+            json_file = run1_path + 'profile-' + str(i) + '.json'
+            run1_stats.append(json.load(open(json_file)))
 
-    if len(run1_stats) != local_gpus:
+    if len(run1_stats) != num_gpu:
         print("Something went wrong in run1")
         sys.exit(1)
 
@@ -401,12 +403,13 @@ def run_stats_only(resume_path, local_gpus, num_nodes):
     print_as_table(args.stats["RUN1"])
 
     run2_stats = []
-    run2_path = resume_path + 'run2-fetch-preprocess/'
-    for i in range(0, local_gpus):
-        json_file = run2_path + 'profile-' + str(i) + '.json'
-        run2_stats.append(json.load(open(json_file)))
+    for rank in range(num_nodes):
+        run2_path = resume_path + 'rank-' + str(rank) + '/run2-fetch-preprocess/'
+        for i in range(local_gpus):
+            json_file = run2_path + 'profile-' + str(i) + '.json'
+            run2_stats.append(json.load(open(json_file)))
 
-    if len(run2_stats) != local_gpus:
+    if len(run2_stats) != num_gpu:
         print("Something went wrong in run1")
         sys.exit(1)
 
@@ -414,24 +417,25 @@ def run_stats_only(resume_path, local_gpus, num_nodes):
     populate_run_stats("RUN2", run2_path)
     args.stats["DISK_THR"] = args.stats["RUN2"]["READ"]
     args.stats["SPEED_DISK"] = args.stats["RUN2"]["SPEED"]
-    args.stats["RUN2"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN2"]["GPU_UTIL_LIST"], local_gpus)
-    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = avg_list(args.stats["RUN2"]["GPU_MEM_UTIL_LIST"], local_gpus)
+    args.stats["RUN2"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN2"]["GPU_UTIL_LIST"], num_gpu)
+    args.stats["RUN2"]["GPU_MEM_UTIL_LIST"] = avg_list(args.stats["RUN2"]["GPU_MEM_UTIL_LIST"], num_gpu)
 
     run3_stats = []
-    run3_path = resume_path + 'run3-preprocess/'
-    for i in range(0, local_gpus):
-        json_file = run3_path + 'profile-' + str(i) + '.json'
-        run3_stats.append(json.load(open(json_file)))
+    for rank in range(num_nodes):
+        run3_path = resume_path + 'rank-' + str(rank) + '/run3-preprocess/'
+        for i in range(local_gpus):
+            json_file = run3_path + 'profile-' + str(i) + '.json'
+            run3_stats.append(json.load(open(json_file)))
 
-    if len(run3_stats) != local_gpus:
+    if len(run3_stats) != num_gpu:
         print("Something went wrong in run1")
         sys.exit(1)
 
     args.stats["RUN3"], stddev_map = aggregate_run1_maps(run3_stats)
     populate_run_stats("RUN3", run3_path)
     args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
-    args.stats["RUN3"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_UTIL_LIST"], local_gpus)
-    args.stats["RUN3"]["GPU_MEM_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_MEM_UTIL_LIST"], local_gpus)
+    args.stats["RUN3"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_UTIL_LIST"], num_gpu)
+    args.stats["RUN3"]["GPU_MEM_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_MEM_UTIL_LIST"], num_gpu)
 
     json_outfile = resume_path + 'MODEL2.json'
     with open(json_outfile, 'w') as jf:
