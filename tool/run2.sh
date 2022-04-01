@@ -2,8 +2,8 @@
 
 GPU=$1
 CPU=$2
-PREFIX=$4
-INSTANCE=$5
+PREFIX=$3
+INSTANCE=$4
 SAMPLES=1281166
 
 for arch in 'alexnet' 'resnet18' 'shufflenet_v2_x0_5'; do
