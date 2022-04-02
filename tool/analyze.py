@@ -58,7 +58,6 @@ def process_json(model, gpu, json_path):
 def process_json2(model, instance, json_path):
 
     gpu = gpu_map[instance]
-    print(gpu, model)
     with open(json_path) as fd:
         dagJson = json.load(fd)
 
@@ -636,19 +635,19 @@ def main():
                     for cpu_path in cpu_paths:
                         json_path = cpu_path + "/MODEL.json"
                         json_path2 = cpu_path + "/MODEL2.json"
-                        if not os.path.isfile(json_path):
+                        if not os.path.isfile(json_path2):
                             continue
 
                         #process_json(model, gpu, json_path2)
                         #process_json(model, gpu, json_path)
                         process_json2(model, instance, json_path2)
 
-                        csv_path = cpu_path + "/run3-preprocess/"
+                        csv_path = cpu_path + "/rank-0/run3-preprocess/"
                         process_csv(model, instance, csv_path)
         itr += 1
 
     compare_instances()
-    compare_models()
+#    compare_models()
 
 
 if __name__ == "__main__":
