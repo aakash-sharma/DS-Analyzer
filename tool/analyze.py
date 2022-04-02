@@ -16,11 +16,10 @@ gpu_map = {
         "p2.xlarge" : "gpus-10",
         "chameleon.xlarge" : "gpus-11",
         "p2.8xlarge" : "gpus-8",
+        "p2.8xlarge_2" : "gpus-8_2",
         "p2.16xlarge" : "gpus-16"}
 
 instances = []
-
-#def take_avg(sample, 
 
 def process_json(model, gpu, json_path):
 
@@ -56,8 +55,10 @@ def process_json(model, gpu, json_path):
 
 
 
-def process_json2(model, gpu, json_path):
+def process_json2(model, instance, json_path):
 
+    gpu = gpu_map[instance]
+    print(gpu, model)
     with open(json_path) as fd:
         dagJson = json.load(fd)
 
@@ -65,8 +66,8 @@ def process_json2(model, gpu, json_path):
     stats[model][gpu]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
     stats[model][gpu]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
     stats[model][gpu]["DISK_THR"] = dagJson["DISK_THR"]
+    stats[model][gpu]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
-    stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
     stats[model][gpu]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
     stats[model][gpu]["MEM_DISK"] = dagJson["RUN2"]["MEM"]
     stats[model][gpu]["PCACHE_DISK"] = dagJson["RUN2"]["PCACHE"]
@@ -84,6 +85,11 @@ def process_json2(model, gpu, json_path):
     stats[model][gpu]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
     stats[model][gpu]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
 
+    stats[model][gpu]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
+    stats[model][gpu]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
+    stats[model][gpu]["COMPUTE_BWD_TIME"] = dagJson["RUN3"]["COMPUTE_BWD"]
+    stats[model][gpu]["COMPUTE_FWD_TIME"] = stats[model][gpu]["COMPUTE_TIME"] - stats[model][gpu]["COMPUTE_BWD_TIME"]
+
     stats[model][gpu]["CPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["CPU_LIST"]
     stats[model][gpu]["CPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["CPU_LIST"]
     stats[model][gpu]["GPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_UTIL_LIST"]
@@ -97,11 +103,16 @@ def process_json2(model, gpu, json_path):
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-    stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
+    stats[model][gpu]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+
+    stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_CACHED"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
+    stats[model][gpu]["INTERCONNECT_STALL_PCT"] = stats[model][gpu]["INTERCONNECT_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_INGESTION"] * 100
 
-def process_csv(model, gpu, csv_path):
 
+def process_csv(model, instance, csv_path):
+
+    gpu = gpu_map[instance]
     stats[model][gpu]["DATA_TIME_LIST"] = []
     stats[model][gpu]["COMPUTE_TIME_LIST"] = []
     stats[model][gpu]["COMPUTE_TIME_FWD_LIST"] = []
@@ -346,7 +357,7 @@ def compare_instances():
     fig6.suptitle("Time comparison", fontsize=20, fontweight ="bold")
     fig6.savefig("figures/memcpy_compute_time_comparison")
 
-#    plt.show()
+    plt.show()
 
 def compare_models():
 
@@ -621,7 +632,6 @@ def main():
                 for gpu_path in gpu_paths:
                     #gpu = gpu_path.split('/')[-1] + str(itr)
                     gpu = gpu_path.split('/')[-1] 
-                    print(gpu)
                     cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
                     for cpu_path in cpu_paths:
                         json_path = cpu_path + "/MODEL.json"
@@ -630,11 +640,11 @@ def main():
                             continue
 
                         #process_json(model, gpu, json_path2)
-                        process_json(model, gpu, json_path)
-                        process_json2(model, gpu, json_path2)
+                        #process_json(model, gpu, json_path)
+                        process_json2(model, instance, json_path2)
 
                         csv_path = cpu_path + "/run3-preprocess/"
-                        process_csv(model, gpu, csv_path)
+                        process_csv(model, instance, csv_path)
         itr += 1
 
     compare_instances()

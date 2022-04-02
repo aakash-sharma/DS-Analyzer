@@ -379,6 +379,28 @@ def run_stats_only(resume_path, local_gpus, num_nodes):
     args.stats["NUM_NODES"] = num_nodes
     num_gpu = local_gpus * num_nodes
 
+    run0_stats = []
+
+    for rank in range(num_nodes):
+        run0_path = resume_path + 'rank-' + str(rank) + '/run0-synthetic_singleGPU/'
+        json_file = run0_path + 'profile-0.json'
+        run0_stats.append(json.load(open(json_file)))
+
+    if len(run0_stats) != num_nodes:
+        print("Something went wrong in run0")
+        sys.exit(1)
+
+    args.stats["RUN0"], stddev_map = aggregate_run1_maps(run0_stats)
+    args.stats["RUN0"]["SPEED"] = args.stats["RUN0"]["SAMPLES"] / args.stats["RUN0"]["COMPUTE"]
+    args.stats["SPEED_INGESTION"] = args.stats["RUN0"]["SPEED"]
+
+    for value in list(stddev_map.values()):
+        if value > 1:
+            print("High STDDEV in values. Run for more minibatches for stable results")
+            # sys.exit(1)
+
+    print_as_table(args.stats["RUN0"])
+
     run1_stats = []
 
     for rank in range(num_nodes):
