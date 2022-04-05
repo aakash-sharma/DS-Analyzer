@@ -454,7 +454,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
     end = time.time()
     args.dprof.start_data_tick()
-    dataset_time = compute_time = compute_bwd_time = 0
+    dataset_time = compute_time = 0
 
     for i, data in enumerate(train_loader):
         if args.synthetic:
@@ -521,7 +521,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
         else:
             loss.backward()
 
+        args.dprof.start_AR_tick()
         optimizer.step()
+        args.dprof.stop_AR_tick()
 
         torch.cuda.synchronize()
 
