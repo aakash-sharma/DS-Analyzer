@@ -22,9 +22,11 @@ declare -A slaves=( ["slave0"]="172.31.65.5"
 					["slave13"]="172.31.65.19"
 					["slave14"]="172.31.65.20")
 
+#~/DS-Analyzer/tool/run_test_dist.sh $num_gpu $num_cpu $((num_slaves+1)) $master 0 > ~/DS-Analyzer/ds.log 2>&1 &
+
 while [ $i -lt $num_slaves ];
 do
-		ssh -o "StrictHostKeyChecking no" ${slaves["slave$i"]} "~/DS-Analyzer/tool/run_test_dist.sh $num_gpu $num_cpu $((num_slaves+1)) $master > ~/ds.log 2>&1 &"
+	ssh -o "StrictHostKeyChecking no" ${slaves["slave$i"]} "~/DS-Analyzer/tool/run_test_dist.sh $num_gpu $num_cpu $((num_slaves+1)) $master $((i+1)) > ~/DS-Analyzer/ds.log 2>&1 &"
 	echo ${slaves["slave$i"]}
-    i=$((i+1))
+	i=$((i+1))
 done
