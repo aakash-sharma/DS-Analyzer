@@ -51,10 +51,12 @@ class DataStallProfiler():
         self.memcpy_time = 0
         self.compute_time = 0
         self.compute_bwd_time = 0
+        self.AR_time = 0
         self.total_data_time = 0
         self.total_compute_time = 0
         self.total_memcpy_time = 0
         self.total_compute_bwd_time = 0
+        self.total_AR_time = 0
         self.active = False
         self.active_sub = False
         self.active_bwd = False
@@ -113,6 +115,7 @@ class DataStallProfiler():
         stats["DATA"] = self.total_data_time
         stats["COMPUTE"] = self.total_compute_time
         stats["COMPUTE_BWD"] = self.total_compute_bwd_time
+        stats["AR"] = self.total_AR_time
         stats["TRAIN"] = self.train_time
         stats["BATCHES"] = self.batch_count
         stats["SAMPLES"] = self.num_samples
@@ -214,10 +217,27 @@ class DataStallProfiler():
     def stop_compute_bwd_tick(self):
         if self.iter < self.warmup:
             return
-        if self.active:
+        if self.active_bwd:
             self.compute_bwd_time = time.time() - self.compute_bwd_time
             self.active_bwd = False
             self.total_compute_bwd_time += self.compute_bwd_time
+        else:
+            print("ERR in iter {} COMP".format(self.iter))
+            raise Exception("Timer stopeed without starting")
+
+    def start_AR_tick(self):
+        if self.iter < self.warmup:
+            return
+        self.active_AR = True
+        self.AR_time = time.time()
+
+    def stop_AR_tick(self):
+        if self.iter < self.warmup:
+            return
+        if self.active_AR:
+            self.AR_time = time.time() - self.AR_time
+            self.active_AR = False
+            self.total_AR_time += self.AR_time
         else:
             print("ERR in iter {} COMP".format(self.iter))
             raise Exception("Timer stopeed without starting")
