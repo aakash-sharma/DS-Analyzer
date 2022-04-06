@@ -170,6 +170,7 @@ def compare_instances():
     fig4, axs4 = plt.subplots(3, 1, figsize=(30,20))
     fig5, axs5 = plt.subplots(3, 1, figsize=(30,20))
     fig6, axs6 = plt.subplots(3, 1, figsize=(30,20))
+    fig7, axs7 = plt.subplots(figsize=(30,20))
 
     X = [model for model in stats.keys()]
     X_axis = np.arange(len(X))
@@ -224,6 +225,14 @@ def compare_instances():
         axs6[0].bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
         axs6[1].bar(X_axis-0.2 + diff , Y_COMPUTE_FWD_TIME, 0.2, label = instance)
         axs6[2].bar(X_axis-0.2 + diff , Y_COMPUTE_BWD_TIME, 0.2, label = instance)
+
+        #axs7.bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
+        #axs7.bar(X_axis-0.2 + diff , Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, label = instance)
+        #axs7.bar(X_axis-0.2 + diff , Y_COMPUTE_BWD_TIME, 0.2, bottom = Y_COMPUTE_FWD_TIME, label = instance)
+
+        axs7.bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, color = 'g', edgecolor='black')
+        axs7.bar(X_axis-0.2 + diff , Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, color = 'b', edgecolor='black')
+        axs7.bar(X_axis-0.2 + diff , Y_COMPUTE_BWD_TIME, 0.2, bottom = Y_COMPUTE_FWD_TIME, color = 'c', edgecolor='black')
 
         diff += 0.2
 
@@ -355,6 +364,16 @@ def compare_instances():
 
     fig6.suptitle("Time comparison", fontsize=20, fontweight ="bold")
     fig6.savefig("figures/memcpy_compute_time_comparison")
+
+    axs7.set_xticks(X_axis)
+    axs7.set_xticklabels(X, fontsize=20)
+    axs7.set_ylabel("Avg Total Time (Seconds)", fontsize=20)
+    axs7.set_title("Stacked time comparison")
+    leg = ["Memcpy Time", "Fwd Propogation Time", "Bwd Propogation Time"]
+    axs7.legend(leg, fontsize=20)
+
+    fig7.suptitle("Time comparison", fontsize=20, fontweight ="bold")
+    fig7.savefig("figures/stacked_time_comparison")
 
     plt.show()
 
