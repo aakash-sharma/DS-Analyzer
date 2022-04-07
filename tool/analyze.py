@@ -13,11 +13,14 @@ stats = defaultdict(lambda: defaultdict(dict))
 stats2 = defaultdict(lambda: defaultdict(dict))
 
 gpu_map = {
-        "p2.xlarge" : "gpus-10",
+        "p2.xlarge" : "K80-1",
         "chameleon.xlarge" : "gpus-11",
-        "p2.8xlarge" : "gpus-8",
-        "p2.8xlarge_2" : "gpus-8_2",
-        "p2.16xlarge" : "gpus-16"}
+        "p2.8xlarge" : "K80-8",
+        "p2.8xlarge_2" : "K80-8_2",
+        "p2.16xlarge" : "K80-16",
+        "p3.2xlarge" : "V100-1",
+        "p3.8xlarge" : "V100-4",
+        "p3.16xlarge" : "V100-8"}
 
 instances = []
 
@@ -47,7 +50,8 @@ def process_json(model, gpu, json_path):
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-    stats[model][gpu]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+    if "RUN0" in dagJson:
+        stats[model][gpu]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
 
     stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_CACHED"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
@@ -102,11 +106,13 @@ def process_json2(model, instance, json_path):
 
     stats[model][gpu]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
     stats[model][gpu]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu]["PREP_STALL_TIME"]
-    stats[model][gpu]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+    if "RUN0" in dagJson:
+        stats[model][gpu]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
 
     stats[model][gpu]["PREP_STALL_PCT"] = stats[model][gpu]["PREP_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_CACHED"] * 100
     stats[model][gpu]["FETCH_STALL_PCT"] = stats[model][gpu]["FETCH_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_DISK"] * 100
-    stats[model][gpu]["INTERCONNECT_STALL_PCT"] = stats[model][gpu]["INTERCONNECT_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_INGESTION"] * 100
+    if "INTERCONNECT_STALL_TIME" in stats[model][gpu]:
+        stats[model][gpu]["INTERCONNECT_STALL_PCT"] = stats[model][gpu]["INTERCONNECT_STALL_TIME"] / stats[model][gpu]["TRAIN_TIME_INGESTION"] * 100
 
 
 def process_csv(model, instance, csv_path):
@@ -148,7 +154,9 @@ def process_csv(model, instance, csv_path):
         stats[model][gpu]["COMPUTE_TIME_FWD_LIST"].append(statistics.mean(compute_fwd_time))
         stats[model][gpu]["COMPUTE_TIME_BWD_LIST"].append(statistics.mean(compute_bwd_time))
 
-
+def add_text(X, Y, axs):
+    for idx, value in enumerate(X):
+        axs.text(value, Y[idx]+2, str(int(Y[idx])))
 
 def compare_instances():
 
@@ -184,7 +192,8 @@ def compare_instances():
         
         Y_PREP_STALL_PCT = [stats[model][gpu]["PREP_STALL_PCT"] for model in X]
         Y_FETCH_STALL_PCT = [stats[model][gpu]["FETCH_STALL_PCT"] for model in X]
-        Y_INTERCONNECT_STALL_PCT = [stats[model][gpu]["INTERCONNECT_STALL_PCT"] for model in X]
+        if "INTERCONNECT_STALL_PCT" in stats[model][gpu]:
+            Y_INTERCONNECT_STALL_PCT = [stats[model][gpu]["INTERCONNECT_STALL_PCT"] for model in X]
         Y_TRAIN_TIME_DISK = [stats[model][gpu]["TRAIN_TIME_DISK"] for model in X]
         Y_TRAIN_TIME_CACHED = [stats[model][gpu]["TRAIN_TIME_CACHED"] for model in X]
         Y_DISK_THR = [stats[model][gpu]["DISK_THR"] for model in X]
@@ -204,27 +213,47 @@ def compare_instances():
 
         axs1[0].bar(X_axis-0.2 + diff , Y_PREP_STALL_PCT, 0.2, label = instance)
         axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
-        axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label = instance)
+        add_text(X_axis-0.25 + diff, Y_PREP_STALL_PCT, axs1[0])
+        add_text(X_axis-0.25 + diff, Y_FETCH_STALL_PCT, axs1[1])
+
+        if "INTERCONNECT_STALL_PCT" in stats[model][gpu]:
+            axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label = instance)
+            add_text(X_axis-0.25 + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
 
         axs2[0].bar(X_axis-0.2 + diff , Y_TRAIN_TIME_DISK, 0.2, label = instance)
         axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label = instance)
         axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label = instance)
+        add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_DISK, axs2[0])
+        add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_CACHED, axs2[1])
+        add_text(X_axis-0.25 + diff, Y_DISK_THR, axs2[2])
 
         axs3[0].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
         axs3[1].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
         axs3[2].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
+        add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_INGESTION, axs3[0])
+        add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_DISK, axs3[1])
+        add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_CACHED, axs3[2])
 
         axs4[0].bar(X_axis-0.2 + diff , Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
         axs4[1].bar(X_axis-0.2 + diff , Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
         axs4[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_DISK_PCT, 0.2, label = instance)
+        add_text(X_axis-0.25 + diff, Y_CPU_UTIL_DISK_PCT, axs4[0])
+        add_text(X_axis-0.25 + diff, Y_GPU_UTIL_DISK_PCT, axs4[1])
+        add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_DISK_PCT, axs4[2])
 
         axs5[0].bar(X_axis-0.2 + diff , Y_CPU_UTIL_CACHED_PCT, 0.2, label = instance)
         axs5[1].bar(X_axis-0.2 + diff , Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
         axs5[2].bar(X_axis-0.2 + diff , Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
+        add_text(X_axis-0.25 + diff, Y_CPU_UTIL_CACHED_PCT, axs5[0])
+        add_text(X_axis-0.25 + diff, Y_GPU_UTIL_CACHED_PCT, axs5[1])
+        add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, axs5[2])
 
         axs6[0].bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
         axs6[1].bar(X_axis-0.2 + diff , Y_COMPUTE_FWD_TIME, 0.2, label = instance)
         axs6[2].bar(X_axis-0.2 + diff , Y_COMPUTE_BWD_TIME, 0.2, label = instance)
+        add_text(X_axis-0.25 + diff, Y_MEMCPY_TIME, axs6[0])
+        add_text(X_axis-0.25 + diff, Y_COMPUTE_FWD_TIME, axs6[1])
+        add_text(X_axis-0.25 + diff, Y_COMPUTE_BWD_TIME, axs6[2])
 
         #axs7.bar(X_axis-0.2 + diff , Y_MEMCPY_TIME, 0.2, label = instance)
         #axs7.bar(X_axis-0.2 + diff , Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, label = instance)
@@ -387,6 +416,8 @@ def compare_models():
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read Write", "IOWait"]
     X_ITR = ["Data time", "Fwd Prop Time", "Bwd Prop Time"]
+    styles = ['r--', 'b--']
+    colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple']]
 
 #    models = ["alexnet"]
 
@@ -416,6 +447,7 @@ def compare_models():
         X_metrics_io_axis = np.arange(len(X_IO))
         X_itrs_axis = np.arange(max_itrs)
         diff = 0
+        idx = 0
 
         for instance in instances:
             
@@ -423,14 +455,18 @@ def compare_models():
             if gpu not in stats[model]:
                 continue
 
-            style = None
+            style = styles[idx]
+            color = colors[idx]
+            idx += 1
 
-            if instance == "p2.8xlarge":
+            """
+            if instance == "p2.xlarge":
                 style = 'r--'
                 color = ['green', 'red', 'blue']
-            elif instance == "p2.16xlarge":
+            elif instance == "p3.2xlarge":
                 style = 'b--'
                 color = ['orange', 'cyan', 'purple']
+            """
 
             overlapping = 0.50
         
@@ -577,7 +613,7 @@ def compare_models():
 
         axs2[1,1].set_xlabel("Time")
         axs2[1,1].set_ylabel("Percentage")
-        axs2[1,1].set_title("GPU memeory utilization comparison cached")
+        axs2[1,1].set_title("GPU memory utilization comparison cached")
         axs2[1,1].legend()
 
         axs2[2,0].set_xticks(X_metrics_io_axis)
@@ -666,7 +702,7 @@ def main():
         itr += 1
 
     compare_instances()
-#    compare_models()
+    compare_models()
 
 
 if __name__ == "__main__":
