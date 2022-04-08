@@ -123,7 +123,7 @@ def parse_args():
 
 args = parse_args()
 
-def run_synthetic_singleGPU():
+def run_synthetic_singleGPU(root_log_path):
     current_env = os.environ.copy()
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
@@ -183,13 +183,13 @@ def run_synthetic_singleGPU():
         raise subprocess.CalledProcessError(returncode=process.returncode,
                                             cmd=process.args)
 #    log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
-    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run0-synthetic_singleGPU/"
+    log_path = root_log_path + "/rank-" + str(args.node_rank) + "/run0-synthetic_singleGPU/"
 
     utils.move_logs(log_path)
     print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
     return log_path
 
-def run_synthetic(delay_allreduce=True):
+def run_synthetic(root_log_path, delay_allreduce=True):
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -269,7 +269,8 @@ def run_synthetic(delay_allreduce=True):
         if process.returncode != 0:
             raise subprocess.CalledProcessError(returncode=process.returncode,
                                                 cmd=process.args)
-    log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/jobs-1"  + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run1-synthetic/"
+    #log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/batch_size-" + str(args.batch_size) + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run1-synthetic/"
+    log_path = root_log_path + "/rank-" + str(args.node_rank) + "/run1-synthetic/"
 
     
     utils.move_logs(log_path)
@@ -277,12 +278,12 @@ def run_synthetic(delay_allreduce=True):
     return log_path
 
 
-def run_with_data(cached=False):
+def run_with_data(root_log_path, cached=False):
     dist_world_size = args.nproc_per_node * args.nnodes
     if not cached: 
-        log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(dist_world_size) +  "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run2-fetch-preprocess/"
+        log_path = root_log_path + "/rank-" + str(args.node_rank) + "/run2-fetch-preprocess/"
     else:
-        log_path = os.getcwd() + "/" +  args.prefix + "/" + args.arch + "/jobs-1"+ "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run3-preprocess/"
+        log_path = root_log_path + "/rank-" + str(args.node_rank) + "/run3-preprocess/"
       
     # set PyTorch distributed related environmental variables
     current_env = os.environ.copy()
@@ -527,12 +528,13 @@ def main():
             print("Incorrect resume stat path")
             sys.exit(1)
         else:
-            resume_path = args.resume_dir + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/"
+            resume_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/batch_size-" + \
+                          str(args.batch_size) + "/gpus-" + str(num_gpu) + "/cpus-" + str(args.workers) + "/"
             run_stats_only(resume_path, args.nproc_per_node, args.nnodes, args.steps)
             sys.exit(0)
             
 
-    final_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/"
+    root_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/batch_size-" + str(args.batch_size) + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/"
 
     args.stats["LOCAL_GPUS"] = args.nproc_per_node
     args.stats["NUM_NODES"] = args.nnodes
@@ -556,7 +558,7 @@ def main():
         print("STEP 0 already done. Continuing to step 1")
 
     else:
-        log_path = run_synthetic_singleGPU()
+        log_path = run_synthetic_singleGPU(root_log_path)
         print("Parsing Step 0 results ...")
         run0_stats = []
         json_file = log_path + 'profile-0.json'
@@ -576,7 +578,7 @@ def main():
         print("STEP 1 already done. Continuing to step 2")
 
     else:
-        log_path = run_synthetic()
+        log_path = run_synthetic(root_log_path)
         print("Parsing Step 1 results ...")
         run1_stats = []
         local_gpus = args.nproc_per_node
@@ -611,7 +613,7 @@ def main():
         #Drop cache here
         utils.clear_cache()
 
-        log_path, res_dstat, res_free, res_nvidia = run_with_data()
+        log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path)
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -726,7 +728,7 @@ def main():
         
 
     # Finally dump all stats to a json which can be queried later
-    json_outfile = final_log_path + 'MODEL.json'
+    json_outfile = root_log_path + 'MODEL.json'
     with open(json_outfile, 'w') as jf:
         json.dump(args.stats, jf)
 
