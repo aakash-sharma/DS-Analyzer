@@ -681,24 +681,25 @@ def main():
 
             for model_path in model_paths:
                 model = model_path.split('/')[-1]
-                model_path_ = model_path + "/jobs-1"
-                gpu_paths = [os.path.join(model_path_, o) for o in os.listdir(model_path_) if os.path.isdir(os.path.join(model_path_,o))]
-                for gpu_path in gpu_paths:
-                    #gpu = gpu_path.split('/')[-1] + str(itr)
-                    gpu = gpu_path.split('/')[-1] 
-                    cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
-                    for cpu_path in cpu_paths:
-                        json_path = cpu_path + "/MODEL.json"
-                        json_path2 = cpu_path + "/MODEL2.json"
-                        if not os.path.isfile(json_path2):
-                            continue
+                batch_paths = [os.path.join(model_path, o) for o in os.listdir(model_path) if os.path.isdir(os.path.join(model_path,o))]
+                for batch_path in batch_paths:
+                    gpu_paths = [os.path.join(batch_path, o) for o in os.listdir(batch_path) if os.path.isdir(os.path.join(batch_path,o))]
+                    for gpu_path in gpu_paths:
+                        #gpu = gpu_path.split('/')[-1] + str(itr)
+                        gpu = gpu_path.split('/')[-1] 
+                        cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
+                        for cpu_path in cpu_paths:
+                            json_path = cpu_path + "/MODEL.json"
+                            json_path2 = cpu_path + "/MODEL2.json"
+                            if not os.path.isfile(json_path2):
+                                continue
 
-                        #process_json(model, gpu, json_path2)
-                        #process_json(model, gpu, json_path)
-                        process_json2(model, instance, json_path2)
+                            #process_json(model, gpu, json_path2)
+                            #process_json(model, gpu, json_path)
+                            process_json2(model, instance, json_path2)
 
-                        csv_path = cpu_path + "/rank-0/run3-preprocess/"
-                        process_csv(model, instance, csv_path)
+                            csv_path = cpu_path + "/rank-0/run3-preprocess/"
+                            process_csv(model, instance, csv_path)
         itr += 1
 
     compare_instances()
