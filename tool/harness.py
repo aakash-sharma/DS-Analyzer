@@ -654,7 +654,7 @@ def main():
         print_as_table(args.stats["RUN3"])
         print("STEP 3 already done. Continuing to step 4\n")
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_with_data(cached = True)    
+        log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path, cached = True)
         idle, wait, read, write, recv, send = res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
