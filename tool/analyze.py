@@ -161,6 +161,7 @@ def add_text(X, Y, axs):
 def compare_instances():
 
     models = list(stats.keys())
+    IC_stall = True
 
     for instance in instances:
 
@@ -170,6 +171,10 @@ def compare_instances():
 
             if gpu not in stats[model]:
                 del stats[model]
+                continue
+
+            if "INTERCONNECT_STALL_PCT" not in stats[model][gpu]:
+                IC_stall = False
 
 
     fig1, axs1 = plt.subplots(3, 1, figsize=(30,20))
@@ -189,10 +194,11 @@ def compare_instances():
         
         gpu = gpu_map[instance]
         print(gpu)
-        
+
         Y_PREP_STALL_PCT = [stats[model][gpu]["PREP_STALL_PCT"] for model in X]
         Y_FETCH_STALL_PCT = [stats[model][gpu]["FETCH_STALL_PCT"] for model in X]
-        if "INTERCONNECT_STALL_PCT" in stats[model][gpu]:
+
+        if IC_stall:
             Y_INTERCONNECT_STALL_PCT = [stats[model][gpu]["INTERCONNECT_STALL_PCT"] for model in X]
         Y_TRAIN_TIME_DISK = [stats[model][gpu]["TRAIN_TIME_DISK"] for model in X]
         Y_TRAIN_TIME_CACHED = [stats[model][gpu]["TRAIN_TIME_CACHED"] for model in X]
@@ -216,7 +222,7 @@ def compare_instances():
         add_text(X_axis-0.25 + diff, Y_PREP_STALL_PCT, axs1[0])
         add_text(X_axis-0.25 + diff, Y_FETCH_STALL_PCT, axs1[1])
 
-        if "INTERCONNECT_STALL_PCT" in stats[model][gpu]:
+        if IC_stall:
             axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label = instance)
             add_text(X_axis-0.25 + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
 
@@ -404,7 +410,7 @@ def compare_instances():
     fig7.suptitle("Time comparison", fontsize=20, fontweight ="bold")
     fig7.savefig("figures/stacked_time_comparison")
 
-    plt.show()
+#    plt.show()
 
 def compare_models():
 
@@ -657,7 +663,7 @@ def compare_models():
         fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
         fig3.savefig("figures/itr_time_comparison - " + model)
 
-        plt.show()
+#        plt.show()
 
 
 def main():
