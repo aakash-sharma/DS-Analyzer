@@ -534,7 +534,7 @@ def main():
             sys.exit(0)
             
 
-    root_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/batch_size-" + str(args.batch_size) + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/"
+    root_log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/batch_size-" + str(args.batch_size) + "/gpus-" + str(num_gpu) +  "/cpus-" + str(args.workers)
 
     args.stats["LOCAL_GPUS"] = args.nproc_per_node
     args.stats["NUM_NODES"] = args.nnodes
