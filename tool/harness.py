@@ -528,7 +528,7 @@ def main():
             print("Incorrect resume stat path")
             sys.exit(1)
         else:
-            resume_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/batch_size-" + \
+            resume_path = args.resume_dir + "/" + args.arch + "/" + "/batch_size-" + \
                           str(args.batch_size) + "/gpus-" + str(num_gpu) + "/cpus-" + str(args.workers) + "/"
             run_stats_only(resume_path, args.nproc_per_node, args.nnodes, args.steps)
             sys.exit(0)
