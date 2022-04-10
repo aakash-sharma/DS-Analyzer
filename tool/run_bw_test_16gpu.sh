@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=14 ./bw_test > gpu14.out &
 CUDA_VISIBLE_DEVICES=15 ./bw_test > gpu15.out 
 
 
-sleep 60
+sleep 180 
 
 HOST_TO_DEVICE=0
 DEVICE_TO_HOST=0
@@ -29,8 +29,8 @@ for filename in gpu*.out; do
         DEVICE_TO_HOST=`echo "$DEVICE_TO_HOST+$HTD" | bc`
 done
 
-HOST_TO_DEVICE=`echo "$HOST_TO_DEVICE / 2" | bc -l`
-DEVICE_TO_HOST=`echo "$DEVICE_TO_HOST / 2" | bc -l`
+HOST_TO_DEVICE=`echo "$HOST_TO_DEVICE / 16" | bc -l`
+DEVICE_TO_HOST=`echo "$DEVICE_TO_HOST / 16" | bc -l`
 echo "Host to device bandwith (GB/s): $HOST_TO_DEVICE"
 echo "Device to Host bandwidth (GB/s): $DEVICE_TO_HOST"
 
