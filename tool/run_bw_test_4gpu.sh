@@ -14,7 +14,7 @@ for filename in gpu*.out; do
         HTD=$(cat $filename | grep "Host to Device bandwidth" |  awk '{print $(NF)}')
         DTH=$(cat $filename | grep "Device to Host bandwidth" |  awk '{print $(NF)}')
         HOST_TO_DEVICE=`echo "$HOST_TO_DEVICE+$HTD" | bc`
-        DEVICE_TO_HOST=`echo "$DEVICE_TO_HOST+$HTD" | bc`
+        DEVICE_TO_HOST=`echo "$DEVICE_TO_HOST+$DTH" | bc`
 done
 
 HOST_TO_DEVICE=`echo "$HOST_TO_DEVICE / 4" | bc -l`
