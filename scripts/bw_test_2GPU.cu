@@ -58,15 +58,22 @@ void profileCopies(float        *h_a,
   checkCuda( cudaEventCreate(&startEvent) );
   checkCuda( cudaEventCreate(&stopEvent) );
  
-  checkCuda( cudaMemcpy(d[0], h_a, bytes, cudaMemcpyHostToDevice) );
+  cudaStream_t stream[GPUS];
+
+  for (int i = 0; i < GPUS; i++)
+  {
+    checkCuda( cudaMemcpy(d[i], h_a, bytes, cudaMemcpyHostToDevice) );
+    checkCuda( cudaStreamCreate(&stream[i]) );
+  }
 
   checkCuda( cudaEventRecord(startEvent, 0) );
   for (int i = 0; i < iterations; i++)
   {
     for (int j = 0; j < GPUS; j++)
     {
-      checkCuda( cudaMemcpy(d[(j+1)%GPUS], d[j%GPUS], bytes, cudaMemcpyDeviceToDevice ) );
+      checkCuda( cudaMemcpyAsync(d[(j+1)%GPUS], d[j%GPUS], bytes, cudaMemcpyDeviceToDevice, stream[j] ) );
     }
+    checkCuda( cudaDeviceSynchronize());
   }
 
   checkCuda( cudaEventRecord(stopEvent, 0) );
@@ -91,22 +98,6 @@ void profileCopies(float        *h_a,
     checkCuda( cudaMemcpy(h_b[i], d[i], bytes, cudaMemcpyDeviceToHost) );
   }
 
-  bool flag = false;
-
-  for (int j = 0; j < GPUS; j++)
-  {
-    for (int k = 0; k < n; k++)
-    {
-      if (h_b[j%GPUS][k] != h_b[(j+1)%GPUS][k]) 
-      {
-        printf("*** transfers failed ***");
-        flag = true;
-        break;
-      }
-    }
-    if (flag)
-    break;
-  }
 }
 
 int main()
@@ -137,7 +128,7 @@ int main()
   printf("Transfer size (MB): %d\n", bytes / (1024 * 1024));
 
   // perform copies and report bandwidth
-  profileCopies(h_aPageable, d_a, nElements, 100000);
+  profileCopies(h_aPageable, d_a, nElements, 10000);
 
   printf("\n");
 
