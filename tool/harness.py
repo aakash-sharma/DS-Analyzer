@@ -392,9 +392,11 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
             print("Something went wrong in run0")
             sys.exit(1)
 
-        args.stats["RUN0"], stddev_map = aggregate_run1_maps(run0_stats)
+        args.stats["RUN0"], stddev_map, min_map, max_map = aggregate_run1_maps(run0_stats)
         args.stats["RUN0"]["SPEED"] = args.stats["RUN0"]["SAMPLES"] / args.stats["RUN0"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN0"]["SPEED"]
+        args.stats["TRAIN_MIN"] = max_map["TRAIN"]
+        args.stats["TRAIN_MAX"] = max_map["TRAIN"]
 
         for value in list(stddev_map.values()):
             if value > 1:
@@ -416,9 +418,11 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
             print("Something went wrong in run1")
             sys.exit(1)
 
-        args.stats["RUN1"], stddev_map = aggregate_run1_maps(run1_stats)
+        args.stats["RUN1"], stddev_map, min_map, max_map = aggregate_run1_maps(run1_stats)
         args.stats["RUN1"]["SPEED"] = args.stats["RUN1"]["SAMPLES"] / args.stats["RUN1"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
+        args.stats["RUN1"]["TRAIN_MIN"] = min_map["TRAIN"]
+        args.stats["RUN1"]["TRAIN_MAX"] = max_map["TRAIN"]
 
         for value in list(stddev_map.values()):
             if value > 1:
@@ -439,7 +443,7 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
             print("Something went wrong in run1")
             sys.exit(1)
 
-        args.stats["RUN2"], stddev_map = aggregate_run1_maps(run2_stats)
+        args.stats["RUN2"], stddev_map, min_map, max_map = aggregate_run1_maps(run2_stats)
         populate_run_stats("RUN2", run2_path)
         args.stats["DISK_THR"] = args.stats["RUN2"]["READ"]
         args.stats["SPEED_DISK"] = args.stats["RUN2"]["SPEED"]
@@ -458,7 +462,7 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
             print("Something went wrong in run1")
             sys.exit(1)
 
-        args.stats["RUN3"], stddev_map = aggregate_run1_maps(run3_stats)
+        args.stats["RUN3"], stddev_map, min_map, max_map = aggregate_run1_maps(run3_stats)
         populate_run_stats("RUN3", run3_path)
         args.stats["SPEED_CACHED"] = args.stats["RUN3"]["SPEED"]
         args.stats["RUN3"]["GPU_UTIL_LIST"] = avg_list(args.stats["RUN3"]["GPU_UTIL_LIST"], num_gpu)
@@ -564,7 +568,7 @@ def main():
         json_file = log_path + 'profile-0.json'
         run0_stats.append(json.load(open(json_file)))
 
-        args.stats["RUN0"], stddev_map = aggregate_run1_maps(run0_stats)
+        args.stats["RUN0"], stddev_map, min_map, max_map = aggregate_run1_maps(run0_stats)
         args.stats["RUN0"]["SPEED"] = args.stats["RUN0"]["SAMPLES"] / args.stats["RUN0"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN0"]["SPEED"]
 
@@ -592,7 +596,7 @@ def main():
             print("Something went wrong in run1")
             sys.exit(1)
     
-        args.stats["RUN1"], stddev_map = aggregate_run1_maps(run1_stats)
+        args.stats["RUN1"], stddev_map, min_map, max_map = aggregate_run1_maps(run1_stats)
         args.stats["RUN1"]["SPEED"] = args.stats["RUN1"]["SAMPLES"]/args.stats["RUN1"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
 
@@ -631,7 +635,7 @@ def main():
             print("Something went wrong in run1")
             sys.exit(1)
     
-        args.stats["RUN2"], stddev_map = aggregate_run1_maps(run2_stats)
+        args.stats["RUN2"], stddev_map, min_map, max_map = aggregate_run1_maps(run2_stats)
         args.stats["RUN2"]["SPEED"] = args.stats["RUN2"]["SAMPLES"]/args.stats["RUN2"]["TRAIN"]
         args.stats["RUN2"]["RECV"] = recv
         args.stats["RUN2"]["SEND"] = send
@@ -671,7 +675,7 @@ def main():
             print("Something went wrong in run1")
             sys.exit(1)
     
-        args.stats["RUN3"], stddev_map = aggregate_run1_maps(run3_stats)
+        args.stats["RUN3"], stddev_map, min_map, max_map = aggregate_run1_maps(run3_stats)
         args.stats["RUN3"]["SPEED"] = args.stats["RUN3"]["SAMPLES"]/args.stats["RUN3"]["TRAIN"]
         args.stats["RUN3"]["RECV"] = recv
         args.stats["RUN3"]["SEND"] = send
@@ -708,7 +712,7 @@ def main():
             print("Something went wrong in run1")
             sys.exit(1)
 
-        args.stats["RUN4"], stddev_map = aggregate_run1_maps(run1_stats)
+        args.stats["RUN4"], stddev_map, min_map, max_map = aggregate_run1_maps(run1_stats)
         args.stats["RUN4"]["SPEED"] = args.stats["RUN4"]["SAMPLES"] / args.stats["RUN4"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN4"]["SPEED"]
 
