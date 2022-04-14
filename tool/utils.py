@@ -29,10 +29,12 @@ def init_maps(dest, source):
 def aggregate_run1_maps(list_of_map):
     num_maps = len(list_of_map)
     stdev_map = {}
+    min_map = {}
     max_map = {}
     mean_map = {}
     keys, mean_map = init_maps(mean_map, list_of_map[0])
     keys, stdev_map = init_maps(stdev_map, list_of_map[0])
+    keys, min_map = init_maps(min_map, list_of_map[0])
     keys, max_map = init_maps(max_map, list_of_map[0])
 
     for key in keys:
@@ -41,11 +43,13 @@ def aggregate_run1_maps(list_of_map):
             val_list.append(list_of_map[i][key])
         mean = statistics.mean(val_list) 
         stddev = statistics.pstdev(val_list, mean)
+        minm = min(val_list)
         maxm = max(val_list)
         stdev_map[key] = stddev
         mean_map[key] = mean
         max_map[key] = maxm
-    return mean_map, stdev_map, max_map
+        min_map[key] = minm
+    return mean_map, stdev_map, min_map, max_map
    
 
 def print_as_table(prof_map, key=None):
