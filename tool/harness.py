@@ -734,7 +734,7 @@ def main():
         
 
     # Finally dump all stats to a json which can be queried later
-    json_outfile = root_log_path + 'MODEL.json'
+    json_outfile = root_log_path + '/' + 'MODEL.json'
     with open(json_outfile, 'w') as jf:
         json.dump(args.stats, jf)
 
