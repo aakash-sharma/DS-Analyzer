@@ -102,6 +102,8 @@ def parse_args():
     parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet18')
     parser.add_argument('--synthetic', action='store_true',
                          help='Use synthetic dataset')
+    parser.add_argument('--synthetic_div_factor', default=2, type=int, metavar='N',
+                        help='division factor for synthetic data')
     parser.add_argument('--data-profile', action='store_true',
                          help='Set profiler on')  
     parser.add_argument('--precreate', action='store_true')
@@ -237,7 +239,7 @@ def run_synthetic(root_log_path, delay_allreduce=True):
                    "--batch-size={}".format(args.batch_size),
                    "--workers={}".format(args.workers),
                    "--classes={}".format(args.classes),
-                   "--num_minibatches={}".format(args.num_minibatches),
+                   "--num_minibatches={}".format(args.num_minibatches // args.synthetic_div_factor),
                    "--precreate",
                    "--tensor_path={}".format(args.tensor_path),
                    "--arch={}".format(args.arch),
@@ -255,7 +257,7 @@ def run_synthetic(root_log_path, delay_allreduce=True):
                    "--batch-size={}".format(args.batch_size),
                    "--workers={}".format(args.workers),
                    "--classes={}".format(args.classes),
-                   "--num_minibatches={}".format(args.num_minibatches),
+                   "--num_minibatches={}".format(args.num_minibatches // args.synthetic_div_factor),
                    "--arch={}".format(args.arch),
                    "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
@@ -314,7 +316,7 @@ def run_with_data(root_log_path, cached=False):
                    "--batch-size={}".format(args.batch_size),
                    "--workers={}".format(args.workers),
                    "--classes={}".format(args.classes),
-                   "--num_minibatches={}".format(args.num_minibatches*2),
+                   "--num_minibatches={}".format(args.num_minibatches),
                    "--arch={}".format(args.arch),
                    "--epochs={}".format(args.epochs)] + args.training_script_args
         else:
@@ -327,7 +329,7 @@ def run_with_data(root_log_path, cached=False):
                    "--batch-size={}".format(args.batch_size),
                    "--workers={}".format(args.workers),
                    "--classes={}".format(args.classes),
-                   "--num_minibatches={}".format(args.num_minibatches*2),
+                   "--num_minibatches={}".format(args.num_minibatches),
                    "--full_epoch ",
                    "--arch={}".format(args.arch),
                    "--epochs={}".format(args.epochs)] + args.training_script_args
