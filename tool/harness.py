@@ -202,7 +202,7 @@ def run_synthetic(root_log_path, delay_allreduce=True):
     current_env["WORLD_SIZE"] = str(dist_world_size)
 
 
-    if args.precreate and not args.use_precreate:
+    if args.precreate:
         print("Precreating tensors in {}".format(args.tensor_path))
         if not os.path.exists(args.tensor_path):
             os.makedirs(args.tensor_path)
