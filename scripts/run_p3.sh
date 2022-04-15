@@ -10,7 +10,7 @@ SAMPLES=1281166
 cd ~/DS-Analyzer/tool
 
 for arch in 'alexnet' 'resnet18' 'shufflenet_v2_x0_5' 'mobilenet_v2' 'squeezenet1_0' 'resnet50' 'vgg11'; do
-         for batch in 32 64 128 256 512; do
+         for batch in 64 128 256 512 1024; do
 				 echo "==============================================="
 				 echo " $batch $arch"
 				 echo "==============================================="
