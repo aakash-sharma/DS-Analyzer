@@ -159,7 +159,7 @@ def run_synthetic_singleGPU(root_log_path):
                "--batch-size={}".format(args.batch_size),
                "--workers={}".format(args.workers),
                "--classes={}".format(args.classes),
-               "--num_minibatches={}".format(args.num_minibatches),
+               "--num_minibatches={}".format(args.num_minibatches // args.synthetic_div_factor),
                "--precreate",
                "--tensor_path={}".format(args.tensor_path),
                "--arch={}".format(args.arch),
@@ -173,7 +173,7 @@ def run_synthetic_singleGPU(root_log_path):
                "--batch-size={}".format(args.batch_size),
                "--workers={}".format(args.workers),
                "--classes={}".format(args.classes),
-               "--num_minibatches={}".format(args.num_minibatches),
+               "--num_minibatches={}".format(args.num_minibatches // args.synthetic_div_factor),
                "--arch={}".format(args.arch),
                "--synthetic",
                "--epochs={}".format(args.epochs)] + args.training_script_args
