@@ -689,6 +689,7 @@ def main():
                 model = model_path.split('/')[-1]
                 batch_paths = [os.path.join(model_path, o) for o in os.listdir(model_path) if os.path.isdir(os.path.join(model_path,o))]
                 for batch_path in batch_paths:
+                    batch = batch_path.split('-')[-1]
                     gpu_paths = [os.path.join(batch_path, o) for o in os.listdir(batch_path) if os.path.isdir(os.path.join(batch_path,o))]
                     for gpu_path in gpu_paths:
                         #gpu = gpu_path.split('/')[-1] + str(itr)
@@ -702,10 +703,10 @@ def main():
 
                             #process_json(model, gpu, json_path2)
                             #process_json(model, gpu, json_path)
-                            process_json2(model, instance, json_path2)
+                            process_json2(model, instance, batch, json_path2)
 
                             csv_path = cpu_path + "/rank-0/run3-preprocess/"
-                            process_csv(model, instance, csv_path)
+                            process_csv(model, instance, batch, csv_path)
         itr += 1
 
     compare_instances()
