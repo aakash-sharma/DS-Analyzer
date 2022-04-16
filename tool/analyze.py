@@ -73,7 +73,7 @@ def process_json2(model, instance, batch, json_path):
     gpu = gpu_map[instance]
     with open(json_path) as fd:
         dagJson = json.load(fd)
-
+        
     stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][gpu][batch]["TRAIN_SPEED_DISK"] = dagJson["SPEED_DISK"]
     stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
@@ -171,6 +171,7 @@ def compare_instances():
 
     models = list(stats.keys())
 
+    """
     for instance in instances:
 
         gpu = gpu_map[instance]
@@ -180,6 +181,7 @@ def compare_instances():
             if gpu not in stats[model]:
                 del stats[model]
                 continue
+    """
 
     for batch in BATCH_SIZES:
 
@@ -193,8 +195,8 @@ def compare_instances():
         fig8, axs8 = plt.subplots(2, 1, figsize=(30,20))
 
         #X = [model for model in stats.keys()]
-        X_small = ['alexnet' 'resnet18' 'shufflenet_v2_x0_5' 'mobilenet_v2' 'squeezenet1_0']
-        X_large = ['resnet50' 'vgg11']
+        X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
+        X_large = ['resnet50', 'vgg11']
         X = X_small
         X_axis = np.arange(len(X))
 
@@ -204,9 +206,7 @@ def compare_instances():
 
             gpu = gpu_map[instance]
 
-            print(instance, gpu, model, batch)
-
-            Y_PREP_STALL_PCT = [stats[model][gpu][batch]["PREP_STALL_PCT"] 
+            Y_PREP_STALL_PCT = [stats[model][gpu][batch]["PREP_STALL_PCT"]
                                 if "PREP_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
             Y_FETCH_STALL_PCT = [stats[model][gpu][batch]["FETCH_STALL_PCT"] 
                                  if "FETCH_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
@@ -219,9 +219,9 @@ def compare_instances():
             Y_TRAIN_TIME_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] 
                                    if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
             
-            Y_COST_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance] 
+            Y_COST_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance]  / 3600
                            if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X] 
-            Y_COST_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] 
+            Y_COST_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
                              if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
             
             Y_DISK_THR = [stats[model][gpu][batch]["DISK_THR"] 
@@ -466,8 +466,7 @@ def compare_instances():
         fig7.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
         fig7.savefig("figures/stacked_time_comparison_batch-" + batch)
 
-    plt.show()
-    plt.close()
+        plt.close()
 
 #    plt.show()
 
