@@ -167,9 +167,7 @@ def add_text(X, Y, axs):
     for idx, value in enumerate(X):
         axs.text(value, Y[idx]+2, str(int(Y[idx])))
 
-def compare_instances():
-
-    models = list(stats.keys())
+def compare_instances(result_dir):
 
     """
     for instance in instances:
@@ -181,292 +179,301 @@ def compare_instances():
             if gpu not in stats[model]:
                 del stats[model]
                 continue
+
+    X = [model for model in stats.keys()]
     """
 
-    for batch in BATCH_SIZES:
 
-        fig1, axs1 = plt.subplots(3, 1, figsize=(30,20))
-        fig2, axs2 = plt.subplots(3, 1, figsize=(30,20))
-        fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
-        fig4, axs4 = plt.subplots(3, 1, figsize=(30,20))
-        fig5, axs5 = plt.subplots(3, 1, figsize=(30,20))
-        fig6, axs6 = plt.subplots(3, 1, figsize=(30,20))
-        fig7, axs7 = plt.subplots(figsize=(30,20))
-        fig8, axs8 = plt.subplots(2, 1, figsize=(30,20))
+    X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
+    X_large = ['resnet50', 'vgg11']
+    desc = ["-Small_models", "-Large_models"]
+    desc_i = 0
 
-        #X = [model for model in stats.keys()]
-        X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
-        X_large = ['resnet50', 'vgg11']
-        X = X_small
+    for X in [X_small, X_large]:
+#    for X in [X_large]:
+
         X_axis = np.arange(len(X))
 
-        diff = 0
+        for batch in BATCH_SIZES:
+            diff = 0
 
-        for instance in instances:
+            fig1, axs1 = plt.subplots(3, 1, figsize=(30, 20))
+            fig2, axs2 = plt.subplots(3, 1, figsize=(30, 20))
+            fig3, axs3 = plt.subplots(3, 1, figsize=(30, 20))
+            fig4, axs4 = plt.subplots(3, 1, figsize=(30, 20))
+            fig5, axs5 = plt.subplots(3, 1, figsize=(30, 20))
+            fig6, axs6 = plt.subplots(3, 1, figsize=(30, 20))
+            fig7, axs7 = plt.subplots(figsize=(30, 20))
+            fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
 
-            gpu = gpu_map[instance]
+            for instance in instances:
 
-            Y_PREP_STALL_PCT = [stats[model][gpu][batch]["PREP_STALL_PCT"]
-                                if "PREP_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            Y_FETCH_STALL_PCT = [stats[model][gpu][batch]["FETCH_STALL_PCT"] 
-                                 if "FETCH_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                Y_INTERCONNECT_STALL_PCT = [stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"] 
-                                            if "INTERCONNECT_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                
-            Y_TRAIN_TIME_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"] 
-                                 if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X]
-            Y_TRAIN_TIME_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] 
-                                   if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
-            
-            Y_COST_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance]  / 3600
-                           if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X] 
-            Y_COST_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
-                             if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
-            
-            Y_DISK_THR = [stats[model][gpu][batch]["DISK_THR"] 
-                          if "DISK_THR" in stats[model][gpu][batch] else 0 for model in X]
-            
-            Y_TRAIN_SPEED_INGESTION = [stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"] 
-                                       if "TRAIN_SPEED_INGESTION" in stats[model][gpu][batch] else 0 for model in X]
-            Y_TRAIN_SPEED_DISK = [stats[model][gpu][batch]["TRAIN_SPEED_DISK"] 
-                                  if "TRAIN_SPEED_DISK" in stats[model][gpu][batch] else 0 for model in X]
-            Y_TRAIN_SPEED_CACHED = [stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] 
-                                    if "TRAIN_SPEED_CACHED" in stats[model][gpu][batch] else 0 for model in X]
-            
-            Y_CPU_UTIL_DISK_PCT = [stats[model][gpu][batch]["CPU_UTIL_DISK_PCT"] 
-                                   if "CPU_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            Y_CPU_UTIL_CACHED_PCT = [stats[model][gpu][batch]["CPU_UTIL_CACHED_PCT"]
-                                     if "CPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            
-            Y_GPU_UTIL_DISK_PCT = [stats[model][gpu][batch]["GPU_UTIL_DISK_PCT"] 
-                                   if "GPU_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            Y_GPU_UTIL_CACHED_PCT = [stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] 
-                                     if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_PCT"] 
-                                       if "GPU_MEM_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] 
-                                         if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
-            
-            Y_MEMCPY_TIME = [stats[model][gpu][batch]["MEMCPY_TIME"] 
-                             if "MEMCPY_TIME" in stats[model][gpu][batch] else 0 for model in X]
-            Y_COMPUTE_TIME = [stats[model][gpu][batch]["COMPUTE_TIME"] 
-                              if "COMPUTE_TIME" in stats[model][gpu][batch] else 0 for model in X]
-            Y_COMPUTE_FWD_TIME = [stats[model][gpu][batch]["COMPUTE_FWD_TIME"] 
-                                  if "COMPUTE_FWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
-            Y_COMPUTE_BWD_TIME = [stats[model][gpu][batch]["COMPUTE_BWD_TIME"] 
-                                  if "COMPUTE_BWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
+                gpu = gpu_map[instance]
 
-            axs1[0].bar(X_axis-0.2 + diff, Y_PREP_STALL_PCT, 0.2, label = instance)
-            axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_PREP_STALL_PCT, axs1[0])
-            add_text(X_axis-0.25 + diff, Y_FETCH_STALL_PCT, axs1[1])
+                Y_PREP_STALL_PCT = [stats[model][gpu][batch]["PREP_STALL_PCT"]
+                                    if "PREP_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_FETCH_STALL_PCT = [stats[model][gpu][batch]["FETCH_STALL_PCT"]
+                                     if "FETCH_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
+                    Y_INTERCONNECT_STALL_PCT = [stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"]
+                                                if "INTERCONNECT_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
 
-            if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label = instance)
-                add_text(X_axis-0.25 + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
+                Y_TRAIN_TIME_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"]
+                                     if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X]
+                Y_TRAIN_TIME_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"]
+                                       if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs2[0].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_DISK, 0.2, label = instance)
-            axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label = instance)
-            axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_DISK, axs2[0])
-            add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_CACHED, axs2[1])
-            add_text(X_axis-0.25 + diff, Y_DISK_THR, axs2[2])
+                Y_COST_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance]  / 3600
+                               if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COST_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
+                                 if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs8[0].bar(X_axis-0.2 + diff, Y_COST_DISK, 0.2, label = instance)
-            axs8[1].bar(X_axis-0.2 + diff, Y_COST_CACHED, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_COST_DISK, axs2[0])
-            add_text(X_axis-0.25 + diff, Y_COST_CACHED, axs2[1])
+                Y_DISK_THR = [stats[model][gpu][batch]["DISK_THR"]
+                              if "DISK_THR" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs3[0].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
-            axs3[1].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
-            axs3[2].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_INGESTION, axs3[0])
-            add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_DISK, axs3[1])
-            add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_CACHED, axs3[2])
+                Y_TRAIN_SPEED_INGESTION = [stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"]
+                                           if "TRAIN_SPEED_INGESTION" in stats[model][gpu][batch] else 0 for model in X]
+                Y_TRAIN_SPEED_DISK = [stats[model][gpu][batch]["TRAIN_SPEED_DISK"]
+                                      if "TRAIN_SPEED_DISK" in stats[model][gpu][batch] else 0 for model in X]
+                Y_TRAIN_SPEED_CACHED = [stats[model][gpu][batch]["TRAIN_SPEED_CACHED"]
+                                        if "TRAIN_SPEED_CACHED" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs4[0].bar(X_axis-0.2 + diff, Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
-            axs4[1].bar(X_axis-0.2 + diff, Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
-            axs4[2].bar(X_axis-0.2 + diff, Y_GPU_MEM_UTIL_DISK_PCT, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_CPU_UTIL_DISK_PCT, axs4[0])
-            add_text(X_axis-0.25 + diff, Y_GPU_UTIL_DISK_PCT, axs4[1])
-            add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_DISK_PCT, axs4[2])
+                Y_CPU_UTIL_DISK_PCT = [stats[model][gpu][batch]["CPU_UTIL_DISK_PCT"]
+                                       if "CPU_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_CPU_UTIL_CACHED_PCT = [stats[model][gpu][batch]["CPU_UTIL_CACHED_PCT"]
+                                         if "CPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs5[0].bar(X_axis-0.2 + diff, Y_CPU_UTIL_CACHED_PCT, 0.2, label = instance)
-            axs5[1].bar(X_axis-0.2 + diff, Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
-            axs5[2].bar(X_axis-0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_CPU_UTIL_CACHED_PCT, axs5[0])
-            add_text(X_axis-0.25 + diff, Y_GPU_UTIL_CACHED_PCT, axs5[1])
-            add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, axs5[2])
+                Y_GPU_UTIL_DISK_PCT = [stats[model][gpu][batch]["GPU_UTIL_DISK_PCT"]
+                                       if "GPU_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_GPU_UTIL_CACHED_PCT = [stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"]
+                                         if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_PCT"]
+                                           if "GPU_MEM_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"]
+                                             if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs6[0].bar(X_axis-0.2 + diff, Y_MEMCPY_TIME, 0.2, label = instance)
-            axs6[1].bar(X_axis-0.2 + diff, Y_COMPUTE_FWD_TIME, 0.2, label = instance)
-            axs6[2].bar(X_axis-0.2 + diff, Y_COMPUTE_BWD_TIME, 0.2, label = instance)
-            add_text(X_axis-0.25 + diff, Y_MEMCPY_TIME, axs6[0])
-            add_text(X_axis-0.25 + diff, Y_COMPUTE_FWD_TIME, axs6[1])
-            add_text(X_axis-0.25 + diff, Y_COMPUTE_BWD_TIME, axs6[2])
+                Y_MEMCPY_TIME = [stats[model][gpu][batch]["MEMCPY_TIME"]
+                                 if "MEMCPY_TIME" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COMPUTE_TIME = [stats[model][gpu][batch]["COMPUTE_TIME"]
+                                  if "COMPUTE_TIME" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COMPUTE_FWD_TIME = [stats[model][gpu][batch]["COMPUTE_FWD_TIME"]
+                                      if "COMPUTE_FWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COMPUTE_BWD_TIME = [stats[model][gpu][batch]["COMPUTE_BWD_TIME"]
+                                      if "COMPUTE_BWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
 
-            axs7.bar(X_axis-0.2 + diff, Y_MEMCPY_TIME, 0.2, color = 'g', edgecolor='black')
-            axs7.bar(X_axis-0.2 + diff, Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, color = 'b', edgecolor='black')
-            axs7.bar(X_axis-0.2 + diff, Y_COMPUTE_BWD_TIME, 0.2, bottom = Y_COMPUTE_FWD_TIME, color = 'c', edgecolor='black')
+                axs1[0].bar(X_axis-0.2 + diff, Y_PREP_STALL_PCT, 0.2, label = instance)
+                axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_PREP_STALL_PCT, axs1[0])
+                add_text(X_axis-0.25 + diff, Y_FETCH_STALL_PCT, axs1[1])
 
-            diff += 0.2
+                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
+                    axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label = instance)
+                    add_text(X_axis-0.25 + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
 
-        axs1[0].set_xticks(X_axis)
-        axs1[0].set_xticklabels(X)
-        axs1[0].set_xlabel("Models")
-        axs1[0].set_ylabel("Percentage")
-        axs1[0].set_title("Prep stall comparison")
-        axs1[0].legend()
+                axs2[0].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_DISK, 0.2, label = instance)
+                axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label = instance)
+                axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_DISK, axs2[0])
+                add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_CACHED, axs2[1])
+                add_text(X_axis-0.25 + diff, Y_DISK_THR, axs2[2])
 
-        axs1[1].set_xticks(X_axis)
-        axs1[1].set_xticklabels(X)
-        axs1[1].set_xlabel("Models")
-        axs1[1].set_ylabel("Percentage")
-        axs1[1].set_title("Fetch stall comparison")
-        axs1[1].legend()
+                axs8[0].bar(X_axis-0.2 + diff, Y_COST_DISK, 0.2, label = instance)
+                axs8[1].bar(X_axis-0.2 + diff, Y_COST_CACHED, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_COST_DISK, axs2[0])
+                add_text(X_axis-0.25 + diff, Y_COST_CACHED, axs2[1])
 
-        axs1[2].set_xticks(X_axis)
-        axs1[2].set_xticklabels(X)
-        axs1[2].set_xlabel("Models")
-        axs1[2].set_ylabel("Percentage")
-        axs1[2].set_title("Interconnect stall comparison")
-        axs1[2].legend()
+                axs3[0].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
+                axs3[1].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
+                axs3[2].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_INGESTION, axs3[0])
+                add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_DISK, axs3[1])
+                add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_CACHED, axs3[2])
 
-        fig1.suptitle("Stall comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig1.savefig("figures/stall_comparison_batch-" + batch)
+                axs4[0].bar(X_axis-0.2 + diff, Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
+                axs4[1].bar(X_axis-0.2 + diff, Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
+                axs4[2].bar(X_axis-0.2 + diff, Y_GPU_MEM_UTIL_DISK_PCT, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_CPU_UTIL_DISK_PCT, axs4[0])
+                add_text(X_axis-0.25 + diff, Y_GPU_UTIL_DISK_PCT, axs4[1])
+                add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_DISK_PCT, axs4[2])
+
+                axs5[0].bar(X_axis-0.2 + diff, Y_CPU_UTIL_CACHED_PCT, 0.2, label = instance)
+                axs5[1].bar(X_axis-0.2 + diff, Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
+                axs5[2].bar(X_axis-0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_CPU_UTIL_CACHED_PCT, axs5[0])
+                add_text(X_axis-0.25 + diff, Y_GPU_UTIL_CACHED_PCT, axs5[1])
+                add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, axs5[2])
+
+                axs6[0].bar(X_axis-0.2 + diff, Y_MEMCPY_TIME, 0.2, label = instance)
+                axs6[1].bar(X_axis-0.2 + diff, Y_COMPUTE_FWD_TIME, 0.2, label = instance)
+                axs6[2].bar(X_axis-0.2 + diff, Y_COMPUTE_BWD_TIME, 0.2, label = instance)
+                add_text(X_axis-0.25 + diff, Y_MEMCPY_TIME, axs6[0])
+                add_text(X_axis-0.25 + diff, Y_COMPUTE_FWD_TIME, axs6[1])
+                add_text(X_axis-0.25 + diff, Y_COMPUTE_BWD_TIME, axs6[2])
+
+                axs7.bar(X_axis-0.2 + diff, Y_MEMCPY_TIME, 0.2, color = 'g', edgecolor='black')
+                axs7.bar(X_axis-0.2 + diff, Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, color = 'b', edgecolor='black')
+                axs7.bar(X_axis-0.2 + diff, Y_COMPUTE_BWD_TIME, 0.2, bottom = Y_COMPUTE_FWD_TIME, color = 'c', edgecolor='black')
+
+                diff += 0.2
+
+            axs1[0].set_xticks(X_axis)
+            axs1[0].set_xticklabels(X)
+            axs1[0].set_xlabel("Models")
+            axs1[0].set_ylabel("Percentage")
+            axs1[0].set_title("Prep stall comparison")
+            axs1[0].legend()
+
+            axs1[1].set_xticks(X_axis)
+            axs1[1].set_xticklabels(X)
+            axs1[1].set_xlabel("Models")
+            axs1[1].set_ylabel("Percentage")
+            axs1[1].set_title("Fetch stall comparison")
+            axs1[1].legend()
+
+            axs1[2].set_xticks(X_axis)
+            axs1[2].set_xticklabels(X)
+            axs1[2].set_xlabel("Models")
+            axs1[2].set_ylabel("Percentage")
+            axs1[2].set_title("Interconnect stall comparison")
+            axs1[2].legend()
+
+            fig1.suptitle("Stall comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i])
     
-        axs2[0].set_xticks(X_axis)
-        axs2[0].set_xticklabels(X)
-        axs2[0].set_ylabel("Time")
-        axs2[0].set_title("Training time disk comparison")
-        axs2[0].legend()
+            axs2[0].set_xticks(X_axis)
+            axs2[0].set_xticklabels(X)
+            axs2[0].set_ylabel("Time")
+            axs2[0].set_title("Training time disk comparison")
+            axs2[0].legend()
 
-        axs2[1].set_xticks(X_axis)
-        axs2[1].set_xticklabels(X)
-        axs2[1].set_ylabel("Time")
-        axs2[1].set_title("Training time cached comparison")
-        axs2[1].legend()
+            axs2[1].set_xticks(X_axis)
+            axs2[1].set_xticklabels(X)
+            axs2[1].set_ylabel("Time")
+            axs2[1].set_title("Training time cached comparison")
+            axs2[1].legend()
 
-        axs2[2].set_xticks(X_axis)
-        axs2[2].set_xticklabels(X)
-        axs2[2].set_ylabel("Throughput")
-        axs2[2].set_title("Disk throughput comparison")
-        axs2[2].legend()
+            axs2[2].set_xticks(X_axis)
+            axs2[2].set_xticklabels(X)
+            axs2[2].set_ylabel("Throughput")
+            axs2[2].set_title("Disk throughput comparison")
+            axs2[2].legend()
 
-        fig2.suptitle("Training time comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig2.savefig("figures/training_time_batch-" + batch)
+            fig2.suptitle("Training time comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig2.savefig(result_dir + "/figures/training_time_batch-" + batch + desc[desc_i])
 
-        axs8[0].set_xticks(X_axis)
-        axs8[0].set_xticklabels(X)
-        axs8[0].set_ylabel("Dollar cost")
-        axs8[0].set_title("Training cost disk comparison")
-        axs8[0].legend()
+            axs8[0].set_xticks(X_axis)
+            axs8[0].set_xticklabels(X)
+            axs8[0].set_ylabel("Dollar cost")
+            axs8[0].set_title("Training cost disk comparison")
+            axs8[0].legend()
 
-        axs8[1].set_xticks(X_axis)
-        axs8[1].set_xticklabels(X)
-        axs8[1].set_ylabel("Dollar cost")
-        axs8[1].set_title("Training cost cached comparison")
-        axs8[1].legend()
+            axs8[1].set_xticks(X_axis)
+            axs8[1].set_xticklabels(X)
+            axs8[1].set_ylabel("Dollar cost")
+            axs8[1].set_title("Training cost cached comparison")
+            axs8[1].legend()
 
-        fig8.suptitle("Training cost comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig8.savefig("figures/training_cost_batch-" + batch)
+            fig8.suptitle("Training cost comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i])
 
-        axs3[0].set_xticks(X_axis)
-        axs3[0].set_xticklabels(X)
-        axs3[0].set_ylabel("Samples/sec")
-        axs3[0].set_title("Training speed ingestion comparison")
-        axs3[0].legend()
+            axs3[0].set_xticks(X_axis)
+            axs3[0].set_xticklabels(X)
+            axs3[0].set_ylabel("Samples/sec")
+            axs3[0].set_title("Training speed ingestion comparison")
+            axs3[0].legend()
 
-        axs3[1].set_xticks(X_axis)
-        axs3[1].set_xticklabels(X)
-        axs3[1].set_ylabel("Samples/sec")
-        axs3[1].set_title("Training speed disk comparison")
-        axs3[1].legend()
+            axs3[1].set_xticks(X_axis)
+            axs3[1].set_xticklabels(X)
+            axs3[1].set_ylabel("Samples/sec")
+            axs3[1].set_title("Training speed disk comparison")
+            axs3[1].legend()
 
-        axs3[2].set_xticks(X_axis)
-        axs3[2].set_xticklabels(X)
-        axs3[2].set_ylabel("Samples/sec")
-        axs3[2].set_title("Training speed cached comparison")
-        axs3[2].legend()
+            axs3[2].set_xticks(X_axis)
+            axs3[2].set_xticklabels(X)
+            axs3[2].set_ylabel("Samples/sec")
+            axs3[2].set_title("Training speed cached comparison")
+            axs3[2].legend()
 
-        fig3.suptitle("Training speed comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig3.savefig("figures/training_speed_batch-" + batch)
+            fig3.suptitle("Training speed comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig3.savefig(result_dir + "/figures/training_speed_batch-" + batch + desc[desc_i])
 
-        axs4[0].set_xticks(X_axis)
-        axs4[0].set_xticklabels(X)
-        axs4[0].set_ylabel("Average CPU utilization")
-        axs4[0].set_title("CPU utilization comparison")
-        axs4[0].legend()
+            axs4[0].set_xticks(X_axis)
+            axs4[0].set_xticklabels(X)
+            axs4[0].set_ylabel("Average CPU utilization")
+            axs4[0].set_title("CPU utilization comparison")
+            axs4[0].legend()
 
-        axs4[1].set_xticks(X_axis)
-        axs4[1].set_xticklabels(X)
-        axs4[1].set_ylabel("Average GPU utilization")
-        axs4[1].set_title("GPU utilization comparison")
-        axs4[1].legend()
+            axs4[1].set_xticks(X_axis)
+            axs4[1].set_xticklabels(X)
+            axs4[1].set_ylabel("Average GPU utilization")
+            axs4[1].set_title("GPU utilization comparison")
+            axs4[1].legend()
 
-        axs4[2].set_xticks(X_axis)
-        axs4[2].set_xticklabels(X)
-        axs4[2].set_ylabel("Average GPU memory utilization")
-        axs4[2].set_title("GPU memory utilization comparison")
-        axs4[2].legend()
+            axs4[2].set_xticks(X_axis)
+            axs4[2].set_xticklabels(X)
+            axs4[2].set_ylabel("Average GPU memory utilization")
+            axs4[2].set_title("GPU memory utilization comparison")
+            axs4[2].legend()
 
-        fig4.suptitle("CPU and GPU utilization DISK comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig4.savefig("figures/cpu_gpu_util_disk_batch-" + batch)
+            fig4.suptitle("CPU and GPU utilization DISK comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig4.savefig(result_dir + "/figures/cpu_gpu_util_disk_batch-" + batch + desc[desc_i])
 
-        axs5[0].set_xticks(X_axis)
-        axs5[0].set_xticklabels(X)
-        axs5[0].set_ylabel("Average CPU utilization")
-        axs5[0].set_title("CPU utilization comparison")
-        axs5[0].legend()
+            axs5[0].set_xticks(X_axis)
+            axs5[0].set_xticklabels(X)
+            axs5[0].set_ylabel("Average CPU utilization")
+            axs5[0].set_title("CPU utilization comparison")
+            axs5[0].legend()
 
-        axs5[1].set_xticks(X_axis)
-        axs5[1].set_xticklabels(X)
-        axs5[1].set_ylabel("Average GPU utilization")
-        axs5[1].set_title("GPU utilization comparison")
-        axs5[1].legend()
+            axs5[1].set_xticks(X_axis)
+            axs5[1].set_xticklabels(X)
+            axs5[1].set_ylabel("Average GPU utilization")
+            axs5[1].set_title("GPU utilization comparison")
+            axs5[1].legend()
 
-        axs5[2].set_xticks(X_axis)
-        axs5[2].set_xticklabels(X)
-        axs5[2].set_ylabel("Average GPU memory utilization")
-        axs5[2].set_title("GPU memory utilization comparison")
-        axs5[2].legend()
+            axs5[2].set_xticks(X_axis)
+            axs5[2].set_xticklabels(X)
+            axs5[2].set_ylabel("Average GPU memory utilization")
+            axs5[2].set_title("GPU memory utilization comparison")
+            axs5[2].legend()
 
-        fig5.suptitle("CPU and GPU utilization CACHED comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig5.savefig("figures/cpu_gpu_util_cached_batch-" + batch)
+            fig5.suptitle("CPU and GPU utilization CACHED comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig5.savefig(result_dir + "/figures/cpu_gpu_util_cached_batch-" + batch + desc[desc_i])
 
-        axs6[0].set_xticks(X_axis)
-        axs6[0].set_xticklabels(X)
-        axs6[0].set_ylabel("Avg Total Time (Seconds)")
-        axs6[0].set_title("Memcpy time")
-        axs6[0].legend()
+            axs6[0].set_xticks(X_axis)
+            axs6[0].set_xticklabels(X)
+            axs6[0].set_ylabel("Avg Total Time (Seconds)")
+            axs6[0].set_title("Memcpy time")
+            axs6[0].legend()
 
-        axs6[1].set_xticks(X_axis)
-        axs6[1].set_xticklabels(X)
-        axs6[1].set_ylabel("Avg Total Time (Seconds)")
-        axs6[1].set_title("Fwd propogation compute time")
-        axs6[1].legend()
+            axs6[1].set_xticks(X_axis)
+            axs6[1].set_xticklabels(X)
+            axs6[1].set_ylabel("Avg Total Time (Seconds)")
+            axs6[1].set_title("Fwd propogation compute time")
+            axs6[1].legend()
 
-        axs6[2].set_xticks(X_axis)
-        axs6[2].set_xticklabels(X)
-        axs6[2].set_ylabel("Avg Total Time (Seconds)")
-        axs6[2].set_title("Bwd propogation compute time")
-        axs6[2].legend()
+            axs6[2].set_xticks(X_axis)
+            axs6[2].set_xticklabels(X)
+            axs6[2].set_ylabel("Avg Total Time (Seconds)")
+            axs6[2].set_title("Bwd propogation compute time")
+            axs6[2].legend()
 
-        fig6.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig6.savefig("figures/memcpy_compute_time_comparison_batch-" + batch)
+            fig6.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig6.savefig(result_dir + "/figures/memcpy_compute_time_comparison_batch-" + batch + desc[desc_i])
 
-        axs7.set_xticks(X_axis)
-        axs7.set_xticklabels(X, fontsize=20)
-        axs7.set_ylabel("Avg Total Time (Seconds)", fontsize=20)
-        axs7.set_title("Stacked time comparison")
-        leg = ["Memcpy Time", "Fwd Propogation Time", "Bwd Propogation Time"]
-        axs7.legend(leg, fontsize=20)
+            axs7.set_xticks(X_axis)
+            axs7.set_xticklabels(X, fontsize=20)
+            axs7.set_ylabel("Avg Total Time (Seconds)", fontsize=20)
+            axs7.set_title("Stacked time comparison")
+            leg = ["Memcpy Time", "Fwd Propogation Time", "Bwd Propogation Time"]
+            axs7.legend(leg, fontsize=20)
 
-        fig7.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
-        fig7.savefig("figures/stacked_time_comparison_batch-" + batch)
+            fig7.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
-        plt.close()
+            plt.close('all')
+
+        desc_i += 1
+
 
 #    plt.show()
 
@@ -656,7 +663,7 @@ def compare_models():
         axs1[2,1].legend()
 
         fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
-        fig1.savefig("figures/cached_comparison - " + model)
+        fig1.savefig(result_dir + "/figures/cached_comparison - " + model)
 
         axs2[0,0].set_xticks(X_metrics_axis)
         axs2[0,0].set_xticklabels(X)
@@ -693,7 +700,7 @@ def compare_models():
         axs2[2,1].legend()
 
         fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
-        fig2.savefig("figures/disk_comparison - " + model)
+        fig2.savefig(result_dir + "/figures/disk_comparison - " + model)
 
         """
         axs3[0].set_xlabel("Iterations")
@@ -719,7 +726,7 @@ def compare_models():
 
 
         fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
-        fig3.savefig("figures/itr_time_comparison - " + model)
+        fig3.savefig(result_dir + "/figures/itr_time_comparison - " + model)
 
 #        plt.show()
 
@@ -766,7 +773,7 @@ def main():
                             process_csv(model, instance, batch, csv_path)
         itr += 1
 
-    compare_instances()
+    compare_instances(result_dir)
 #    compare_models()
 
 
