@@ -73,7 +73,7 @@ def process_json2(model, instance, batch, json_path):
     gpu = gpu_map[instance]
     with open(json_path) as fd:
         dagJson = json.load(fd)
-        
+
     stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][gpu][batch]["TRAIN_SPEED_DISK"] = dagJson["SPEED_DISK"]
     stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
@@ -209,7 +209,7 @@ def compare_instances(result_dir):
             for instance in instances:
 
                 gpu = gpu_map[instance]
-
+                
                 Y_PREP_STALL_PCT = [stats[model][gpu][batch]["PREP_STALL_PCT"]
                                     if "PREP_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
                 Y_FETCH_STALL_PCT = [stats[model][gpu][batch]["FETCH_STALL_PCT"]
@@ -477,7 +477,7 @@ def compare_instances(result_dir):
 
 #    plt.show()
 
-def compare_models():
+def compare_models(result_dir):
 
     models = list(stats.keys())
     max_dstat_len = 0
@@ -494,239 +494,252 @@ def compare_models():
 
     for model in models:
 
-        for instance in instances:
-            gpu = gpu_map[instance]
-            if gpu not in stats[model]:
-                del stats[model]
-                continue
+        for batch in BATCH_SIZES:
 
+            for instance in instances:
+                gpu = gpu_map[instance]
+                if gpu not in stats[model]:
+                    del stats[model]
+                    continue
 
-            max_dstat_len = max(max_dstat_len, len(stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"]))
-            max_dstat_len = max(max_dstat_len, len(stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"]))
-            max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"]))
-            max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]))
-            max_itrs = max(max_itrs, len(stats[model][gpu][batch]["DATA_TIME_LIST"]))
+                if "CPU_UTIL_DISK_LIST" not in stats[model][gpu][batch]:
+                    stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"] = []
+                if "CPU_UTIL_CACHED_LIST" not in stats[model][gpu][batch]:
+                    stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"] = []
+                if "GPU_UTIL_DISK_LIST" not in stats[model][gpu][batch]:
+                    stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"] = []
+                if "GPU_UTIL_CACHED_LIST" not in stats[model][gpu][batch]:
+                    stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"] = []
+                if "DATA_TIME_LIST" not in stats[model][gpu][batch]:
+                    stats[model][gpu][batch]["DATA_TIME_LIST"] = []
 
-        fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
-        fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
-        #fig3, axs3 = plt.subplots(3, 1, figsize=(30,20))
-        fig3, axs3 = plt.subplots(figsize=(60,40))
+                max_dstat_len = max(max_dstat_len, len(stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"]))
+                max_dstat_len = max(max_dstat_len, len(stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"]))
+                max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"]))
+                max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]))
+                max_itrs = max(max_itrs, len(stats[model][gpu][batch]["DATA_TIME_LIST"]))
 
-        X_dstat_axis = np.arange(max_dstat_len)
-        X_nvidia_axis = np.arange(max_nvidia_len)
-        X_metrics_axis = np.arange(len(X))
-        X_metrics_io_axis = np.arange(len(X_IO))
-        X_itrs_axis = np.arange(max_itrs)
-        diff = 0
-        idx = 0
+            fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
+            fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
+            fig3, axs3 = plt.subplots(figsize=(60,40))
 
-        for instance in instances:
-            
-            gpu = gpu_map[instance]
-            if gpu not in stats[model]:
-                continue
+            X_dstat_axis = np.arange(max_dstat_len)
+            X_nvidia_axis = np.arange(max_nvidia_len)
+            X_metrics_axis = np.arange(len(X))
+            X_metrics_io_axis = np.arange(len(X_IO))
+            X_itrs_axis = np.arange(max_itrs)
+            diff = 0
+            idx = 0
 
-            style = styles[idx]
-            color = colors[idx]
-            idx += 1
+            for instance in instances:
 
-            """
-            if instance == "p2.xlarge":
-                style = 'r--'
-                color = ['green', 'red', 'blue']
-            elif instance == "p3.2xlarge":
-                style = 'b--'
-                color = ['orange', 'cyan', 'purple']
-            """
+                gpu = gpu_map[instance]
+                if gpu not in stats[model]:
+                    continue
 
-            overlapping = 0.50
+                style = styles[idx]
+                color = colors[idx]
+                idx += 1
+
+                """
+                if instance == "p2.xlarge":
+                    style = 'r--'
+                    color = ['green', 'red', 'blue']
+                elif instance == "p3.2xlarge":
+                    style = 'b--'
+                    color = ['orange', 'cyan', 'purple']
+                """
+
+                overlapping = 0.50
         
-            Y_METRICS_DISK = []
-            Y_METRICS_CACHED = []
-            Y_METRICS_IO_DISK = []
-            Y_METRICS_IO_CACHED = []
+                Y_METRICS_DISK = []
+                Y_METRICS_CACHED = []
+                Y_METRICS_IO_DISK = []
+                Y_METRICS_IO_CACHED = []
 
-            print(model, gpu)
+                print(model, gpu, batch)
 
-            Y_METRICS_DISK.append(stats[model][gpu][batch]["DISK_THR"])
-            Y_METRICS_DISK.append(stats[model][gpu][batch]["TRAIN_SPEED_DISK"])
-            Y_METRICS_DISK.append(stats[model][gpu][batch]["MEM_DISK"])
-            Y_METRICS_DISK.append(stats[model][gpu][batch]["PCACHE_DISK"])
-            Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"])
-            Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"])
-            
-            Y_METRICS_CACHED.append(stats[model][gpu][batch]["DISK_THR"])
-            Y_METRICS_CACHED.append(stats[model][gpu][batch]["TRAIN_SPEED_CACHED"])
-            Y_METRICS_CACHED.append(stats[model][gpu][batch]["MEM_CACHED"])
-            Y_METRICS_CACHED.append(stats[model][gpu][batch]["PCACHE_CACHED"])
-            Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"])
-            Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"])
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["DISK_THR"])
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["TRAIN_SPEED_DISK"])
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["MEM_DISK"])
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["PCACHE_DISK"])
+                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"])
+                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"])
 
-            Y_CPU_UTIL_DISK = stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"]
-            Y_CPU_UTIL_CACHED = stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"]
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["DISK_THR"])
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["TRAIN_SPEED_CACHED"])
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["MEM_CACHED"])
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["PCACHE_CACHED"])
+                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"])
+                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"])
 
-            Y_GPU_UTIL_DISK = stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"]
-            Y_GPU_UTIL_CACHED = stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]
+                Y_CPU_UTIL_DISK = stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"]
+                Y_CPU_UTIL_CACHED = stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"]
 
-            Y_GPU_MEM_UTIL_DISK = stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_LIST"]
-            Y_GPU_MEM_UTIL_CACHED = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_LIST"]
+                Y_GPU_UTIL_DISK = stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"]
+                Y_GPU_UTIL_CACHED = stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]
 
-            Y_IO_WAIT_LIST_DISK = stats[model][gpu][batch]["IO_WAIT_LIST_DISK"]
-            Y_IO_WAIT_LIST_CACHED = stats[model][gpu][batch]["IO_WAIT_LIST_CACHED"]
+                Y_GPU_MEM_UTIL_DISK = stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_LIST"]
+                Y_GPU_MEM_UTIL_CACHED = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_LIST"]
 
-            Y_DATA_TIME_LIST = stats[model][gpu][batch]["DATA_TIME_LIST"]
-            Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"]
-            Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"]
+                Y_IO_WAIT_LIST_DISK = stats[model][gpu][batch]["IO_WAIT_LIST_DISK"]
+                Y_IO_WAIT_LIST_CACHED = stats[model][gpu][batch]["IO_WAIT_LIST_CACHED"]
 
-            if len(Y_CPU_UTIL_DISK) < max_dstat_len:
-                Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
-            if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
-                Y_CPU_UTIL_CACHED.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_CACHED)))
-            if len(Y_GPU_UTIL_DISK) < max_nvidia_len:
-                Y_GPU_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_DISK)))
-            if len(Y_GPU_UTIL_CACHED) < max_nvidia_len:
-                Y_GPU_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_CACHED)))
-            if len(Y_GPU_MEM_UTIL_DISK) < max_nvidia_len:
-                Y_GPU_MEM_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_DISK)))
-            if len(Y_GPU_MEM_UTIL_CACHED) < max_nvidia_len:
-                Y_GPU_MEM_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_CACHED)))
-            if len(Y_IO_WAIT_LIST_DISK) < max_dstat_len:
-                Y_IO_WAIT_LIST_DISK.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_DISK)))
-            if len(Y_IO_WAIT_LIST_CACHED) < max_dstat_len:
-                Y_IO_WAIT_LIST_CACHED.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_CACHED)))
-            if len(Y_DATA_TIME_LIST) < max_itrs:
-                Y_DATA_TIME_LIST.extend([0] * (max_itrs - len(Y_DATA_TIME_LIST)))
-            if len(Y_COMPUTE_TIME_FWD_LIST) < max_itrs:
-                Y_COMPUTE_TIME_FWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_FWD_LIST)))
-            if len(Y_COMPUTE_TIME_BWD_LIST) < max_itrs:
-                Y_COMPUTE_TIME_BWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_BWD_LIST)))
+                Y_DATA_TIME_LIST = stats[model][gpu][batch]["DATA_TIME_LIST"]
+                Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"]
+                Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"]
 
-            axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
-            axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
-            axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
-            axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
-            axs1[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
-            axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
+                if len(Y_CPU_UTIL_DISK) < max_dstat_len:
+                    Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
+                if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
+                    Y_CPU_UTIL_CACHED.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_CACHED)))
+                if len(Y_GPU_UTIL_DISK) < max_nvidia_len:
+                    Y_GPU_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_DISK)))
+                if len(Y_GPU_UTIL_CACHED) < max_nvidia_len:
+                    Y_GPU_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_UTIL_CACHED)))
+                if len(Y_GPU_MEM_UTIL_DISK) < max_nvidia_len:
+                    Y_GPU_MEM_UTIL_DISK.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_DISK)))
+                if len(Y_GPU_MEM_UTIL_CACHED) < max_nvidia_len:
+                    Y_GPU_MEM_UTIL_CACHED.extend([0] * (max_nvidia_len - len(Y_GPU_MEM_UTIL_CACHED)))
+                if len(Y_IO_WAIT_LIST_DISK) < max_dstat_len:
+                    Y_IO_WAIT_LIST_DISK.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_DISK)))
+                if len(Y_IO_WAIT_LIST_CACHED) < max_dstat_len:
+                    Y_IO_WAIT_LIST_CACHED.extend([0] * (max_dstat_len - len(Y_IO_WAIT_LIST_CACHED)))
+                if len(Y_DATA_TIME_LIST) < max_itrs:
+                    Y_DATA_TIME_LIST.extend([0] * (max_itrs - len(Y_DATA_TIME_LIST)))
+                if len(Y_COMPUTE_TIME_FWD_LIST) < max_itrs:
+                    Y_COMPUTE_TIME_FWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_FWD_LIST)))
+                if len(Y_COMPUTE_TIME_BWD_LIST) < max_itrs:
+                    Y_COMPUTE_TIME_BWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_BWD_LIST)))
 
-            axs2[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_DISK, 0.2, label = instance)
-            axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
-            axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
-            axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
-            axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
-            axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
+                axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
+                axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+                axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+                axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
+                axs1[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
+                axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
 
-            #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
-            #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
-            #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
+                axs2[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_DISK, 0.2, label = instance)
+                axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
+                axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
-            xtra_space = 0            
+                #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
+                #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
+                #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
 
-            axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_DATA_TIME_LIST, 0.2, color = color[0]) 
-            axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
-            axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
+                xtra_space = 0
 
-            diff += 0.2
-            xtra_space += 0.05
+                axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_DATA_TIME_LIST, 0.2, color = color[0])
+                axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
+                axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
 
-        axs1[0,0].set_xticks(X_metrics_axis)
-        axs1[0,0].set_xticklabels(X)
-        axs1[0,0].set_xlabel("Metrics")
-        axs1[0,0].set_ylabel("Values")
-        axs1[0,0].set_title("Metric comparison cached")
-        axs1[0,0].legend()
+                diff += 0.2
+                xtra_space += 0.05
 
-        axs1[0,1].set_xlabel("Time")
-        axs1[0,1].set_ylabel("Percentage")
-        axs1[0,1].set_title("CPU utilization comparison cached")
-        axs1[0,1].legend()
+            axs1[0,0].set_xticks(X_metrics_axis)
+            axs1[0,0].set_xticklabels(X)
+            axs1[0,0].set_xlabel("Metrics")
+            axs1[0,0].set_ylabel("Values")
+            axs1[0,0].set_title("Metric comparison cached")
+            axs1[0,0].legend()
 
-        axs1[1,0].set_xlabel("Time")
-        axs1[1,0].set_ylabel("Percentage")
-        axs1[1,0].set_title("GPU utilization comparison cached")
-        axs1[1,0].legend()
+            axs1[0,1].set_xlabel("Time")
+            axs1[0,1].set_ylabel("Percentage")
+            axs1[0,1].set_title("CPU utilization comparison cached")
+            axs1[0,1].legend()
 
-        axs1[1,1].set_xlabel("Time")
-        axs1[1,1].set_ylabel("Percentage")
-        axs2[1,1].set_title("GPU memory utilization comparison cached")
-        axs1[1,1].legend()
+            axs1[1,0].set_xlabel("Time")
+            axs1[1,0].set_ylabel("Percentage")
+            axs1[1,0].set_title("GPU utilization comparison cached")
+            axs1[1,0].legend()
 
-        axs1[2,0].set_xticks(X_metrics_io_axis)
-        axs1[2,0].set_xticklabels(X_IO)
-        axs1[2,0].set_xlabel("Metrics")
-        axs1[2,0].set_ylabel("Values")
-        axs1[2,0].set_title("IO Metric comparison cached")
-        axs1[2,0].legend()
+            axs1[1,1].set_xlabel("Time")
+            axs1[1,1].set_ylabel("Percentage")
+            axs2[1,1].set_title("GPU memory utilization comparison cached")
+            axs1[1,1].legend()
 
-        axs1[2,1].set_xlabel("Time")
-        axs1[2,1].set_ylabel("Percentage")
-        axs1[2,1].set_title("IO wait percentage cached")
-        axs1[2,1].legend()
+            axs1[2,0].set_xticks(X_metrics_io_axis)
+            axs1[2,0].set_xticklabels(X_IO)
+            axs1[2,0].set_xlabel("Metrics")
+            axs1[2,0].set_ylabel("Values")
+            axs1[2,0].set_title("IO Metric comparison cached")
+            axs1[2,0].legend()
 
-        fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
-        fig1.savefig(result_dir + "/figures/cached_comparison - " + model)
+            axs1[2,1].set_xlabel("Time")
+            axs1[2,1].set_ylabel("Percentage")
+            axs1[2,1].set_title("IO wait percentage cached")
+            axs1[2,1].legend()
 
-        axs2[0,0].set_xticks(X_metrics_axis)
-        axs2[0,0].set_xticklabels(X)
-        axs2[0,0].set_xlabel("Metrics")
-        axs2[0,0].set_ylabel("Values")
-        axs2[0,0].set_title("Metric comparison cached")
-        axs2[0,0].legend()
+            fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
+            fig1.savefig(result_dir + "/figures/cached_comparison - " + model + "_batch-" + batch)
 
-        axs2[0,1].set_xlabel("Time")
-        axs2[0,1].set_ylabel("Percentage")
-        axs2[0,1].set_title("CPU utilization comparison cached")
-        axs2[0,1].legend()
+            axs2[0,0].set_xticks(X_metrics_axis)
+            axs2[0,0].set_xticklabels(X)
+            axs2[0,0].set_xlabel("Metrics")
+            axs2[0,0].set_ylabel("Values")
+            axs2[0,0].set_title("Metric comparison cached")
+            axs2[0,0].legend()
 
-        axs2[1,0].set_xlabel("Time")
-        axs2[1,0].set_ylabel("Percentage")
-        axs2[1,0].set_title("GPU utilization comparison cached")
-        axs2[1,0].legend()
+            axs2[0,1].set_xlabel("Time")
+            axs2[0,1].set_ylabel("Percentage")
+            axs2[0,1].set_title("CPU utilization comparison cached")
+            axs2[0,1].legend()
 
-        axs2[1,1].set_xlabel("Time")
-        axs2[1,1].set_ylabel("Percentage")
-        axs2[1,1].set_title("GPU memory utilization comparison cached")
-        axs2[1,1].legend()
+            axs2[1,0].set_xlabel("Time")
+            axs2[1,0].set_ylabel("Percentage")
+            axs2[1,0].set_title("GPU utilization comparison cached")
+            axs2[1,0].legend()
 
-        axs2[2,0].set_xticks(X_metrics_io_axis)
-        axs2[2,0].set_xticklabels(X_IO)
-        axs2[2,0].set_xlabel("Metrics")
-        axs2[2,0].set_ylabel("Values")
-        axs2[2,0].set_title("IO Metric comparison disk")
-        axs2[2,0].legend()
+            axs2[1,1].set_xlabel("Time")
+            axs2[1,1].set_ylabel("Percentage")
+            axs2[1,1].set_title("GPU memory utilization comparison cached")
+            axs2[1,1].legend()
 
-        axs2[2,1].set_xlabel("Time")
-        axs2[2,1].set_ylabel("Percentage")
-        axs2[2,1].set_title("io wait percentage disk")
-        axs2[2,1].legend()
+            axs2[2,0].set_xticks(X_metrics_io_axis)
+            axs2[2,0].set_xticklabels(X_IO)
+            axs2[2,0].set_xlabel("Metrics")
+            axs2[2,0].set_ylabel("Values")
+            axs2[2,0].set_title("IO Metric comparison disk")
+            axs2[2,0].legend()
 
-        fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
-        fig2.savefig(result_dir + "/figures/disk_comparison - " + model)
+            axs2[2,1].set_xlabel("Time")
+            axs2[2,1].set_ylabel("Percentage")
+            axs2[2,1].set_title("io wait percentage disk")
+            axs2[2,1].legend()
 
-        """
-        axs3[0].set_xlabel("Iterations")
-        axs3[0].set_ylabel("Avg Time (seconds)")
-        axs3[0].set_title("Data load time comparison")
-        axs3[0].legend()
+            fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
+            fig2.savefig(result_dir + "/figures/disk_comparison - " + model + "_batch-" + batch)
 
-        axs3[1].set_xlabel("Iterations")
-        axs3[1].set_ylabel("Fwd Propogation Time (seconds)")
-        axs3[1].set_title("Fwd Propgation time comparison")
-        axs3[1].legend()
+            """
+            axs3[0].set_xlabel("Iterations")
+            axs3[0].set_ylabel("Avg Time (seconds)")
+            axs3[0].set_title("Data load time comparison")
+            axs3[0].legend()
 
-        axs3[2].set_xlabel("Iterations")
-        axs3[2].set_ylabel("Bwd Propogation Time (seconds)")
-        axs3[2].set_title("Bwd Propgation time comparison")
-        axs3[2].legend()
-        """
+            axs3[1].set_xlabel("Iterations")
+            axs3[1].set_ylabel("Fwd Propogation Time (seconds)")
+            axs3[1].set_title("Fwd Propgation time comparison")
+            axs3[1].legend()
 
-        axs3.set_xlabel("Iterations")
-        axs3.set_ylabel("Avg Time (seconds)")
-        axs3.set_title("Data load time comparison")
-        axs3.legend()
+            axs3[2].set_xlabel("Iterations")
+            axs3[2].set_ylabel("Bwd Propogation Time (seconds)")
+            axs3[2].set_title("Bwd Propgation time comparison")
+            axs3[2].legend()
+            """
+
+            axs3.set_xlabel("Iterations")
+            axs3.set_ylabel("Avg Time (seconds)")
+            axs3.set_title("Data load time comparison")
+            axs3.legend()
 
 
-        fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
-        fig3.savefig(result_dir + "/figures/itr_time_comparison - " + model)
+            fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
+            fig3.savefig(result_dir + "/figures/itr_time_comparison - " + model + "_batch-" + batch)
+
+            plt.close('all')
 
 #        plt.show()
 
@@ -773,8 +786,8 @@ def main():
                             process_csv(model, instance, batch, csv_path)
         itr += 1
 
-    compare_instances(result_dir)
-#    compare_models()
+#    compare_instances(result_dir)
+    compare_models(result_dir)
 
 
 if __name__ == "__main__":
