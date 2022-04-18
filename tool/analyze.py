@@ -261,24 +261,24 @@ def compare_instances(result_dir):
                 Y_COMPUTE_BWD_TIME = [stats[model][gpu][batch]["COMPUTE_BWD_TIME"]
                                       if "COMPUTE_BWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
 
-                axs1[0].bar(X_axis-0.2 + diff, Y_PREP_STALL_PCT, 0.2, label = instance)
-                axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label = instance)
+                axs1[0].bar(X_axis-0.2 + diff, Y_PREP_STALL_PCT, 0.2, label=instance)
+                axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label=instance)
                 add_text(X_axis-0.25 + diff, Y_PREP_STALL_PCT, axs1[0])
                 add_text(X_axis-0.25 + diff, Y_FETCH_STALL_PCT, axs1[1])
 
                 if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                    axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label = instance)
+                    axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
                     add_text(X_axis-0.25 + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
 
-                axs2[0].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_DISK, 0.2, label = instance)
-                axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label = instance)
-                axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label = instance)
+                axs2[0].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
+                axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
+                axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label=instance)
                 add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_DISK, axs2[0])
                 add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_CACHED, axs2[1])
                 add_text(X_axis-0.25 + diff, Y_DISK_THR, axs2[2])
 
-                axs8[0].bar(X_axis-0.2 + diff, Y_COST_DISK, 0.2, label = instance)
-                axs8[1].bar(X_axis-0.2 + diff, Y_COST_CACHED, 0.2, label = instance)
+                axs8[0].bar(X_axis-0.2 + diff, Y_COST_DISK, 0.2, label=instance)
+                axs8[1].bar(X_axis-0.2 + diff, Y_COST_CACHED, 0.2, label=instance)
                 add_text(X_axis-0.25 + diff, Y_COST_DISK, axs2[0])
                 add_text(X_axis-0.25 + diff, Y_COST_CACHED, axs2[1])
 
@@ -470,31 +470,29 @@ def compare_instances(result_dir):
             fig7.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
+            plt.show()
             plt.close('all')
 
         desc_i += 1
 
 
-#    plt.show()
 
 def compare_models(result_dir):
 
     models = list(stats.keys())
-    max_dstat_len = 0
-    max_nvidia_len = 0
-    max_itrs = 0
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read Write", "IOWait"]
     X_ITR = ["Data time", "Fwd Prop Time", "Bwd Prop Time"]
-    styles = ['r--', 'b--']
-    colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple']]
-
-#    models = ["alexnet"]
+    styles = ['r--', 'b--', 'g--']
+    colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple'], ['green', 'red', 'blue']]
 
     for model in models:
 
         for batch in BATCH_SIZES:
+            max_dstat_len = 0
+            max_nvidia_len = 0
+            max_itrs = 0
 
             for instance in instances:
                 gpu = gpu_map[instance]
@@ -559,35 +557,35 @@ def compare_models(result_dir):
 
                 print(model, gpu, batch)
 
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["DISK_THR"])
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["TRAIN_SPEED_DISK"])
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["MEM_DISK"])
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["PCACHE_DISK"])
-                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"])
-                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"])
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["DISK_THR"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["TRAIN_SPEED_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["MEM_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][gpu][batch]["PCACHE_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
 
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["DISK_THR"])
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["TRAIN_SPEED_CACHED"])
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["MEM_CACHED"])
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["PCACHE_CACHED"])
-                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"])
-                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"])
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["DISK_THR"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["MEM_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][gpu][batch]["PCACHE_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
 
-                Y_CPU_UTIL_DISK = stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"]
-                Y_CPU_UTIL_CACHED = stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"]
+                Y_CPU_UTIL_DISK = stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_CPU_UTIL_CACHED = stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
-                Y_GPU_UTIL_DISK = stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"]
-                Y_GPU_UTIL_CACHED = stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]
+                Y_GPU_UTIL_DISK = stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_GPU_UTIL_CACHED = stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
-                Y_GPU_MEM_UTIL_DISK = stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_LIST"]
-                Y_GPU_MEM_UTIL_CACHED = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_LIST"]
+                Y_GPU_MEM_UTIL_DISK = stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_GPU_MEM_UTIL_CACHED = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
-                Y_IO_WAIT_LIST_DISK = stats[model][gpu][batch]["IO_WAIT_LIST_DISK"]
-                Y_IO_WAIT_LIST_CACHED = stats[model][gpu][batch]["IO_WAIT_LIST_CACHED"]
+                Y_IO_WAIT_LIST_DISK = stats[model][gpu][batch]["IO_WAIT_LIST_DISK"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_IO_WAIT_LIST_CACHED = stats[model][gpu][batch]["IO_WAIT_LIST_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else []
 
-                Y_DATA_TIME_LIST = stats[model][gpu][batch]["DATA_TIME_LIST"]
-                Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"]
-                Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"]
+                Y_DATA_TIME_LIST = stats[model][gpu][batch]["DATA_TIME_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
@@ -630,14 +628,12 @@ def compare_models(result_dir):
                 #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
                 #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
 
-                xtra_space = 0
-
-                axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_DATA_TIME_LIST, 0.2, color = color[0])
-                axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
-                axs3.bar(X_itrs_axis - 0.2 + diff + xtra_space, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
-
+                """
+                axs3.bar(X_itrs_axis - 0.2 + diff, Y_DATA_TIME_LIST, 0.2, color = color[0])
+                axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
+                axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
+                """
                 diff += 0.2
-                xtra_space += 0.05
 
             axs1[0,0].set_xticks(X_metrics_axis)
             axs1[0,0].set_xticklabels(X)
@@ -728,17 +724,17 @@ def compare_models(result_dir):
             axs3[2].set_ylabel("Bwd Propogation Time (seconds)")
             axs3[2].set_title("Bwd Propgation time comparison")
             axs3[2].legend()
-            """
 
             axs3.set_xlabel("Iterations")
             axs3.set_ylabel("Avg Time (seconds)")
             axs3.set_title("Data load time comparison")
             axs3.legend()
 
-
             fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
             fig3.savefig(result_dir + "/figures/itr_time_comparison - " + model + "_batch-" + batch)
+            """
 
+            plt.show()
             plt.close('all')
 
 #        plt.show()
