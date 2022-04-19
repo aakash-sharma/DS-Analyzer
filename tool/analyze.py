@@ -483,9 +483,12 @@ def compare_models(result_dir):
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read Write", "IOWait"]
-    X_ITR = ["Data time", "Fwd Prop Time", "Bwd Prop Time"]
+    X_BAT = ['Batch-'+ batch for batch in BATCH_SIZES]
     styles = ['r--', 'b--', 'g--']
     colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple'], ['green', 'red', 'blue']]
+
+    fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
+    X_BAT_axis = np.arange(len(BATCH_SIZES))
 
     for model in models:
 
@@ -519,13 +522,11 @@ def compare_models(result_dir):
 
             fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
             fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
-            fig3, axs3 = plt.subplots(figsize=(60,40))
 
             X_dstat_axis = np.arange(max_dstat_len)
             X_nvidia_axis = np.arange(max_nvidia_len)
             X_metrics_axis = np.arange(len(X))
             X_metrics_io_axis = np.arange(len(X_IO))
-            X_itrs_axis = np.arange(max_itrs)
             diff = 0
             idx = 0
 
@@ -587,6 +588,9 @@ def compare_models(result_dir):
                 Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
                 Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
+                Y_GPU_UTIL_CACHED_PCT = stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
+                Y_GPU_MEM_UTIL_CACHED_PCT = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
+
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
                 if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
@@ -624,15 +628,17 @@ def compare_models(result_dir):
                 axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
                 axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
+                axs3[0,0].bar(X_BAT - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
+                axs3[0,1].bar(X_BAT - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
                 #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
                 #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
                 #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
 
-                """
-                axs3.bar(X_itrs_axis - 0.2 + diff, Y_DATA_TIME_LIST, 0.2, color = color[0])
-                axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
-                axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
-                """
+
+                #axs3.bar(X_itrs_axis - 0.2 + diff, Y_DATA_TIME_LIST, 0.2, color = color[0])
+                #axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
+                #axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
+
                 diff += 0.2
 
             axs1[0,0].set_xticks(X_metrics_axis)
@@ -709,35 +715,28 @@ def compare_models(result_dir):
             fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
             fig2.savefig(result_dir + "/figures/disk_comparison - " + model + "_batch-" + batch)
 
-            """
-            axs3[0].set_xlabel("Iterations")
-            axs3[0].set_ylabel("Avg Time (seconds)")
-            axs3[0].set_title("Data load time comparison")
-            axs3[0].legend()
-
-            axs3[1].set_xlabel("Iterations")
-            axs3[1].set_ylabel("Fwd Propogation Time (seconds)")
-            axs3[1].set_title("Fwd Propgation time comparison")
-            axs3[1].legend()
-
-            axs3[2].set_xlabel("Iterations")
-            axs3[2].set_ylabel("Bwd Propogation Time (seconds)")
-            axs3[2].set_title("Bwd Propgation time comparison")
-            axs3[2].legend()
-
-            axs3.set_xlabel("Iterations")
-            axs3.set_ylabel("Avg Time (seconds)")
-            axs3.set_title("Data load time comparison")
-            axs3.legend()
-
-            fig3.suptitle("Iteration time compare - " + model , fontsize=20, fontweight ="bold")
-            fig3.savefig(result_dir + "/figures/itr_time_comparison - " + model + "_batch-" + batch)
-            """
-
-            plt.show()
+            #plt.show()
             plt.close('all')
 
-#        plt.show()
+
+        axs3[0, 0].set_xticks(X_BAT_axis)
+        axs3[0, 0].set_xticklabels(X_BAT)
+        axs3[0, 0].set_xlabel("Batch size")
+        axs3[0, 0].set_ylabel("Percentage")
+        axs3[0, 0].set_title("GPU utilization")
+        axs3[0, 0].legend()
+
+        axs3[0, 1].set_xticks(X_BAT_axis)
+        axs3[0, 1].set_xticklabels(X_BAT)
+        axs3[0, 1].set_xlabel("Batch size")
+        axs3[0, 1].set_ylabel("Percentage")
+        axs3[0, 1].set_title("GPU memory utilization")
+        axs3[0, 1].legend()
+
+        fig3.suptitle("GPU utilization - " + model, fontsize=20, fontweight="bold")
+        fig3.savefig(result_dir + "/figures/gpu_util_batch_compare - " + model + "_batch-" + batch)
+
+        plt.show()
 
 
 def main():
