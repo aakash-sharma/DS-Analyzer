@@ -492,10 +492,16 @@ def compare_models(result_dir):
 
     for model in models:
 
+        Y_GPU_UTIL_CACHED_PCT_LIST = []
+        Y_GPU_MEM_UTIL_CACHED_PCT_LIST = []
+        batch_i = 0
         for batch in BATCH_SIZES:
             max_dstat_len = 0
             max_nvidia_len = 0
             max_itrs = 0
+
+            Y_GPU_UTIL_CACHED_PCT_LIST.append([])
+            Y_GPU_MEM_UTIL_CACHED_PCT_LIST.append([])
 
             for instance in instances:
                 gpu = gpu_map[instance]
@@ -538,7 +544,6 @@ def compare_models(result_dir):
 
                 style = styles[idx]
                 color = colors[idx]
-                idx += 1
 
                 """
                 if instance == "p2.xlarge":
@@ -555,6 +560,8 @@ def compare_models(result_dir):
                 Y_METRICS_CACHED = []
                 Y_METRICS_IO_DISK = []
                 Y_METRICS_IO_CACHED = []
+                Y_GPU_UTIL_CACHED_PCT_LIST[batch_i].append([])
+                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[batch_i].append([])
 
                 print(model, gpu, batch)
 
@@ -588,8 +595,8 @@ def compare_models(result_dir):
                 Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
                 Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
-                Y_GPU_UTIL_CACHED_PCT = stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
-                Y_GPU_MEM_UTIL_CACHED_PCT = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
+                Y_GPU_UTIL_CACHED_PCT_LIST[batch_i][idx].append(stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0)
+                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[batch_i][idx].append(stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0)
 
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
@@ -628,8 +635,6 @@ def compare_models(result_dir):
                 axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
                 axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
-                axs3[0,0].bar(X_BAT - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
-                axs3[0,1].bar(X_BAT - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
                 #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
                 #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
                 #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
@@ -640,6 +645,7 @@ def compare_models(result_dir):
                 #axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
 
                 diff += 0.2
+                idx += 1
 
             axs1[0,0].set_xticks(X_metrics_axis)
             axs1[0,0].set_xticklabels(X)
@@ -660,7 +666,7 @@ def compare_models(result_dir):
 
             axs1[1,1].set_xlabel("Time")
             axs1[1,1].set_ylabel("Percentage")
-            axs2[1,1].set_title("GPU memory utilization comparison cached")
+            axs1[1,1].set_title("GPU memory utilization comparison cached")
             axs1[1,1].legend()
 
             axs1[2,0].set_xticks(X_metrics_io_axis)
@@ -675,8 +681,8 @@ def compare_models(result_dir):
             axs1[2,1].set_title("IO wait percentage cached")
             axs1[2,1].legend()
 
-            fig1.suptitle("Cached comparison - " + model , fontsize=20, fontweight ="bold")
-            fig1.savefig(result_dir + "/figures/cached_comparison - " + model + "_batch-" + batch)
+            fig1.suptitle("Cached comparison- " + model, fontsize=20, fontweight ="bold")
+            fig1.savefig(result_dir + "/figures/cached_comparison-" + model + "_batch-" + batch)
 
             axs2[0,0].set_xticks(X_metrics_axis)
             axs2[0,0].set_xticklabels(X)
@@ -712,31 +718,40 @@ def compare_models(result_dir):
             axs2[2,1].set_title("io wait percentage disk")
             axs2[2,1].legend()
 
-            fig2.suptitle("Disk comparison - " + model , fontsize=20, fontweight ="bold")
-            fig2.savefig(result_dir + "/figures/disk_comparison - " + model + "_batch-" + batch)
+            fig2.suptitle("Disk comparison - " + model, fontsize=20, fontweight ="bold")
+            fig2.savefig(result_dir + "/figures/disk_comparison-" + model + "_batch-" + batch)
+
+            batch_i += 1
 
             #plt.show()
-            plt.close('all')
+            #plt.close('all')
 
+        diff = 0
+        for i in range(len(instances)):
+            for j in range(len(BATCH_SIZES)):
+                axs3[0].bar(X_BAT_axis - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[j], 0.2, label=instances[i])
+                axs3[1].bar(X_BAT_axis - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[j], 0.2, label=instances[i])
+                diff += 0.2
 
-        axs3[0, 0].set_xticks(X_BAT_axis)
-        axs3[0, 0].set_xticklabels(X_BAT)
-        axs3[0, 0].set_xlabel("Batch size")
-        axs3[0, 0].set_ylabel("Percentage")
-        axs3[0, 0].set_title("GPU utilization")
-        axs3[0, 0].legend()
+        axs3[0].set_xticks(X_BAT_axis)
+        axs3[0].set_xticklabels(X_BAT)
+        axs3[0].set_xlabel("Batch size")
+        axs3[0].set_ylabel("Percentage")
+        axs3[0].set_title("GPU utilization")
+        axs3[0].legend()
 
-        axs3[0, 1].set_xticks(X_BAT_axis)
-        axs3[0, 1].set_xticklabels(X_BAT)
-        axs3[0, 1].set_xlabel("Batch size")
-        axs3[0, 1].set_ylabel("Percentage")
-        axs3[0, 1].set_title("GPU memory utilization")
-        axs3[0, 1].legend()
+        axs3[1].set_xticks(X_BAT_axis)
+        axs3[1].set_xticklabels(X_BAT)
+        axs3[1].set_xlabel("Batch size")
+        axs3[1].set_ylabel("Percentage")
+        axs3[1].set_title("GPU memory utilization")
+        axs3[1].legend()
 
-        fig3.suptitle("GPU utilization - " + model, fontsize=20, fontweight="bold")
-        fig3.savefig(result_dir + "/figures/gpu_util_batch_compare - " + model + "_batch-" + batch)
+        fig3.suptitle("GPU utilization-" + model, fontsize=20, fontweight="bold")
+        #fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model + "_batch-" + batch)
 
         plt.show()
+        break
 
 
 def main():
