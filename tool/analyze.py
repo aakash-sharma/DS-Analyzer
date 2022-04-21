@@ -470,7 +470,7 @@ def compare_instances(result_dir):
             fig7.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
-            plt.show()
+    #        plt.show()
             plt.close('all')
 
         desc_i += 1
@@ -487,25 +487,21 @@ def compare_models(result_dir):
     styles = ['r--', 'b--', 'g--']
     colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple'], ['green', 'red', 'blue']]
 
-    fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
     X_BAT_axis = np.arange(len(BATCH_SIZES))
 
     for model in models:
 
+        fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
         Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         batch_i = 0
-
-        print("l1")
 
         for batch in BATCH_SIZES:
             max_dstat_len = 0
             max_nvidia_len = 0
             max_itrs = 0
 
-            print("l2")
             for instance in instances:
-                print("l3")
                 gpu = gpu_map[instance]
                 if gpu not in stats[model]:
                     del stats[model]
@@ -528,7 +524,6 @@ def compare_models(result_dir):
                 max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]))
                 max_itrs = max(max_itrs, len(stats[model][gpu][batch]["DATA_TIME_LIST"]))
 
-            print("l4")
             fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
             fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
 
@@ -541,12 +536,10 @@ def compare_models(result_dir):
 
             for instance in instances:
 
-                print("l5")
                 gpu = gpu_map[instance]
-                print(gpu)
                 if gpu not in stats[model]:
-                    print("l6")
-                    continue
+                    stats[model][gpu][batch] = {}
+
 
                 style = styles[idx]
                 color = colors[idx]
@@ -625,7 +618,7 @@ def compare_models(result_dir):
                 if len(Y_COMPUTE_TIME_BWD_LIST) < max_itrs:
                     Y_COMPUTE_TIME_BWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_BWD_LIST)))
 
-                axs1[0,0].bar(X_metrics_axis -0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
+                axs1[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
                 axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
                 axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
                 axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
@@ -636,7 +629,7 @@ def compare_models(result_dir):
                 axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
                 axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
                 axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
-                axs2[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
+                axs2[2,0].bar(X_metrics_io_axis - 0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
                 axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
                 #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
@@ -748,7 +741,7 @@ def compare_models(result_dir):
         axs3[1].legend()
 
         fig3.suptitle("GPU utilization-" + model, fontsize=20, fontweight="bold")
-        fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model + "_batch-" + batch)
+        fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model)
 
         #plt.show()
 
@@ -795,7 +788,7 @@ def main():
                             process_csv(model, instance, batch, csv_path)
         itr += 1
 
-#    compare_instances(result_dir)
+    compare_instances(result_dir)
     compare_models(result_dir)
 
 
