@@ -492,18 +492,20 @@ def compare_models(result_dir):
 
     for model in models:
 
-        Y_GPU_UTIL_CACHED_PCT_LIST = []
-        Y_GPU_MEM_UTIL_CACHED_PCT_LIST = []
+        Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
+        Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         batch_i = 0
+
+        print("l1")
+
         for batch in BATCH_SIZES:
             max_dstat_len = 0
             max_nvidia_len = 0
             max_itrs = 0
 
-            Y_GPU_UTIL_CACHED_PCT_LIST.append([])
-            Y_GPU_MEM_UTIL_CACHED_PCT_LIST.append([])
-
+            print("l2")
             for instance in instances:
+                print("l3")
                 gpu = gpu_map[instance]
                 if gpu not in stats[model]:
                     del stats[model]
@@ -526,6 +528,7 @@ def compare_models(result_dir):
                 max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]))
                 max_itrs = max(max_itrs, len(stats[model][gpu][batch]["DATA_TIME_LIST"]))
 
+            print("l4")
             fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
             fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
 
@@ -538,8 +541,11 @@ def compare_models(result_dir):
 
             for instance in instances:
 
+                print("l5")
                 gpu = gpu_map[instance]
+                print(gpu)
                 if gpu not in stats[model]:
+                    print("l6")
                     continue
 
                 style = styles[idx]
@@ -560,8 +566,6 @@ def compare_models(result_dir):
                 Y_METRICS_CACHED = []
                 Y_METRICS_IO_DISK = []
                 Y_METRICS_IO_CACHED = []
-                Y_GPU_UTIL_CACHED_PCT_LIST[batch_i].append([])
-                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[batch_i].append([])
 
                 print(model, gpu, batch)
 
@@ -595,9 +599,9 @@ def compare_models(result_dir):
                 Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
                 Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
 
-                Y_GPU_UTIL_CACHED_PCT_LIST[batch_i][idx].append(stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0)
-                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[batch_i][idx].append(stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0)
-
+                Y_GPU_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
+                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
+                
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
                 if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
@@ -723,15 +727,11 @@ def compare_models(result_dir):
 
             batch_i += 1
 
-            #plt.show()
-            #plt.close('all')
-
         diff = 0
         for i in range(len(instances)):
-            for j in range(len(BATCH_SIZES)):
-                axs3[0].bar(X_BAT_axis - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[j], 0.2, label=instances[i])
-                axs3[1].bar(X_BAT_axis - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[j], 0.2, label=instances[i])
-                diff += 0.2
+            axs3[0].bar(X_BAT_axis - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
+            axs3[1].bar(X_BAT_axis - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
+            diff += 0.2
 
         axs3[0].set_xticks(X_BAT_axis)
         axs3[0].set_xticklabels(X_BAT)
@@ -748,10 +748,9 @@ def compare_models(result_dir):
         axs3[1].legend()
 
         fig3.suptitle("GPU utilization-" + model, fontsize=20, fontweight="bold")
-        #fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model + "_batch-" + batch)
+        fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model + "_batch-" + batch)
 
-        plt.show()
-        break
+        #plt.show()
 
 
 def main():
