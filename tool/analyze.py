@@ -165,7 +165,7 @@ def process_csv(model, instance, batch, csv_path):
 
 def add_text(X, Y, axs):
     for idx, value in enumerate(X):
-        axs.text(value, Y[idx]+2, str(int(Y[idx])))
+        axs.text(value, Y[idx]+2, str(int(Y[idx])), fontsize=20)
 
 def compare_instances(result_dir):
 
@@ -188,6 +188,9 @@ def compare_instances(result_dir):
     X_large = ['resnet50', 'vgg11']
     desc = ["-Small_models", "-Large_models"]
     desc_i = 0
+
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
 
     for X in [X_small, X_large]:
 
@@ -723,7 +726,9 @@ def compare_models(result_dir):
         diff = 0
         for i in range(len(instances)):
             axs3[0].bar(X_BAT_axis - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
+            add_text(X_BAT_axis - 0.25 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
             axs3[1].bar(X_BAT_axis - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
+            add_text(X_BAT_axis - 0.25 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], axs3[1])
             diff += 0.2
 
         axs3[0].set_xticks(X_BAT_axis)
