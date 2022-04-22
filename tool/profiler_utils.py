@@ -26,7 +26,7 @@ class SuppressStream(object):
 
     def close(self):
         os.close(self.orig_stream_fileno)
-        os.dup2(self.orig_stream_dup, self.orig_stream_fileno)
+        #os.dup2(self.orig_stream_dup, self.orig_stream_fileno)
         os.close(self.orig_stream_dup)
         self.devnull.close()
 
