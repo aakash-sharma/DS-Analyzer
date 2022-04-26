@@ -29,7 +29,7 @@ def main():
             for model_path in model_paths:
                 model = model_path.split('/')[-1]
                 os.chdir(model_path)
-                os.system("mv jobs-1/ batch_size-" + str(batch_sizes[model]))
+                os.system("mv jobs-1 batch_size-" + str(batch_sizes[model]))
                 continue
                 model_path_ = model_path + "/" + "batch_size-" + str(batch_sizes[model])
                 gpu_paths = [os.path.join(model_path_, o) for o in os.listdir(model_path_) ]
