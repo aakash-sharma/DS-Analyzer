@@ -10,6 +10,7 @@ import glob
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 BATCH_SIZES = ['64', '128', '256', '512']
+FONTSIZE = 20
 
 gpu_map = {
         "p2.xlarge" : "K80-1",
@@ -89,6 +90,8 @@ def process_json2(model, instance, batch, json_path):
     stats[model][gpu][batch]["IO_WAIT_DISK"] = dagJson["RUN2"]["IO_WAIT"]
     stats[model][gpu][batch]["READ_WRITE_CACHED"] = dagJson["RUN3"]["READ"] + dagJson["RUN3"]["WRITE"]
     stats[model][gpu][batch]["IO_WAIT_CACHED"] = dagJson["RUN3"]["IO_WAIT"]
+    stats[model][gpu][batch]["COST_DISK"] = stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance] / 3600
+    stats[model][gpu][batch]["COST_CACHED"] = stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
 
     stats[model][gpu][batch]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
     stats[model][gpu][batch]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
@@ -165,7 +168,7 @@ def process_csv(model, instance, batch, csv_path):
 
 def add_text(X, Y, axs):
     for idx, value in enumerate(X):
-        axs.text(value, Y[idx]+2, str(int(Y[idx])), fontsize=20)
+        axs.text(value, Y[idx]+2, str(int(Y[idx])), fontsize=FONTSIZE)
 
 def compare_instances(result_dir):
 
@@ -189,8 +192,8 @@ def compare_instances(result_dir):
     desc = ["-Small_models", "-Large_models"]
     desc_i = 0
 
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    plt.xticks(fontsize=FONTSIZE)
+    plt.yticks(fontsize=FONTSIZE)
 
     for X in [X_small, X_large]:
 
@@ -226,10 +229,10 @@ def compare_instances(result_dir):
                 Y_TRAIN_TIME_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"]
                                        if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
 
-                Y_COST_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance]  / 3600
-                               if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X]
-                Y_COST_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
-                                 if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COST_DISK = [stats[model][gpu][batch]["COST_DISK"]
+                               if "COST_DISK" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COST_CACHED = [stats[model][gpu][batch]["COST_CACHED"]
+                                 if "COST_CACHED" in stats[model][gpu][batch] else 0 for model in X]
 
                 Y_DISK_THR = [stats[model][gpu][batch]["DISK_THR"]
                               if "DISK_THR" in stats[model][gpu][batch] else 0 for model in X]
@@ -320,157 +323,157 @@ def compare_instances(result_dir):
                 diff += 0.2
 
             axs1[0].set_xticks(X_axis)
-            axs1[0].set_xticklabels(X, fontsize=20)
-            axs1[0].set_xlabel("Models", fontsize=20)
-            axs1[0].set_ylabel("Percentage", fontsize=20)
-            axs1[0].set_title("Prep stall comparison", fontsize=20)
-            axs1[0].legend(fontsize=20)
+            axs1[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs1[0].set_xlabel("Models", fontsize=FONTSIZE)
+            axs1[0].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[0].set_title("Prep stall comparison", fontsize=FONTSIZE)
+            axs1[0].legend(fontsize=FONTSIZE)
 
             axs1[1].set_xticks(X_axis)
-            axs1[1].set_xticklabels(X, fontsize=20)
-            axs1[1].set_xlabel("Models", fontsize=20)
-            axs1[1].set_ylabel("Percentage", fontsize=20)
-            axs1[1].set_title("Fetch stall comparison", fontsize=20)
-            axs1[1].legend(fontsize=20)
+            axs1[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs1[1].set_xlabel("Models", fontsize=FONTSIZE)
+            axs1[1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[1].set_title("Fetch stall comparison", fontsize=FONTSIZE)
+            axs1[1].legend(fontsize=FONTSIZE)
 
             axs1[2].set_xticks(X_axis)
-            axs1[2].set_xticklabels(X, fontsize=20)
-            axs1[2].set_xlabel("Models", fontsize=20)
-            axs1[2].set_ylabel("Percentage", fontsize=20)
-            axs1[2].set_title("Interconnect stall comparison", fontsize=20)
-            axs1[2].legend(fontsize=20)
+            axs1[2].set_xticklabels(X, fontsize=FONTSIZE)
+            axs1[2].set_xlabel("Models", fontsize=FONTSIZE)
+            axs1[2].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[2].set_title("Interconnect stall comparison", fontsize=FONTSIZE)
+            axs1[2].legend(fontsize=FONTSIZE)
 
-            fig1.suptitle("Stall comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig1.suptitle("Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i])
     
             axs2[0].set_xticks(X_axis)
-            axs2[0].set_xticklabels(X, fontsize=20)
-            axs2[0].set_ylabel("Time", fontsize=20)
-            axs2[0].set_title("Training time disk comparison", fontsize=20)
-            axs2[0].legend(fontsize=20)
+            axs2[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs2[0].set_ylabel("Time", fontsize=FONTSIZE)
+            axs2[0].set_title("Training time disk comparison", fontsize=FONTSIZE)
+            axs2[0].legend(fontsize=FONTSIZE)
 
             axs2[1].set_xticks(X_axis)
-            axs2[1].set_xticklabels(X, fontsize=20)
-            axs2[1].set_ylabel("Time", fontsize=20)
-            axs2[1].set_title("Training time cached comparison", fontsize=20)
-            axs2[1].legend(fontsize=20)
+            axs2[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs2[1].set_ylabel("Time", fontsize=FONTSIZE)
+            axs2[1].set_title("Training time cached comparison", fontsize=FONTSIZE)
+            axs2[1].legend(fontsize=FONTSIZE)
 
             axs2[2].set_xticks(X_axis)
-            axs2[2].set_xticklabels(X, fontsize=20)
-            axs2[2].set_ylabel("Throughput", fontsize=20)
-            axs2[2].set_title("Disk throughput comparison", fontsize=20)
-            axs2[2].legend(fontsize=20)
+            axs2[2].set_xticklabels(X, fontsize=FONTSIZE)
+            axs2[2].set_ylabel("Throughput", fontsize=FONTSIZE)
+            axs2[2].set_title("Disk throughput comparison", fontsize=FONTSIZE)
+            axs2[2].legend(fontsize=FONTSIZE)
 
-            fig2.suptitle("Training time comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig2.suptitle("Training time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig2.savefig(result_dir + "/figures/training_time_batch-" + batch + desc[desc_i])
 
             axs8[0].set_xticks(X_axis)
-            axs8[0].set_xticklabels(X, fontsize=20)
-            axs8[0].set_ylabel("Dollar cost", fontsize=20)
-            axs8[0].set_title("Training cost disk comparison", fontsize=20)
-            axs8[0].legend(fontsize=20)
+            axs8[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs8[0].set_ylabel("Dollar cost", fontsize=FONTSIZE)
+            axs8[0].set_title("Training cost disk comparison", fontsize=FONTSIZE)
+            axs8[0].legend(fontsize=FONTSIZE)
 
             axs8[1].set_xticks(X_axis)
-            axs8[1].set_xticklabels(X, fontsize=20)
-            axs8[1].set_ylabel("Dollar cost", fontsize=20)
-            axs8[1].set_title("Training cost cached comparison", fontsize=20)
-            axs8[1].legend(fontsize=20)
+            axs8[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs8[1].set_ylabel("Dollar cost", fontsize=FONTSIZE)
+            axs8[1].set_title("Training cost cached comparison", fontsize=FONTSIZE)
+            axs8[1].legend(fontsize=FONTSIZE)
 
-            fig8.suptitle("Training cost comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig8.suptitle("Training cost comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i])
 
             axs3[0].set_xticks(X_axis)
-            axs3[0].set_xticklabels(X, fontsize=20)
-            axs3[0].set_ylabel("Samples/sec", fontsize=20)
-            axs3[0].set_title("Training speed ingestion comparison", fontsize=20)
-            axs3[0].legend(fontsize=20)
+            axs3[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs3[0].set_ylabel("Samples/sec", fontsize=FONTSIZE)
+            axs3[0].set_title("Training speed ingestion comparison", fontsize=FONTSIZE)
+            axs3[0].legend(fontsize=FONTSIZE)
 
             axs3[1].set_xticks(X_axis)
-            axs3[1].set_xticklabels(X, fontsize=20)
-            axs3[1].set_ylabel("Samples/sec", fontsize=20)
-            axs3[1].set_title("Training speed disk comparison", fontsize=20)
-            axs3[1].legend(fontsize=20)
+            axs3[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs3[1].set_ylabel("Samples/sec", fontsize=FONTSIZE)
+            axs3[1].set_title("Training speed disk comparison", fontsize=FONTSIZE)
+            axs3[1].legend(fontsize=FONTSIZE)
 
             axs3[2].set_xticks(X_axis)
-            axs3[2].set_xticklabels(X, fontsize=20)
-            axs3[2].set_ylabel("Samples/sec", fontsize=20)
-            axs3[2].set_title("Training speed cached comparison", fontsize=20)
-            axs3[2].legend(fontsize=20)
+            axs3[2].set_xticklabels(X, fontsize=FONTSIZE)
+            axs3[2].set_ylabel("Samples/sec", fontsize=FONTSIZE)
+            axs3[2].set_title("Training speed cached comparison", fontsize=FONTSIZE)
+            axs3[2].legend(fontsize=FONTSIZE)
 
-            fig3.suptitle("Training speed comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig3.suptitle("Training speed comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig3.savefig(result_dir + "/figures/training_speed_batch-" + batch + desc[desc_i])
 
             axs4[0].set_xticks(X_axis)
-            axs4[0].set_xticklabels(X, fontsize=20)
-            axs4[0].set_ylabel("Average CPU utilization", fontsize=20)
-            axs4[0].set_title("CPU utilization comparison", fontsize=20)
-            axs4[0].legend(fontsize=20)
+            axs4[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs4[0].set_ylabel("Average CPU utilization", fontsize=FONTSIZE)
+            axs4[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
+            axs4[0].legend(fontsize=FONTSIZE)
 
             axs4[1].set_xticks(X_axis)
-            axs4[1].set_xticklabels(X, fontsize=20)
-            axs4[1].set_ylabel("Average GPU utilization", fontsize=20)
-            axs4[1].set_title("GPU utilization comparison", fontsize=20)
-            axs4[1].legend(fontsize=20)
+            axs4[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs4[1].set_ylabel("Average GPU utilization", fontsize=FONTSIZE)
+            axs4[1].set_title("GPU utilization comparison", fontsize=FONTSIZE)
+            axs4[1].legend(fontsize=FONTSIZE)
 
             axs4[2].set_xticks(X_axis)
-            axs4[2].set_xticklabels(X, fontsize=20)
-            axs4[2].set_ylabel("Average GPU memory utilization", fontsize=20)
-            axs4[2].set_title("GPU memory utilization comparison", fontsize=20)
-            axs4[2].legend(fontsize=20)
+            axs4[2].set_xticklabels(X, fontsize=FONTSIZE)
+            axs4[2].set_ylabel("Average GPU memory utilization", fontsize=FONTSIZE)
+            axs4[2].set_title("GPU memory utilization comparison", fontsize=FONTSIZE)
+            axs4[2].legend(fontsize=FONTSIZE)
 
-            fig4.suptitle("CPU and GPU utilization DISK comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig4.suptitle("CPU and GPU utilization DISK comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig4.savefig(result_dir + "/figures/cpu_gpu_util_disk_batch-" + batch + desc[desc_i])
 
             axs5[0].set_xticks(X_axis)
-            axs5[0].set_xticklabels(X, fontsize=20)
-            axs5[0].set_ylabel("Average CPU utilization", fontsize=20)
-            axs5[0].set_title("CPU utilization comparison", fontsize=20)
-            axs5[0].legend(fontsize=20)
+            axs5[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs5[0].set_ylabel("Average CPU utilization", fontsize=FONTSIZE)
+            axs5[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
+            axs5[0].legend(fontsize=FONTSIZE)
 
             axs5[1].set_xticks(X_axis)
-            axs5[1].set_xticklabels(X, fontsize=20)
-            axs5[1].set_ylabel("Average GPU utilization", fontsize=20)
-            axs5[1].set_title("GPU utilization comparison", fontsize=20)
-            axs5[1].legend(fontsize=20)
+            axs5[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs5[1].set_ylabel("Average GPU utilization", fontsize=FONTSIZE)
+            axs5[1].set_title("GPU utilization comparison", fontsize=FONTSIZE)
+            axs5[1].legend(fontsize=FONTSIZE)
 
             axs5[2].set_xticks(X_axis)
-            axs5[2].set_xticklabels(X, fontsize=20)
-            axs5[2].set_ylabel("Average GPU memory utilization", fontsize=20)
-            axs5[2].set_title("GPU memory utilization comparison", fontsize=20)
-            axs5[2].legend(fontsize=20)
+            axs5[2].set_xticklabels(X, fontsize=FONTSIZE)
+            axs5[2].set_ylabel("Average GPU memory utilization", fontsize=FONTSIZE)
+            axs5[2].set_title("GPU memory utilization comparison", fontsize=FONTSIZE)
+            axs5[2].legend(fontsize=FONTSIZE)
 
-            fig5.suptitle("CPU and GPU utilization CACHED comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig5.suptitle("CPU and GPU utilization CACHED comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig5.savefig(result_dir + "/figures/cpu_gpu_util_cached_batch-" + batch + desc[desc_i])
 
             axs6[0].set_xticks(X_axis)
-            axs6[0].set_xticklabels(X, fontsize=20)
-            axs6[0].set_ylabel("Avg Total Time (Seconds)", fontsize=20)
-            axs6[0].set_title("Memcpy time", fontsize=20)
-            axs6[0].legend(fontsize=20)
+            axs6[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs6[0].set_ylabel("Avg Total Time (Seconds)", fontsize=FONTSIZE)
+            axs6[0].set_title("Memcpy time", fontsize=FONTSIZE)
+            axs6[0].legend(fontsize=FONTSIZE)
 
             axs6[1].set_xticks(X_axis)
-            axs6[1].set_xticklabels(X, fontsize=20)
-            axs6[1].set_ylabel("Avg Total Time (Seconds)", fontsize=20)
-            axs6[1].set_title("Fwd propogation compute time", fontsize=20)
-            axs6[1].legend(fontsize=20)
+            axs6[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs6[1].set_ylabel("Avg Total Time (Seconds)", fontsize=FONTSIZE)
+            axs6[1].set_title("Fwd propogation compute time", fontsize=FONTSIZE)
+            axs6[1].legend(fontsize=FONTSIZE)
 
             axs6[2].set_xticks(X_axis)
-            axs6[2].set_xticklabels(X, fontsize=20)
-            axs6[2].set_ylabel("Avg Total Time (Seconds)", fontsize=20)
-            axs6[2].set_title("Bwd propogation compute time", fontsize=20)
-            axs6[2].legend(fontsize=20)
+            axs6[2].set_xticklabels(X, fontsize=FONTSIZE)
+            axs6[2].set_ylabel("Avg Total Time (Seconds)", fontsize=FONTSIZE)
+            axs6[2].set_title("Bwd propogation compute time", fontsize=FONTSIZE)
+            axs6[2].legend(fontsize=FONTSIZE)
 
-            fig6.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig6.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig6.savefig(result_dir + "/figures/memcpy_compute_time_comparison_batch-" + batch + desc[desc_i])
 
             axs7.set_xticks(X_axis)
-            axs7.set_xticklabels(X, fontsize=20)
-            axs7.set_ylabel("Avg Total Time (Seconds)", fontsize=20)
-            axs7.set_title("Stacked time comparison", fontsize=20)
+            axs7.set_xticklabels(X, fontsize=FONTSIZE)
+            axs7.set_ylabel("Avg Total Time (Seconds)", fontsize=FONTSIZE)
+            axs7.set_title("Stacked time comparison", fontsize=FONTSIZE)
             leg = ["Memcpy Time", "Fwd Propogation Time", "Bwd Propogation Time"]
-            axs7.legend(leg, fontsize=20)
+            axs7.legend(leg, fontsize=FONTSIZE)
 
-            fig7.suptitle("Time comparison - batch " + batch, fontsize=20, fontweight ="bold")
+            fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
     #        plt.show()
@@ -495,8 +498,11 @@ def compare_models(result_dir):
     for model in models:
 
         fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
+        fig4, axs4 = plt.subplots(1, 2, figsize=(30, 20))
         Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
+        Y_COST_DISK_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
+        Y_COST_CACHED_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         batch_i = 0
 
         for batch in BATCH_SIZES:
@@ -597,7 +603,10 @@ def compare_models(result_dir):
 
                 Y_GPU_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
                 Y_GPU_MEM_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
-                
+
+                Y_COST_DISK_LIST[idx][batch_i] = stats[model][gpu][batch]["COST_DISK"] if "COST_DISK" in stats[model][gpu][batch] else 0
+                Y_COST_CACHED_LIST[idx][batch_i] = stats[model][gpu][batch]["COST_CACHED"] if "COST_CACHED" in stats[model][gpu][batch] else 0
+
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
                 if len(Y_CPU_UTIL_CACHED) < max_dstat_len:
@@ -648,77 +657,77 @@ def compare_models(result_dir):
                 idx += 1
 
             axs1[0,0].set_xticks(X_metrics_axis)
-            axs1[0,0].set_xticklabels(X, fontsize=20)
-            axs1[0,0].set_xlabel("Metrics", fontsize=20)
-            axs1[0,0].set_ylabel("Values", fontsize=20)
-            axs1[0,0].set_title("Metric comparison cached", fontsize=20)
-            axs1[0,0].legend(fontsize=20)
+            axs1[0,0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs1[0,0].set_xlabel("Metrics", fontsize=FONTSIZE)
+            axs1[0,0].set_ylabel("Values", fontsize=FONTSIZE)
+            axs1[0,0].set_title("Metric comparison cached", fontsize=FONTSIZE)
+            axs1[0,0].legend(fontsize=FONTSIZE)
 
-            axs1[0,1].set_xlabel("Time", fontsize=20)
-            axs1[0,1].set_ylabel("Percentage", fontsize=20)
-            axs1[0,1].set_title("CPU utilization comparison cached", fontsize=20)
+            axs1[0,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs1[0,1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[0,1].set_title("CPU utilization comparison cached", fontsize=FONTSIZE)
             axs1[0,1].legend()
 
-            axs1[1,0].set_xlabel("Time", fontsize=20)
-            axs1[1,0].set_ylabel("Percentage", fontsize=20)
-            axs1[1,0].set_title("GPU utilization comparison cached", fontsize=20)
+            axs1[1,0].set_xlabel("Time", fontsize=FONTSIZE)
+            axs1[1,0].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[1,0].set_title("GPU utilization comparison cached", fontsize=FONTSIZE)
             axs1[1,0].legend()
 
-            axs1[1,1].set_xlabel("Time", fontsize=20)
-            axs1[1,1].set_ylabel("Percentage", fontsize=20)
-            axs1[1,1].set_title("GPU memory utilization comparison cached", fontsize=20)
+            axs1[1,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs1[1,1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[1,1].set_title("GPU memory utilization comparison cached", fontsize=FONTSIZE)
             axs1[1,1].legend()
 
             axs1[2,0].set_xticks(X_metrics_io_axis)
-            axs1[2,0].set_xticklabels(X_IO, fontsize=20)
-            axs1[2,0].set_xlabel("Metrics", fontsize=20)
-            axs1[2,0].set_ylabel("Values", fontsize=20)
-            axs1[2,0].set_title("IO Metric comparison cached", fontsize=20)
+            axs1[2,0].set_xticklabels(X_IO, fontsize=FONTSIZE)
+            axs1[2,0].set_xlabel("Metrics", fontsize=FONTSIZE)
+            axs1[2,0].set_ylabel("Values", fontsize=FONTSIZE)
+            axs1[2,0].set_title("IO Metric comparison cached", fontsize=FONTSIZE)
             axs1[2,0].legend()
 
-            axs1[2,1].set_xlabel("Time", fontsize=20)
-            axs1[2,1].set_ylabel("Percentage", fontsize=20)
-            axs1[2,1].set_title("IO wait percentage cached", fontsize=20)
+            axs1[2,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs1[2,1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs1[2,1].set_title("IO wait percentage cached", fontsize=FONTSIZE)
             axs1[2,1].legend()
 
-            fig1.suptitle("Cached comparison- " + model, fontsize=20, fontweight ="bold")
+            fig1.suptitle("Cached comparison- " + model, fontsize=FONTSIZE, fontweight ="bold")
             fig1.savefig(result_dir + "/figures/cached_comparison-" + model + "_batch-" + batch)
 
             axs2[0,0].set_xticks(X_metrics_axis)
-            axs2[0,0].set_xticklabels(X, fontsize=20)
-            axs2[0,0].set_xlabel("Metrics", fontsize=20)
-            axs2[0,0].set_ylabel("Values", fontsize=20)
-            axs2[0,0].set_title("Metric comparison cached", fontsize=20)
+            axs2[0,0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs2[0,0].set_xlabel("Metrics", fontsize=FONTSIZE)
+            axs2[0,0].set_ylabel("Values", fontsize=FONTSIZE)
+            axs2[0,0].set_title("Metric comparison cached", fontsize=FONTSIZE)
             axs2[0,0].legend()
 
-            axs2[0,1].set_xlabel("Time", fontsize=20)
-            axs2[0,1].set_ylabel("Percentage", fontsize=20)
-            axs2[0,1].set_title("CPU utilization comparison cached", fontsize=20)
+            axs2[0,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[0,1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs2[0,1].set_title("CPU utilization comparison cached", fontsize=FONTSIZE)
             axs2[0,1].legend()
 
-            axs2[1,0].set_xlabel("Time", fontsize=20)
-            axs2[1,0].set_ylabel("Percentage", fontsize=20)
-            axs2[1,0].set_title("GPU utilization comparison cached", fontsize=20)
+            axs2[1,0].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[1,0].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs2[1,0].set_title("GPU utilization comparison cached", fontsize=FONTSIZE)
             axs2[1,0].legend()
 
-            axs2[1,1].set_xlabel("Time", fontsize=20)
-            axs2[1,1].set_ylabel("Percentage", fontsize=20)
-            axs2[1,1].set_title("GPU memory utilization comparison cached", fontsize=20)
+            axs2[1,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[1,1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs2[1,1].set_title("GPU memory utilization comparison cached", fontsize=FONTSIZE)
             axs2[1,1].legend()
 
             axs2[2,0].set_xticks(X_metrics_io_axis)
-            axs2[2,0].set_xticklabels(X_IO, fontsize=20)
-            axs2[2,0].set_xlabel("Metrics", fontsize=20)
-            axs2[2,0].set_ylabel("Values", fontsize=20)
-            axs2[2,0].set_title("IO Metric comparison disk", fontsize=20)
+            axs2[2,0].set_xticklabels(X_IO, fontsize=FONTSIZE)
+            axs2[2,0].set_xlabel("Metrics", fontsize=FONTSIZE)
+            axs2[2,0].set_ylabel("Values", fontsize=FONTSIZE)
+            axs2[2,0].set_title("IO Metric comparison disk", fontsize=FONTSIZE)
             axs2[2,0].legend()
 
-            axs2[2,1].set_xlabel("Time", fontsize=20)
-            axs2[2,1].set_ylabel("Percentage", fontsize=20)
-            axs2[2,1].set_title("io wait percentage disk", fontsize=20)
+            axs2[2,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[2,1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs2[2,1].set_title("io wait percentage disk", fontsize=FONTSIZE)
             axs2[2,1].legend()
 
-            fig2.suptitle("Disk comparison - " + model, fontsize=20, fontweight ="bold")
+            fig2.suptitle("Disk comparison - " + model, fontsize=FONTSIZE, fontweight ="bold")
             fig2.savefig(result_dir + "/figures/disk_comparison-" + model + "_batch-" + batch)
 
             batch_i += 1
@@ -726,28 +735,52 @@ def compare_models(result_dir):
         diff = 0
         for i in range(len(instances)):
             axs3[0].bar(X_BAT_axis - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
-            add_text(X_BAT_axis - 0.25 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
+            add_text(X_BAT_axis - 0.2 + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
             axs3[1].bar(X_BAT_axis - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
-            add_text(X_BAT_axis - 0.25 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], axs3[1])
+            add_text(X_BAT_axis - 0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], axs3[1])
+
+            axs4[0].bar(X_BAT_axis - 0.2 + diff, Y_COST_DISK_LIST[i], 0.2, label=instances[i])
+            add_text(X_BAT_axis - 0.2 + diff, Y_COST_DISK_LIST[i], axs4[0])
+            axs4[1].bar(X_BAT_axis - 0.2 + diff, Y_COST_CACHED_LIST[i], 0.2, label=instances[i])
+            add_text(X_BAT_axis - 0.2 + diff, Y_COST_CACHED_LIST[i], axs4[1])
+
             diff += 0.2
 
         axs3[0].set_xticks(X_BAT_axis)
-        axs3[0].set_xticklabels(X_BAT, fontsize=20)
-        axs3[0].set_xlabel("Batch size", fontsize=20)
-        axs3[0].set_ylabel("Percentage", fontsize=20)
-        axs3[0].set_title("GPU utilization", fontsize=20)
+        axs3[0].set_xticklabels(X_BAT, fontsize=FONTSIZE)
+        axs3[0].set_xlabel("Batch size", fontsize=FONTSIZE)
+        axs3[0].set_ylabel("Percentage", fontsize=FONTSIZE)
+        axs3[0].set_title("GPU utilization", fontsize=FONTSIZE)
         axs3[0].legend()
 
         axs3[1].set_xticks(X_BAT_axis)
-        axs3[1].set_xticklabels(X_BAT, fontsize=20)
-        axs3[1].set_xlabel("Batch size", fontsize=20)
-        axs3[1].set_ylabel("Percentage", fontsize=20)
-        axs3[1].set_title("GPU memory utilization", fontsize=20)
+        axs3[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
+        axs3[1].set_xlabel("Batch size", fontsize=FONTSIZE)
+        axs3[1].set_ylabel("Percentage", fontsize=FONTSIZE)
+        axs3[1].set_title("GPU memory utilization", fontsize=FONTSIZE)
         axs3[1].legend()
 
-        fig3.suptitle("GPU utilization-" + model, fontsize=20, fontweight="bold")
+        fig3.suptitle("GPU utilization-" + model, fontsize=FONTSIZE, fontweight="bold")
         fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model)
 
+        axs4[0].set_xticks(X_BAT_axis)
+        axs4[0].set_xticklabels(X_BAT, fontsize=FONTSIZE)
+        axs4[0].set_xlabel("Batch size", fontsize=FONTSIZE)
+        axs4[0].set_ylabel("Dollar cost", fontsize=FONTSIZE)
+        axs4[0].set_title("Training Cost Disk", fontsize=FONTSIZE)
+        axs4[0].legend()
+
+        axs4[1].set_xticks(X_BAT_axis)
+        axs4[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
+        axs4[1].set_xlabel("Batch size", fontsize=FONTSIZE)
+        axs4[1].set_ylabel("Dollar cost", fontsize=FONTSIZE)
+        axs4[1].set_title("Training cost cached", fontsize=FONTSIZE)
+        axs4[1].legend()
+
+        fig4.suptitle("Training Cost -" + model, fontsize=FONTSIZE, fontweight="bold")
+        fig4.savefig(result_dir + "/figures/training_cost_batch_compare-" + model)
+
+        plt.close('all')
         #plt.show()
 
 
