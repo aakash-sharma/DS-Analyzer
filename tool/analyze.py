@@ -11,6 +11,7 @@ import glob
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 BATCH_SIZES = ['64', '128', '256', '512']
 FONTSIZE = 20
+WIDTH = 0.01
 
 gpu_map = {
         "p2.xlarge" : "K80-1",
@@ -195,7 +196,7 @@ def compare_instances(result_dir):
     plt.xticks(fontsize=FONTSIZE)
     plt.yticks(fontsize=FONTSIZE)
 
-    for X in [X_small, X_large]:
+    for X in [X_large, X_small]:
 
 
         X_axis = np.arange(len(X))
@@ -267,58 +268,58 @@ def compare_instances(result_dir):
                 Y_COMPUTE_BWD_TIME = [stats[model][gpu][batch]["COMPUTE_BWD_TIME"]
                                       if "COMPUTE_BWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
 
-                axs1[0].bar(X_axis-0.2 + diff, Y_PREP_STALL_PCT, 0.2, label=instance)
-                axs1[1].bar(X_axis-0.2 + diff, Y_FETCH_STALL_PCT, 0.2, label=instance)
+                axs1[0].bar(X_axis-WIDTH + diff, Y_PREP_STALL_PCT, 0.2, label=instance)
+                axs1[1].bar(X_axis-WIDTH + diff, Y_FETCH_STALL_PCT, 0.2, label=instance)
                 add_text(X_axis-0.25 + diff, Y_PREP_STALL_PCT, axs1[0])
                 add_text(X_axis-0.25 + diff, Y_FETCH_STALL_PCT, axs1[1])
 
                 if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                    axs1[2].bar(X_axis-0.2 + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
+                    axs1[2].bar(X_axis-WIDTH + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
                     add_text(X_axis-0.25 + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
 
-                axs2[0].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
-                axs2[1].bar(X_axis-0.2 + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
-                axs2[2].bar(X_axis-0.2 + diff, Y_DISK_THR, 0.2, label=instance)
+                axs2[0].bar(X_axis-WIDTH + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
+                axs2[1].bar(X_axis-WIDTH + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
+                axs2[2].bar(X_axis-WIDTH + diff, Y_DISK_THR, 0.2, label=instance)
                 add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_DISK, axs2[0])
                 add_text(X_axis-0.25 + diff, Y_TRAIN_TIME_CACHED, axs2[1])
                 add_text(X_axis-0.25 + diff, Y_DISK_THR, axs2[2])
 
-                axs8[0].bar(X_axis-0.2 + diff, Y_COST_DISK, 0.2, label=instance)
-                axs8[1].bar(X_axis-0.2 + diff, Y_COST_CACHED, 0.2, label=instance)
+                axs8[0].bar(X_axis-WIDTH + diff, Y_COST_DISK, 0.2, label=instance)
+                axs8[1].bar(X_axis-WIDTH + diff, Y_COST_CACHED, 0.2, label=instance)
                 add_text(X_axis-0.25 + diff, Y_COST_DISK, axs2[0])
                 add_text(X_axis-0.25 + diff, Y_COST_CACHED, axs2[1])
 
-                axs3[0].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
-                axs3[1].bar(X_axis-0.2 + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
-                axs3[2].bar(X_axis-0.2 + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
+                axs3[0].bar(X_axis-WIDTH + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
+                axs3[1].bar(X_axis-WIDTH + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
+                axs3[2].bar(X_axis-WIDTH + diff, Y_TRAIN_SPEED_CACHED, 0.2, label = instance)
                 add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_INGESTION, axs3[0])
                 add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_DISK, axs3[1])
                 add_text(X_axis-0.25 + diff, Y_TRAIN_SPEED_CACHED, axs3[2])
 
-                axs4[0].bar(X_axis-0.2 + diff, Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
-                axs4[1].bar(X_axis-0.2 + diff, Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
-                axs4[2].bar(X_axis-0.2 + diff, Y_GPU_MEM_UTIL_DISK_PCT, 0.2, label = instance)
+                axs4[0].bar(X_axis-WIDTH + diff, Y_CPU_UTIL_DISK_PCT, 0.2, label = instance)
+                axs4[1].bar(X_axis-WIDTH + diff, Y_GPU_UTIL_DISK_PCT, 0.2, label = instance)
+                axs4[2].bar(X_axis-WIDTH + diff, Y_GPU_MEM_UTIL_DISK_PCT, 0.2, label = instance)
                 add_text(X_axis-0.25 + diff, Y_CPU_UTIL_DISK_PCT, axs4[0])
                 add_text(X_axis-0.25 + diff, Y_GPU_UTIL_DISK_PCT, axs4[1])
                 add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_DISK_PCT, axs4[2])
 
-                axs5[0].bar(X_axis-0.2 + diff, Y_CPU_UTIL_CACHED_PCT, 0.2, label = instance)
-                axs5[1].bar(X_axis-0.2 + diff, Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
-                axs5[2].bar(X_axis-0.2 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
+                axs5[0].bar(X_axis-WIDTH + diff, Y_CPU_UTIL_CACHED_PCT, 0.2, label = instance)
+                axs5[1].bar(X_axis-WIDTH + diff, Y_GPU_UTIL_CACHED_PCT, 0.2, label = instance)
+                axs5[2].bar(X_axis-WIDTH + diff, Y_GPU_MEM_UTIL_CACHED_PCT, 0.2, label = instance)
                 add_text(X_axis-0.25 + diff, Y_CPU_UTIL_CACHED_PCT, axs5[0])
                 add_text(X_axis-0.25 + diff, Y_GPU_UTIL_CACHED_PCT, axs5[1])
                 add_text(X_axis-0.25 + diff, Y_GPU_MEM_UTIL_CACHED_PCT, axs5[2])
 
-                axs6[0].bar(X_axis-0.2 + diff, Y_MEMCPY_TIME, 0.2, label = instance)
-                axs6[1].bar(X_axis-0.2 + diff, Y_COMPUTE_FWD_TIME, 0.2, label = instance)
-                axs6[2].bar(X_axis-0.2 + diff, Y_COMPUTE_BWD_TIME, 0.2, label = instance)
+                axs6[0].bar(X_axis-WIDTH + diff, Y_MEMCPY_TIME, 0.2, label = instance)
+                axs6[1].bar(X_axis-WIDTH + diff, Y_COMPUTE_FWD_TIME, 0.2, label = instance)
+                axs6[2].bar(X_axis-WIDTH + diff, Y_COMPUTE_BWD_TIME, 0.2, label = instance)
                 add_text(X_axis-0.25 + diff, Y_MEMCPY_TIME, axs6[0])
                 add_text(X_axis-0.25 + diff, Y_COMPUTE_FWD_TIME, axs6[1])
                 add_text(X_axis-0.25 + diff, Y_COMPUTE_BWD_TIME, axs6[2])
 
-                axs7.bar(X_axis-0.2 + diff, Y_MEMCPY_TIME, 0.2, color = 'g', edgecolor='black')
-                axs7.bar(X_axis-0.2 + diff, Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, color = 'b', edgecolor='black')
-                axs7.bar(X_axis-0.2 + diff, Y_COMPUTE_BWD_TIME, 0.2, bottom = Y_COMPUTE_FWD_TIME, color = 'c', edgecolor='black')
+                axs7.bar(X_axis-WIDTH + diff, Y_MEMCPY_TIME, 0.2, color = 'g', edgecolor='black')
+                axs7.bar(X_axis-WIDTH + diff, Y_COMPUTE_FWD_TIME, 0.2, bottom = Y_MEMCPY_TIME, color = 'b', edgecolor='black')
+                axs7.bar(X_axis-WIDTH + diff, Y_COMPUTE_BWD_TIME, 0.2, bottom = Y_COMPUTE_FWD_TIME, color = 'c', edgecolor='black')
 
                 diff += 0.2
 
@@ -476,7 +477,7 @@ def compare_instances(result_dir):
             fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
-    #        plt.show()
+#            plt.show()
             plt.close('all')
 
         desc_i += 1
@@ -630,18 +631,18 @@ def compare_models(result_dir):
                 if len(Y_COMPUTE_TIME_BWD_LIST) < max_itrs:
                     Y_COMPUTE_TIME_BWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_BWD_LIST)))
 
-                axs1[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_CACHED, 0.2, label = instance)
+                axs1[0,0].bar(X_metrics_axis - WIDTH + diff, Y_METRICS_CACHED, 0.2, label = instance)
                 axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
                 axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
                 axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
-                axs1[2,0].bar(X_metrics_io_axis -0.2 + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
+                axs1[2,0].bar(X_metrics_io_axis -WIDTH + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
                 axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
 
-                axs2[0,0].bar(X_metrics_axis - 0.2 + diff, Y_METRICS_DISK, 0.2, label = instance)
+                axs2[0,0].bar(X_metrics_axis - WIDTH + diff, Y_METRICS_DISK, 0.2, label = instance)
                 axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
                 axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
                 axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
-                axs2[2,0].bar(X_metrics_io_axis - 0.2 + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
+                axs2[2,0].bar(X_metrics_io_axis - WIDTH + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
                 axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
                 #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
@@ -649,9 +650,9 @@ def compare_models(result_dir):
                 #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
 
 
-                #axs3.bar(X_itrs_axis - 0.2 + diff, Y_DATA_TIME_LIST, 0.2, color = color[0])
-                #axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
-                #axs3.bar(X_itrs_axis - 0.2 + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
+                #axs3.bar(X_itrs_axis - WIDTH + diff, Y_DATA_TIME_LIST, 0.2, color = color[0])
+                #axs3.bar(X_itrs_axis - WIDTH + diff, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
+                #axs3.bar(X_itrs_axis - WIDTH + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
 
                 diff += 0.2
                 idx += 1
