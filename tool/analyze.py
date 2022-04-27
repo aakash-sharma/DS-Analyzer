@@ -9,7 +9,7 @@ import statistics
 import glob
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-BATCH_SIZES = ['64', '128', '256', '512']
+BATCH_SIZES = ['32', '64', '128', '256', '512']
 FONTSIZE = 20
 WIDTH = 0.01
 
@@ -190,7 +190,7 @@ def compare_instances(result_dir):
 
     X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
     X_large = ['resnet50', 'vgg11']
-    desc = ["-Small_models", "-Large_models"]
+    desc = ["-Large_models", "-Small_models"]
     desc_i = 0
 
     plt.xticks(fontsize=FONTSIZE)
