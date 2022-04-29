@@ -7,7 +7,7 @@ PREFIX=$4
 INSTANCE=$5
 
 SAMPLES=1281166
-NUM_GPUS=((4 * NNODES))
+NUM_GPUS=$((4 * NNODES))
 
 cd ~/DS-Analyzer/tool
 
