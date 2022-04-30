@@ -9,7 +9,7 @@ import statistics
 import glob
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-BATCH_SIZES = ['32', '64', '128', '256']
+BATCH_SIZES = ['32', '64', '80', '128', '256']
 FONTSIZE = 20
 BAR_MARGIN = 0
 TEXT_MARGIN = 0.01
@@ -22,6 +22,7 @@ gpu_map = {
         "p2.16xlarge" : "K80-16",
         "p3.2xlarge" : "V100-1",
         "p3.8xlarge" : "V100-4",
+        "p3.8xlarge_2" : "V100-4_2",
         "p3.16xlarge" : "V100-8"}
 
 cost_map = {
@@ -35,6 +36,7 @@ cost_map = {
     "p3.16xlarge" : 24.48}
 
 instances = []
+batch_map = {}
 
 def process_json(model, gpu, batch, json_path):
 
@@ -76,6 +78,12 @@ def process_json2(model, instance, batch, json_path):
     gpu = gpu_map[instance]
     with open(json_path) as fd:
         dagJson = json.load(fd)
+
+    if batch not in batch_map:
+        batch_map[batch] = []
+        batch_map[batch].append(instance)
+    elif instance not in batch_map[batch]:
+        batch_map[batch].append(instance)
 
     stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][gpu][batch]["TRAIN_SPEED_DISK"] = dagJson["SPEED_DISK"]
@@ -215,6 +223,9 @@ def compare_instances(result_dir):
             fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
 
             for instance in instances:
+
+                if instance not in batch_map[batch]:
+                    continue
 
                 gpu = gpu_map[instance]
                 
@@ -492,7 +503,7 @@ def compare_models(result_dir):
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read Write", "IOWait"]
     X_BAT = ['Batch-'+ batch for batch in BATCH_SIZES]
-    styles = ['r--', 'b--', 'g--']
+    styles = ['r--', 'b--', 'g--', 'c--']
     colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple'], ['green', 'red', 'blue']]
 
     X_BAT_axis = np.arange(len(BATCH_SIZES))
@@ -513,6 +524,9 @@ def compare_models(result_dir):
             max_itrs = 0
 
             for instance in instances:
+
+                if instance not in batch_map[batch]:
+                    continue
                 gpu = gpu_map[instance]
                 if gpu not in stats[model]:
                     del stats[model]
@@ -547,13 +561,15 @@ def compare_models(result_dir):
 
             for instance in instances:
 
+                if instance not in batch_map[batch]:
+                    continue
                 gpu = gpu_map[instance]
                 if gpu not in stats[model]:
                     stats[model][gpu][batch] = {}
 
 
                 style = styles[idx]
-                color = colors[idx]
+                #color = colors[idx]
 
                 """
                 if instance == "p2.xlarge":
@@ -736,6 +752,8 @@ def compare_models(result_dir):
 
         diff = 0
         for i in range(len(instances)):
+            if instances[i] not in batch_map[batch]:
+                continue
             axs3[0].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
             add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
             axs3[1].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
