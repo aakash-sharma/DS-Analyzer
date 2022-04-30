@@ -133,12 +133,16 @@ def parseDstat(fname, rerun = False):
     reader = csv.DictReader(csvfile)
     header = reader.fieldnames
     for row in reader:
-        idle_list.append(float(row["idl"]))
-        wai_list.append(float(row["wai"]))
-        read_list.append(float(row["read"])/1024/1024) #in MB
-        write_list.append(float(row["writ"])/1024/1024)
-        recv_list.append(float(row["recv"])/1024/1024)
-        send_list.append(float(row["send"])/1024/1024)
+        try:
+            idle_list.append(float(row["idl"]))
+            wai_list.append(float(row["wai"]))
+            read_list.append(float(row["read"])/1024/1024) #in MB
+            write_list.append(float(row["writ"])/1024/1024)
+            recv_list.append(float(row["recv"])/1024/1024)
+            send_list.append(float(row["send"])/1024/1024)
+        except:
+            print(row)
+            continue
 
     mean_idle = statistics.mean(idle_list)
     mean_wait = statistics.mean(wai_list)
