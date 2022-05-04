@@ -135,6 +135,11 @@ def process_json2(model, instance, batch, json_path):
     stats[model][gpu][batch]["FETCH_STALL_PCT"] = stats[model][gpu][batch]["FETCH_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_DISK"] * 100
     if "INTERCONNECT_STALL_TIME" in stats[model][gpu][batch]:
         stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"] = stats[model][gpu][batch]["INTERCONNECT_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] * 100
+        
+    if instance == "p3.16xlarge" and "V100-4_2" in stats[model] and batch in stats[model]["V100-4_2"]:
+        stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][gpu][batch]["TRAIN_TIME_INGESTION"]
+        stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] * 100
+
 
 
 def process_csv(model, instance, batch, csv_path):
@@ -178,24 +183,9 @@ def process_csv(model, instance, batch, csv_path):
 
 def add_text(X, Y, axs):
     for idx, value in enumerate(X):
-        axs.text(value - (0.01 * value), Y[idx] + (0.05 * Y[idx]), str(int(Y[idx])), fontsize=FONTSIZE)
+        axs.text(value - (0.1 * value), Y[idx] + (0.01 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE)
 
 def compare_instances(result_dir):
-
-    """
-    for instance in instances:
-
-        gpu = gpu_map[instance]
-
-        for model in models:
-
-            if gpu not in stats[model]:
-                del stats[model]
-                continue
-
-    X = [model for model in stats.keys()]
-    """
-
 
     X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
     X_large = ['resnet50', 'vgg11']
@@ -213,7 +203,7 @@ def compare_instances(result_dir):
         for batch in BATCH_SIZES:
             diff = 0
 
-            fig1, axs1 = plt.subplots(3, 1, figsize=(30, 20))
+            fig1, axs1 = plt.subplots(2, 1, figsize=(30, 20))
             fig2, axs2 = plt.subplots(3, 1, figsize=(30, 20))
             fig3, axs3 = plt.subplots(3, 1, figsize=(30, 20))
             fig4, axs4 = plt.subplots(3, 1, figsize=(30, 20))
@@ -221,6 +211,7 @@ def compare_instances(result_dir):
             fig6, axs6 = plt.subplots(3, 1, figsize=(30, 20))
             fig7, axs7 = plt.subplots(figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
+            fig9, axs9 = plt.subplots(2, 1, figsize=(30, 20))
 
             for instance in instances:
 
@@ -233,9 +224,12 @@ def compare_instances(result_dir):
                                     if "PREP_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
                 Y_FETCH_STALL_PCT = [stats[model][gpu][batch]["FETCH_STALL_PCT"]
                                      if "FETCH_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                    Y_INTERCONNECT_STALL_PCT = [stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"]
-                                                if "INTERCONNECT_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+#                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
+                Y_INTERCONNECT_STALL_PCT = [stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"]
+                                            if "INTERCONNECT_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+
+                Y_NETWORK_STALL_PCT = [stats[model][gpu][batch]["NETWORK_STALL_PCT"]
+                                            if "NETWORK_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
 
                 Y_TRAIN_TIME_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"]
                                      if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X]
@@ -285,9 +279,11 @@ def compare_instances(result_dir):
                 add_text(X_axis-TEXT_MARGIN + diff, Y_PREP_STALL_PCT, axs1[0])
                 add_text(X_axis-TEXT_MARGIN + diff, Y_FETCH_STALL_PCT, axs1[1])
 
-                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                    axs1[2].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
-                    add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs1[2])
+#                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
+                axs9[0].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
+                axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
+                add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
+                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs9[1])
 
                 axs2[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
                 axs2[1].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
@@ -348,13 +344,6 @@ def compare_instances(result_dir):
             axs1[1].set_ylabel("Percentage", fontsize=FONTSIZE)
             axs1[1].set_title("Fetch stall comparison", fontsize=FONTSIZE)
             axs1[1].legend(fontsize=FONTSIZE)
-
-            axs1[2].set_xticks(X_axis)
-            axs1[2].set_xticklabels(X, fontsize=FONTSIZE)
-            axs1[2].set_xlabel("Models", fontsize=FONTSIZE)
-            axs1[2].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs1[2].set_title("Interconnect stall comparison", fontsize=FONTSIZE)
-            axs1[2].legend(fontsize=FONTSIZE)
 
             fig1.suptitle("Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i])
@@ -489,6 +478,25 @@ def compare_instances(result_dir):
             fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
+            axs9[0].set_xticks(X_axis)
+            axs9[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs9[0].set_xlabel("Models", fontsize=FONTSIZE)
+            axs9[0].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs9[0].set_title("Interconnect stall comparison", fontsize=FONTSIZE)
+            axs9[0].legend(fontsize=FONTSIZE)
+
+            axs9[1].set_xticks(X_axis)
+            axs9[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs9[1].set_xlabel("Models", fontsize=FONTSIZE)
+            axs9[1].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs9[1].set_title("Network stall comparison", fontsize=FONTSIZE)
+            axs9[1].legend(fontsize=FONTSIZE)
+
+            fig9.suptitle("Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
+            fig9.savefig(result_dir + "/figures/stall_comparison2_batch-" + batch + desc[desc_i])
+
+
+
 #            plt.show()
             plt.close('all')
 
@@ -501,7 +509,7 @@ def compare_models(result_dir):
     models = list(stats.keys())
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
-    X_IO = ["Read Write", "IOWait"]
+    X_IO = ["Read/Write", "IOWait"]
     X_BAT = ['Batch-'+ batch for batch in BATCH_SIZES]
     styles = ['r--', 'b--', 'g--', 'c--']
     colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple'], ['green', 'red', 'blue']]
@@ -512,10 +520,31 @@ def compare_models(result_dir):
 
         fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
         fig4, axs4 = plt.subplots(1, 2, figsize=(30, 20))
+
         Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_COST_DISK_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_COST_CACHED_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
+
+        """
+        Y_GPU_UTIL_CACHED_PCT_LIST = []
+        Y_GPU_MEM_UTIL_CACHED_PCT_LIST = []
+        Y_COST_DISK_LIST = []
+        Y_COST_CACHED_LIST = []
+
+        for i in range(len(instances)):
+            batches = []
+            for j in range(len(BATCH_SIZES)):
+                if instances[i] not in batch_map[BATCH_SIZES[j]]:
+                    continue
+                batches.append(None)
+            
+            Y_GPU_UTIL_CACHED_PCT_LIST.append(batches.copy())
+            Y_GPU_MEM_UTIL_CACHED_PCT_LIST.append(batches.copy())
+            Y_COST_DISK_LIST.append(batches.copy())
+            Y_COST_CACHED_LIST.append(batches.copy())
+        """
+
         batch_i = 0
 
         for batch in BATCH_SIZES:
@@ -525,8 +554,6 @@ def compare_models(result_dir):
 
             for instance in instances:
 
-                if instance not in batch_map[batch]:
-                    continue
                 gpu = gpu_map[instance]
                 if gpu not in stats[model]:
                     del stats[model]
@@ -561,8 +588,6 @@ def compare_models(result_dir):
 
             for instance in instances:
 
-                if instance not in batch_map[batch]:
-                    continue
                 gpu = gpu_map[instance]
                 if gpu not in stats[model]:
                     stats[model][gpu][batch] = {}
@@ -593,15 +618,15 @@ def compare_models(result_dir):
                 Y_METRICS_DISK.append(stats[model][gpu][batch]["TRAIN_SPEED_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
                 Y_METRICS_DISK.append(stats[model][gpu][batch]["MEM_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
                 Y_METRICS_DISK.append(stats[model][gpu][batch]["PCACHE_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"] if "READ_WRITE_DISK" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"] if "IO_WAIT_DISK" in stats[model][gpu][batch] else 0)
 
                 Y_METRICS_CACHED.append(stats[model][gpu][batch]["DISK_THR"] if "DISK_THR" in stats[model][gpu][batch] else 0)
                 Y_METRICS_CACHED.append(stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
                 Y_METRICS_CACHED.append(stats[model][gpu][batch]["MEM_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
                 Y_METRICS_CACHED.append(stats[model][gpu][batch]["PCACHE_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"] if "READ_WRITE_CACHED" in stats[model][gpu][batch] else 0)
+                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"] if "IO_WAIT_CACHED" in stats[model][gpu][batch] else 0)
 
                 Y_CPU_UTIL_DISK = stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
                 Y_CPU_UTIL_CACHED = stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
@@ -652,7 +677,7 @@ def compare_models(result_dir):
                 axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
                 axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
                 axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
-                axs1[2,0].bar(X_metrics_io_axis -BAR_MARGIN + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
+                axs1[2,0].bar(X_metrics_io_axis - BAR_MARGIN + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
                 axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
 
                 axs2[0,0].bar(X_metrics_axis - BAR_MARGIN + diff, Y_METRICS_DISK, 0.2, label = instance)
@@ -754,6 +779,8 @@ def compare_models(result_dir):
         for i in range(len(instances)):
             if instances[i] not in batch_map[batch]:
                 continue
+            print(instances[i])
+            print(Y_GPU_UTIL_CACHED_PCT_LIST[i])
             axs3[0].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
             add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
             axs3[1].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
@@ -771,14 +798,14 @@ def compare_models(result_dir):
         axs3[0].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs3[0].set_ylabel("Percentage", fontsize=FONTSIZE)
         axs3[0].set_title("GPU utilization", fontsize=FONTSIZE)
-        axs3[0].legend()
+        axs3[0].legend(fontsize=FONTSIZE)
 
         axs3[1].set_xticks(X_BAT_axis)
         axs3[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
         axs3[1].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs3[1].set_ylabel("Percentage", fontsize=FONTSIZE)
         axs3[1].set_title("GPU memory utilization", fontsize=FONTSIZE)
-        axs3[1].legend()
+        axs3[1].legend(fontsize=FONTSIZE)
 
         fig3.suptitle("GPU utilization-" + model, fontsize=FONTSIZE, fontweight="bold")
         fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model)
@@ -788,14 +815,14 @@ def compare_models(result_dir):
         axs4[0].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs4[0].set_ylabel("Dollar cost", fontsize=FONTSIZE)
         axs4[0].set_title("Training Cost Disk", fontsize=FONTSIZE)
-        axs4[0].legend()
+        axs4[0].legend(fontsize=FONTSIZE)
 
         axs4[1].set_xticks(X_BAT_axis)
         axs4[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
         axs4[1].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs4[1].set_ylabel("Dollar cost", fontsize=FONTSIZE)
         axs4[1].set_title("Training cost cached", fontsize=FONTSIZE)
-        axs4[1].legend()
+        axs4[1].legend(fontsize=FONTSIZE)
 
         fig4.suptitle("Training Cost -" + model, fontsize=FONTSIZE, fontweight="bold")
         fig4.savefig(result_dir + "/figures/training_cost_batch_compare-" + model)
