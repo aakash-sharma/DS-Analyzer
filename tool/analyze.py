@@ -38,38 +38,38 @@ cost_map = {
 instances = []
 batch_map = {}
 
-def process_json(model, gpu, batch, json_path):
+def process_json(model, instance, batch, json_path):
 
     with open(json_path) as fd:
         dagJson = json.load(fd)
 
-    stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
-    stats[model][gpu][batch]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
-    stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
-    stats[model][gpu][batch]["DISK_THR"] = dagJson["DISK_THR"]
-#    stats[model][gpu][batch]["MEM_THR"] = dagJson["MEM_THR"]
-    stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
-    stats[model][gpu][batch]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
-    stats[model][gpu][batch]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
-    stats[model][gpu][batch]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
-    stats[model][gpu][batch]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
-    stats[model][gpu][batch]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
-    stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
-    stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
-    stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
-    stats[model][gpu][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
-    stats[model][gpu][batch]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
-    stats[model][gpu][batch]["COMPUTE_BWD_TIME"] = dagJson["RUN3"]["COMPUTE_BWD"]
-    stats[model][gpu][batch]["COMPUTE_FWD_TIME"] = stats[model][gpu][batch]["COMPUTE_TIME"] - stats[model][gpu][batch]["COMPUTE_BWD_TIME"]
+    stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
+    stats[model][instance][batch]["TRAIN_SPEED_DISK"]  = dagJson["SPEED_DISK"]
+    stats[model][instance][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
+    stats[model][instance][batch]["DISK_THR"] = dagJson["DISK_THR"]
+#    stats[model][instance][batch]["MEM_THR"] = dagJson["MEM_THR"]
+    stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
+    stats[model][instance][batch]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
+    stats[model][instance][batch]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
+    stats[model][instance][batch]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
+    stats[model][instance][batch]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
+    stats[model][instance][batch]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
+    stats[model][instance][batch]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
+    stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
+    stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
+    stats[model][instance][batch]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
+    stats[model][instance][batch]["COMPUTE_BWD_TIME"] = dagJson["RUN3"]["COMPUTE_BWD"]
+    stats[model][instance][batch]["COMPUTE_FWD_TIME"] = stats[model][instance][batch]["COMPUTE_TIME"] - stats[model][instance][batch]["COMPUTE_BWD_TIME"]
 
-    stats[model][gpu][batch]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
-    stats[model][gpu][batch]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu][batch]["PREP_STALL_TIME"]
+    stats[model][instance][batch]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][instance][batch]["PREP_STALL_TIME"]
     if "RUN0" in dagJson:
-        stats[model][gpu][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
 
-    stats[model][gpu][batch]["PREP_STALL_PCT"] = stats[model][gpu][batch]["PREP_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * 100
-    stats[model][gpu][batch]["FETCH_STALL_PCT"] = stats[model][gpu][batch]["FETCH_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_DISK"] * 100
-    stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"] = stats[model][gpu][batch]["INTERCONNECT_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] * 100
+    stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
+    stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
+    stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
 
 
 
@@ -85,70 +85,70 @@ def process_json2(model, instance, batch, json_path):
     elif instance not in batch_map[batch]:
         batch_map[batch].append(instance)
 
-    stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
-    stats[model][gpu][batch]["TRAIN_SPEED_DISK"] = dagJson["SPEED_DISK"]
-    stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
-    stats[model][gpu][batch]["DISK_THR"] = dagJson["DISK_THR"]
-    stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
-    stats[model][gpu][batch]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
-    stats[model][gpu][batch]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
-    stats[model][gpu][batch]["MEM_DISK"] = dagJson["RUN2"]["MEM"]
-    stats[model][gpu][batch]["PCACHE_DISK"] = dagJson["RUN2"]["PCACHE"]
-    stats[model][gpu][batch]["MEM_CACHED"] = dagJson["RUN3"]["MEM"]
-    stats[model][gpu][batch]["PCACHE_CACHED"] = dagJson["RUN3"]["PCACHE"]
-    stats[model][gpu][batch]["READ_WRITE_DISK"] = dagJson["RUN2"]["READ"] + dagJson["RUN2"]["WRITE"]
-    stats[model][gpu][batch]["IO_WAIT_DISK"] = dagJson["RUN2"]["IO_WAIT"]
-    stats[model][gpu][batch]["READ_WRITE_CACHED"] = dagJson["RUN3"]["READ"] + dagJson["RUN3"]["WRITE"]
-    stats[model][gpu][batch]["IO_WAIT_CACHED"] = dagJson["RUN3"]["IO_WAIT"]
-    stats[model][gpu][batch]["COST_DISK"] = stats[model][gpu][batch]["TRAIN_TIME_DISK"] * cost_map[instance] / 3600
-    stats[model][gpu][batch]["COST_CACHED"] = stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
+    stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
+    stats[model][instance][batch]["TRAIN_SPEED_DISK"] = dagJson["SPEED_DISK"]
+    stats[model][instance][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
+    stats[model][instance][batch]["DISK_THR"] = dagJson["DISK_THR"]
+    stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
+    stats[model][instance][batch]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
+    stats[model][instance][batch]["MEM_DISK"] = dagJson["RUN2"]["MEM"]
+    stats[model][instance][batch]["PCACHE_DISK"] = dagJson["RUN2"]["PCACHE"]
+    stats[model][instance][batch]["MEM_CACHED"] = dagJson["RUN3"]["MEM"]
+    stats[model][instance][batch]["PCACHE_CACHED"] = dagJson["RUN3"]["PCACHE"]
+    stats[model][instance][batch]["READ_WRITE_DISK"] = dagJson["RUN2"]["READ"] + dagJson["RUN2"]["WRITE"]
+    stats[model][instance][batch]["IO_WAIT_DISK"] = dagJson["RUN2"]["IO_WAIT"]
+    stats[model][instance][batch]["READ_WRITE_CACHED"] = dagJson["RUN3"]["READ"] + dagJson["RUN3"]["WRITE"]
+    stats[model][instance][batch]["IO_WAIT_CACHED"] = dagJson["RUN3"]["IO_WAIT"]
+    stats[model][instance][batch]["COST_DISK"] = stats[model][instance][batch]["TRAIN_TIME_DISK"] * cost_map[instance] / 3600
+    stats[model][instance][batch]["COST_CACHED"] = stats[model][instance][batch]["TRAIN_TIME_CACHED"] * cost_map[instance] / 3600
 
-    stats[model][gpu][batch]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
-    stats[model][gpu][batch]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
-    stats[model][gpu][batch]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
-    stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
-    stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
-    stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
+    stats[model][instance][batch]["CPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["CPU"]
+    stats[model][instance][batch]["CPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["CPU"]
+    stats[model][instance][batch]["GPU_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_UTIL"]
+    stats[model][instance][batch]["GPU_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_UTIL"]
+    stats[model][instance][batch]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
+    stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
 
-    stats[model][gpu][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
-    stats[model][gpu][batch]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
-    stats[model][gpu][batch]["COMPUTE_BWD_TIME"] = dagJson["RUN3"]["COMPUTE_BWD"]
-    stats[model][gpu][batch]["COMPUTE_FWD_TIME"] = stats[model][gpu][batch]["COMPUTE_TIME"] - stats[model][gpu][batch]["COMPUTE_BWD_TIME"]
+    stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
+    stats[model][instance][batch]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
+    stats[model][instance][batch]["COMPUTE_BWD_TIME"] = dagJson["RUN3"]["COMPUTE_BWD"]
+    stats[model][instance][batch]["COMPUTE_FWD_TIME"] = stats[model][instance][batch]["COMPUTE_TIME"] - stats[model][instance][batch]["COMPUTE_BWD_TIME"]
 
-    stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["CPU_LIST"]
-    stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["CPU_LIST"]
-    stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_UTIL_LIST"]
-    stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_UTIL_LIST"]
-    stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_MEM_UTIL_LIST"]
-    stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_MEM_UTIL_LIST"]
-    stats[model][gpu][batch]["READ_WRITE_LIST_DISK"] = dagJson["RUN2"]["READ_LIST"] + dagJson["RUN2"]["WRITE_LIST"]
-    stats[model][gpu][batch]["READ_WRITE_LIST_CACHED"] = dagJson["RUN3"]["READ_LIST"] + dagJson["RUN3"]["WRITE_LIST"]
-    stats[model][gpu][batch]["IO_WAIT_LIST_DISK"] = dagJson["RUN2"]["IO_WAIT_LIST"]
-    stats[model][gpu][batch]["IO_WAIT_LIST_CACHED"] = dagJson["RUN3"]["IO_WAIT_LIST"]
+    stats[model][instance][batch]["CPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["CPU_LIST"]
+    stats[model][instance][batch]["CPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["CPU_LIST"]
+    stats[model][instance][batch]["GPU_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_UTIL_LIST"]
+    stats[model][instance][batch]["GPU_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_UTIL_LIST"]
+    stats[model][instance][batch]["GPU_MEM_UTIL_DISK_LIST"] = dagJson["RUN2"]["GPU_MEM_UTIL_LIST"]
+    stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_LIST"] = dagJson["RUN3"]["GPU_MEM_UTIL_LIST"]
+    stats[model][instance][batch]["READ_WRITE_LIST_DISK"] = dagJson["RUN2"]["READ_LIST"] + dagJson["RUN2"]["WRITE_LIST"]
+    stats[model][instance][batch]["READ_WRITE_LIST_CACHED"] = dagJson["RUN3"]["READ_LIST"] + dagJson["RUN3"]["WRITE_LIST"]
+    stats[model][instance][batch]["IO_WAIT_LIST_DISK"] = dagJson["RUN2"]["IO_WAIT_LIST"]
+    stats[model][instance][batch]["IO_WAIT_LIST_CACHED"] = dagJson["RUN3"]["IO_WAIT_LIST"]
 
-    stats[model][gpu][batch]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
-    stats[model][gpu][batch]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][gpu][batch]["PREP_STALL_TIME"]
+    stats[model][instance][batch]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][instance][batch]["PREP_STALL_TIME"]
     if "RUN0" in dagJson:
-        stats[model][gpu][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
 
-    stats[model][gpu][batch]["PREP_STALL_PCT"] = stats[model][gpu][batch]["PREP_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_CACHED"] * 100
-    stats[model][gpu][batch]["FETCH_STALL_PCT"] = stats[model][gpu][batch]["FETCH_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_DISK"] * 100
-    if "INTERCONNECT_STALL_TIME" in stats[model][gpu][batch]:
-        stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"] = stats[model][gpu][batch]["INTERCONNECT_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] * 100
+    stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
+    stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
+    if "INTERCONNECT_STALL_TIME" in stats[model][instance][batch]:
+        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
         
     if instance == "p3.16xlarge" and "V100-4_2" in stats[model] and batch in stats[model]["V100-4_2"]:
-        stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][gpu][batch]["TRAIN_TIME_INGESTION"]
-        stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][gpu][batch]["TRAIN_TIME_INGESTION"] * 100
+        stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
+        stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
 
 
 
 def process_csv(model, instance, batch, csv_path):
 
     gpu = gpu_map[instance]
-    stats[model][gpu][batch]["DATA_TIME_LIST"] = []
-    stats[model][gpu][batch]["COMPUTE_TIME_LIST"] = []
-    stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"] = []
-    stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"] = []
+    stats[model][instance][batch]["DATA_TIME_LIST"] = []
+    stats[model][instance][batch]["COMPUTE_TIME_LIST"] = []
+    stats[model][instance][batch]["COMPUTE_TIME_FWD_LIST"] = []
+    stats[model][instance][batch]["COMPUTE_TIME_BWD_LIST"] = []
 
     files = glob.glob(csv_path + 'time*.csv')
     csv_readers = []
@@ -176,10 +176,10 @@ def process_csv(model, instance, batch, csv_path):
             compute_fwd_time.append(float(row[2]) - float(row[3]))
             compute_bwd_time.append(float(row[3]))
 
-        stats[model][gpu][batch]["DATA_TIME_LIST"].append(statistics.mean(data_time))
-        stats[model][gpu][batch]["COMPUTE_TIME_LIST"].append(statistics.mean(compute_time))
-        stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"].append(statistics.mean(compute_fwd_time))
-        stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"].append(statistics.mean(compute_bwd_time))
+        stats[model][instance][batch]["DATA_TIME_LIST"].append(statistics.mean(data_time))
+        stats[model][instance][batch]["COMPUTE_TIME_LIST"].append(statistics.mean(compute_time))
+        stats[model][instance][batch]["COMPUTE_TIME_FWD_LIST"].append(statistics.mean(compute_fwd_time))
+        stats[model][instance][batch]["COMPUTE_TIME_BWD_LIST"].append(statistics.mean(compute_bwd_time))
 
 def add_text(X, Y, axs):
     for idx, value in enumerate(X):
@@ -220,59 +220,59 @@ def compare_instances(result_dir):
 
                 gpu = gpu_map[instance]
                 
-                Y_PREP_STALL_PCT = [stats[model][gpu][batch]["PREP_STALL_PCT"]
-                                    if "PREP_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                Y_FETCH_STALL_PCT = [stats[model][gpu][batch]["FETCH_STALL_PCT"]
-                                     if "FETCH_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_PREP_STALL_PCT = [stats[model][instance][batch]["PREP_STALL_PCT"]
+                                    if "PREP_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
+                Y_FETCH_STALL_PCT = [stats[model][instance][batch]["FETCH_STALL_PCT"]
+                                     if "FETCH_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
 #                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                Y_INTERCONNECT_STALL_PCT = [stats[model][gpu][batch]["INTERCONNECT_STALL_PCT"]
-                                            if "INTERCONNECT_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_INTERCONNECT_STALL_PCT = [stats[model][instance][batch]["INTERCONNECT_STALL_PCT"]
+                                            if "INTERCONNECT_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_NETWORK_STALL_PCT = [stats[model][gpu][batch]["NETWORK_STALL_PCT"]
-                                            if "NETWORK_STALL_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_NETWORK_STALL_PCT = [stats[model][instance][batch]["NETWORK_STALL_PCT"]
+                                            if "NETWORK_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_TRAIN_TIME_DISK = [stats[model][gpu][batch]["TRAIN_TIME_DISK"]
-                                     if "TRAIN_TIME_DISK" in stats[model][gpu][batch] else 0 for model in X]
-                Y_TRAIN_TIME_CACHED = [stats[model][gpu][batch]["TRAIN_TIME_CACHED"]
-                                       if "TRAIN_TIME_CACHED" in stats[model][gpu][batch] else 0 for model in X]
+                Y_TRAIN_TIME_DISK = [stats[model][instance][batch]["TRAIN_TIME_DISK"]
+                                     if "TRAIN_TIME_DISK" in stats[model][instance][batch] else 0 for model in X]
+                Y_TRAIN_TIME_CACHED = [stats[model][instance][batch]["TRAIN_TIME_CACHED"]
+                                       if "TRAIN_TIME_CACHED" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_COST_DISK = [stats[model][gpu][batch]["COST_DISK"]
-                               if "COST_DISK" in stats[model][gpu][batch] else 0 for model in X]
-                Y_COST_CACHED = [stats[model][gpu][batch]["COST_CACHED"]
-                                 if "COST_CACHED" in stats[model][gpu][batch] else 0 for model in X]
+                Y_COST_DISK = [stats[model][instance][batch]["COST_DISK"]
+                               if "COST_DISK" in stats[model][instance][batch] else 0 for model in X]
+                Y_COST_CACHED = [stats[model][instance][batch]["COST_CACHED"]
+                                 if "COST_CACHED" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_DISK_THR = [stats[model][gpu][batch]["DISK_THR"]
-                              if "DISK_THR" in stats[model][gpu][batch] else 0 for model in X]
+                Y_DISK_THR = [stats[model][instance][batch]["DISK_THR"]
+                              if "DISK_THR" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_TRAIN_SPEED_INGESTION = [stats[model][gpu][batch]["TRAIN_SPEED_INGESTION"]
-                                           if "TRAIN_SPEED_INGESTION" in stats[model][gpu][batch] else 0 for model in X]
-                Y_TRAIN_SPEED_DISK = [stats[model][gpu][batch]["TRAIN_SPEED_DISK"]
-                                      if "TRAIN_SPEED_DISK" in stats[model][gpu][batch] else 0 for model in X]
-                Y_TRAIN_SPEED_CACHED = [stats[model][gpu][batch]["TRAIN_SPEED_CACHED"]
-                                        if "TRAIN_SPEED_CACHED" in stats[model][gpu][batch] else 0 for model in X]
+                Y_TRAIN_SPEED_INGESTION = [stats[model][instance][batch]["TRAIN_SPEED_INGESTION"]
+                                           if "TRAIN_SPEED_INGESTION" in stats[model][instance][batch] else 0 for model in X]
+                Y_TRAIN_SPEED_DISK = [stats[model][instance][batch]["TRAIN_SPEED_DISK"]
+                                      if "TRAIN_SPEED_DISK" in stats[model][instance][batch] else 0 for model in X]
+                Y_TRAIN_SPEED_CACHED = [stats[model][instance][batch]["TRAIN_SPEED_CACHED"]
+                                        if "TRAIN_SPEED_CACHED" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_CPU_UTIL_DISK_PCT = [stats[model][gpu][batch]["CPU_UTIL_DISK_PCT"]
-                                       if "CPU_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                Y_CPU_UTIL_CACHED_PCT = [stats[model][gpu][batch]["CPU_UTIL_CACHED_PCT"]
-                                         if "CPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_CPU_UTIL_DISK_PCT = [stats[model][instance][batch]["CPU_UTIL_DISK_PCT"]
+                                       if "CPU_UTIL_DISK_PCT" in stats[model][instance][batch] else 0 for model in X]
+                Y_CPU_UTIL_CACHED_PCT = [stats[model][instance][batch]["CPU_UTIL_CACHED_PCT"]
+                                         if "CPU_UTIL_CACHED_PCT" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_GPU_UTIL_DISK_PCT = [stats[model][gpu][batch]["GPU_UTIL_DISK_PCT"]
-                                       if "GPU_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                Y_GPU_UTIL_CACHED_PCT = [stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"]
-                                         if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_PCT"]
-                                           if "GPU_MEM_UTIL_DISK_PCT" in stats[model][gpu][batch] else 0 for model in X]
-                Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"]
-                                             if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0 for model in X]
+                Y_GPU_UTIL_DISK_PCT = [stats[model][instance][batch]["GPU_UTIL_DISK_PCT"]
+                                       if "GPU_UTIL_DISK_PCT" in stats[model][instance][batch] else 0 for model in X]
+                Y_GPU_UTIL_CACHED_PCT = [stats[model][instance][batch]["GPU_UTIL_CACHED_PCT"]
+                                         if "GPU_UTIL_CACHED_PCT" in stats[model][instance][batch] else 0 for model in X]
+                Y_GPU_MEM_UTIL_DISK_PCT = [stats[model][instance][batch]["GPU_MEM_UTIL_DISK_PCT"]
+                                           if "GPU_MEM_UTIL_DISK_PCT" in stats[model][instance][batch] else 0 for model in X]
+                Y_GPU_MEM_UTIL_CACHED_PCT = [stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_PCT"]
+                                             if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_MEMCPY_TIME = [stats[model][gpu][batch]["MEMCPY_TIME"]
-                                 if "MEMCPY_TIME" in stats[model][gpu][batch] else 0 for model in X]
-                Y_COMPUTE_TIME = [stats[model][gpu][batch]["COMPUTE_TIME"]
-                                  if "COMPUTE_TIME" in stats[model][gpu][batch] else 0 for model in X]
-                Y_COMPUTE_FWD_TIME = [stats[model][gpu][batch]["COMPUTE_FWD_TIME"]
-                                      if "COMPUTE_FWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
-                Y_COMPUTE_BWD_TIME = [stats[model][gpu][batch]["COMPUTE_BWD_TIME"]
-                                      if "COMPUTE_BWD_TIME" in stats[model][gpu][batch] else 0 for model in X]
+                Y_MEMCPY_TIME = [stats[model][instance][batch]["MEMCPY_TIME"]
+                                 if "MEMCPY_TIME" in stats[model][instance][batch] else 0 for model in X]
+                Y_COMPUTE_TIME = [stats[model][instance][batch]["COMPUTE_TIME"]
+                                  if "COMPUTE_TIME" in stats[model][instance][batch] else 0 for model in X]
+                Y_COMPUTE_FWD_TIME = [stats[model][instance][batch]["COMPUTE_FWD_TIME"]
+                                      if "COMPUTE_FWD_TIME" in stats[model][instance][batch] else 0 for model in X]
+                Y_COMPUTE_BWD_TIME = [stats[model][instance][batch]["COMPUTE_BWD_TIME"]
+                                      if "COMPUTE_BWD_TIME" in stats[model][instance][batch] else 0 for model in X]
 
                 axs1[0].bar(X_axis-BAR_MARGIN + diff, Y_PREP_STALL_PCT, 0.2, label=instance)
                 axs1[1].bar(X_axis-BAR_MARGIN + diff, Y_FETCH_STALL_PCT, 0.2, label=instance)
@@ -555,26 +555,26 @@ def compare_models(result_dir):
             for instance in instances:
 
                 gpu = gpu_map[instance]
-                if gpu not in stats[model]:
+                if instance not in stats[model]:
                     del stats[model]
                     continue
 
-                if "CPU_UTIL_DISK_LIST" not in stats[model][gpu][batch]:
-                    stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"] = []
-                if "CPU_UTIL_CACHED_LIST" not in stats[model][gpu][batch]:
-                    stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"] = []
-                if "GPU_UTIL_DISK_LIST" not in stats[model][gpu][batch]:
-                    stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"] = []
-                if "GPU_UTIL_CACHED_LIST" not in stats[model][gpu][batch]:
-                    stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"] = []
-                if "DATA_TIME_LIST" not in stats[model][gpu][batch]:
-                    stats[model][gpu][batch]["DATA_TIME_LIST"] = []
+                if "CPU_UTIL_DISK_LIST" not in stats[model][instance][batch]:
+                    stats[model][instance][batch]["CPU_UTIL_DISK_LIST"] = []
+                if "CPU_UTIL_CACHED_LIST" not in stats[model][instance][batch]:
+                    stats[model][instance][batch]["CPU_UTIL_CACHED_LIST"] = []
+                if "GPU_UTIL_DISK_LIST" not in stats[model][instance][batch]:
+                    stats[model][instance][batch]["GPU_UTIL_DISK_LIST"] = []
+                if "GPU_UTIL_CACHED_LIST" not in stats[model][instance][batch]:
+                    stats[model][instance][batch]["GPU_UTIL_CACHED_LIST"] = []
+                if "DATA_TIME_LIST" not in stats[model][instance][batch]:
+                    stats[model][instance][batch]["DATA_TIME_LIST"] = []
 
-                max_dstat_len = max(max_dstat_len, len(stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"]))
-                max_dstat_len = max(max_dstat_len, len(stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"]))
-                max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"]))
-                max_nvidia_len = max(max_nvidia_len, len(stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"]))
-                max_itrs = max(max_itrs, len(stats[model][gpu][batch]["DATA_TIME_LIST"]))
+                max_dstat_len = max(max_dstat_len, len(stats[model][instance][batch]["CPU_UTIL_DISK_LIST"]))
+                max_dstat_len = max(max_dstat_len, len(stats[model][instance][batch]["CPU_UTIL_CACHED_LIST"]))
+                max_nvidia_len = max(max_nvidia_len, len(stats[model][instance][batch]["GPU_UTIL_DISK_LIST"]))
+                max_nvidia_len = max(max_nvidia_len, len(stats[model][instance][batch]["GPU_UTIL_CACHED_LIST"]))
+                max_itrs = max(max_itrs, len(stats[model][instance][batch]["DATA_TIME_LIST"]))
 
             fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
             fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
@@ -589,8 +589,8 @@ def compare_models(result_dir):
             for instance in instances:
 
                 gpu = gpu_map[instance]
-                if gpu not in stats[model]:
-                    stats[model][gpu][batch] = {}
+                if instance not in stats[model]:
+                    stats[model][instance][batch] = {}
 
 
                 style = styles[idx]
@@ -612,43 +612,43 @@ def compare_models(result_dir):
                 Y_METRICS_IO_DISK = []
                 Y_METRICS_IO_CACHED = []
 
-                print(model, gpu, batch)
+                print(model, instance, batch)
 
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["DISK_THR"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["TRAIN_SPEED_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["MEM_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_DISK.append(stats[model][gpu][batch]["PCACHE_DISK"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["READ_WRITE_DISK"] if "READ_WRITE_DISK" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_DISK.append(stats[model][gpu][batch]["IO_WAIT_DISK"] if "IO_WAIT_DISK" in stats[model][gpu][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][instance][batch]["DISK_THR"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][instance][batch]["TRAIN_SPEED_DISK"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][instance][batch]["MEM_DISK"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_DISK.append(stats[model][instance][batch]["PCACHE_DISK"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_IO_DISK.append(stats[model][instance][batch]["READ_WRITE_DISK"] if "READ_WRITE_DISK" in stats[model][instance][batch] else 0)
+                Y_METRICS_IO_DISK.append(stats[model][instance][batch]["IO_WAIT_DISK"] if "IO_WAIT_DISK" in stats[model][instance][batch] else 0)
 
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["DISK_THR"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["TRAIN_SPEED_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["MEM_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_CACHED.append(stats[model][gpu][batch]["PCACHE_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["READ_WRITE_CACHED"] if "READ_WRITE_CACHED" in stats[model][gpu][batch] else 0)
-                Y_METRICS_IO_CACHED.append(stats[model][gpu][batch]["IO_WAIT_CACHED"] if "IO_WAIT_CACHED" in stats[model][gpu][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][instance][batch]["DISK_THR"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][instance][batch]["TRAIN_SPEED_CACHED"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][instance][batch]["MEM_CACHED"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_CACHED.append(stats[model][instance][batch]["PCACHE_CACHED"] if "DISK_THR" in stats[model][instance][batch] else 0)
+                Y_METRICS_IO_CACHED.append(stats[model][instance][batch]["READ_WRITE_CACHED"] if "READ_WRITE_CACHED" in stats[model][instance][batch] else 0)
+                Y_METRICS_IO_CACHED.append(stats[model][instance][batch]["IO_WAIT_CACHED"] if "IO_WAIT_CACHED" in stats[model][instance][batch] else 0)
 
-                Y_CPU_UTIL_DISK = stats[model][gpu][batch]["CPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
-                Y_CPU_UTIL_CACHED = stats[model][gpu][batch]["CPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_CPU_UTIL_DISK = stats[model][instance][batch]["CPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
+                Y_CPU_UTIL_CACHED = stats[model][instance][batch]["CPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
 
-                Y_GPU_UTIL_DISK = stats[model][gpu][batch]["GPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
-                Y_GPU_UTIL_CACHED = stats[model][gpu][batch]["GPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_GPU_UTIL_DISK = stats[model][instance][batch]["GPU_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
+                Y_GPU_UTIL_CACHED = stats[model][instance][batch]["GPU_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
 
-                Y_GPU_MEM_UTIL_DISK = stats[model][gpu][batch]["GPU_MEM_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
-                Y_GPU_MEM_UTIL_CACHED = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_GPU_MEM_UTIL_DISK = stats[model][instance][batch]["GPU_MEM_UTIL_DISK_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
+                Y_GPU_MEM_UTIL_CACHED = stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
 
-                Y_IO_WAIT_LIST_DISK = stats[model][gpu][batch]["IO_WAIT_LIST_DISK"] if "DISK_THR" in stats[model][gpu][batch] else []
-                Y_IO_WAIT_LIST_CACHED = stats[model][gpu][batch]["IO_WAIT_LIST_CACHED"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_IO_WAIT_LIST_DISK = stats[model][instance][batch]["IO_WAIT_LIST_DISK"] if "DISK_THR" in stats[model][instance][batch] else []
+                Y_IO_WAIT_LIST_CACHED = stats[model][instance][batch]["IO_WAIT_LIST_CACHED"] if "DISK_THR" in stats[model][instance][batch] else []
 
-                Y_DATA_TIME_LIST = stats[model][gpu][batch]["DATA_TIME_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
-                Y_COMPUTE_TIME_FWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_FWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
-                Y_COMPUTE_TIME_BWD_LIST = stats[model][gpu][batch]["COMPUTE_TIME_BWD_LIST"] if "DISK_THR" in stats[model][gpu][batch] else []
+                Y_DATA_TIME_LIST = stats[model][instance][batch]["DATA_TIME_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
+                Y_COMPUTE_TIME_FWD_LIST = stats[model][instance][batch]["COMPUTE_TIME_FWD_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
+                Y_COMPUTE_TIME_BWD_LIST = stats[model][instance][batch]["COMPUTE_TIME_BWD_LIST"] if "DISK_THR" in stats[model][instance][batch] else []
 
-                Y_GPU_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][gpu][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
-                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][gpu][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][gpu][batch] else 0
+                Y_GPU_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][instance][batch]["GPU_UTIL_CACHED_PCT"] if "GPU_UTIL_CACHED_PCT" in stats[model][instance][batch] else 0
+                Y_GPU_MEM_UTIL_CACHED_PCT_LIST[idx][batch_i] = stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_PCT"] if "GPU_MEM_UTIL_CACHED_PCT" in stats[model][instance][batch] else 0
 
-                Y_COST_DISK_LIST[idx][batch_i] = stats[model][gpu][batch]["COST_DISK"] if "COST_DISK" in stats[model][gpu][batch] else 0
-                Y_COST_CACHED_LIST[idx][batch_i] = stats[model][gpu][batch]["COST_CACHED"] if "COST_CACHED" in stats[model][gpu][batch] else 0
+                Y_COST_DISK_LIST[idx][batch_i] = stats[model][instance][batch]["COST_DISK"] if "COST_DISK" in stats[model][instance][batch] else 0
+                Y_COST_CACHED_LIST[idx][batch_i] = stats[model][instance][batch]["COST_CACHED"] if "COST_CACHED" in stats[model][instance][batch] else 0
 
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
