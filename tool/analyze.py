@@ -7,6 +7,8 @@ from collections import defaultdict
 import csv
 import statistics
 import glob
+import xlwt
+import xlrd
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 BATCH_SIZES = ['32', '64', '80', '128', '256']
@@ -130,15 +132,21 @@ def process_json2(model, instance, batch, json_path):
     stats[model][instance][batch]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][instance][batch]["PREP_STALL_TIME"]
     if "RUN0" in dagJson:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+    else:
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
 
     stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
     stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
-    if "INTERCONNECT_STALL_TIME" in stats[model][instance][batch]:
-        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+    stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
         
-    if instance == "p3.16xlarge" and "V100-4_2" in stats[model] and batch in stats[model]["V100-4_2"]:
-        stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
-        stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+    if instance == "p3.16xlarge" and "V100-4_2" in stats[model]:
+        if batch in stats[model]["V100-4_2"]:
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+        else:
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = 0
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = 0
+
 
 
 
@@ -829,6 +837,77 @@ def compare_models(result_dir):
 
         plt.close('all')
         #plt.show()
+        
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def dump_to_excel(result_dir):
+
+    header_metrics = []
+    header_list_metrics = []
+    for model in stats:
+        for instance in stats[model]:
+            for batch in stats[model][instance]:
+                for metric in stats[model][instance][batch].keys():
+                    if "LIST" in metric:
+                        header_list_metrics.append(metric)
+                    else:
+                        header_metrics.append(metric)
+                break
+            break
+        break
+
+    style = xlwt.XFStyle()
+    style.num_format_str = '#,###0.00'
+
+    for model in stats:
+        workbook = xlwt.Workbook()
+        for instance in stats[model]:
+            row_list = []
+            row_list.append(["Metric"] + header_metrics)
+            row_list2 = []
+            row_list2.append(["Metric"] + header_list_metrics)
+
+            for batch in sorted(stats[model][instance]):
+                row = []
+                row2 = []
+                row.append('batch-' + batch)
+
+                """
+                for key in header_list_metrics:
+                    if key not in stats[model][instance][batch]:
+                        row2.append(0)
+                    else:
+                        row2.append(stats[model][instance][batch][key])
+                """
+
+                for key in header_metrics:
+                    if key not in stats[model][instance][batch]:
+                        row.append(0)
+                    else:
+                        row.append(stats[model][instance][batch][key])
+
+                row_list.append(row.copy())
+
+            worksheet = workbook.add_sheet(instance)
+            i = 0
+            for column in row_list:
+                for item in range(len(column)):
+                    value = column[item]
+                    # print(value)
+                    if value == None:
+                        value = 0
+                    if is_number(value):
+                        # print(value)
+                        worksheet.write(item, i, value, style=style)
+                    else:
+                        worksheet.write(item, i, value)
+                i += 1
+        workbook.save(result_dir + '/data_dump/' + model + '.xls')
 
 
 def main():
@@ -873,6 +952,7 @@ def main():
                             process_csv(model, instance, batch, csv_path)
         itr += 1
 
+    dump_to_excel(result_dir)
     compare_instances(result_dir)
     compare_models(result_dir)
 
