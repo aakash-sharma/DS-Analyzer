@@ -200,6 +200,13 @@ def compare_instances(result_dir):
     desc = ["-Large_models", "-Small_models"]
     desc_i = 0
 
+    font = {'family': 'normal',
+            'weight': 'bold',
+            'size': 22}
+
+    #matplotlib.rc('font', **font)
+    plt.rcParams.update({'font.size': 22})
+
     plt.xticks(fontsize=FONTSIZE)
     plt.yticks(fontsize=FONTSIZE)
 
@@ -872,7 +879,7 @@ def dump_to_excel(result_dir):
             row_list2 = []
             row_list2.append(["Metric"] + header_list_metrics)
 
-            for batch in sorted(stats[model][instance]):
+            for batch in sorted(stats[model][instance], key=int):
                 row = []
                 row2 = []
                 row.append('batch-' + batch)
@@ -908,6 +915,45 @@ def dump_to_excel(result_dir):
                         worksheet.write(item, i, value)
                 i += 1
         workbook.save(result_dir + '/data_dump/' + model + '.xls')
+
+    models = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0', 'resnet50', 'vgg11']
+
+    for instance in instances:
+        workbook = xlwt.Workbook()
+        for model in models:
+            if instance not in stats[model]:
+                continue
+            row_list = []
+            row_list.append(["Metric"] + header_metrics)
+            for batch in sorted(stats[model][instance], key=int):
+                row = []
+                row.append('batch-' + batch)
+                for key in header_metrics:
+                    if key not in stats[model][instance][batch]:
+                        row.append(0)
+                    else:
+                        row.append(stats[model][instance][batch][key])
+
+                row_list.append(row.copy())
+
+            worksheet = workbook.add_sheet(model)
+            i = 0
+            for column in row_list:
+                for item in range(len(column)):
+                    value = column[item]
+                    # print(value)
+                    if value == None:
+                        value = 0
+                    if is_number(value):
+                        # print(value)
+                        worksheet.write(item, i, value, style=style)
+                    else:
+                        worksheet.write(item, i, value)
+                i += 1
+
+        workbook.save(result_dir + '/data_dump/' + instance + '.xls')
+
+
 
 
 def main():
