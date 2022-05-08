@@ -11,8 +11,8 @@ NODE_RANK=$8
 SAMPLES=1281166
 
 cd ~/DS-Analyzer/tool
-echo $NNODES
-for arch in 'vgg11' 'vgg13' 'vgg16' 'vgg19'; do
+
+for arch in 'vgg13' 'vgg16' 'vgg19' 'resnet34' 'resnet101' 'resnet152'; do
 	for batch in 80; do
 		d=`date`
 		echo "==============================================="
@@ -26,4 +26,3 @@ for arch in 'vgg11' 'vgg13' 'vgg16' 'vgg19'; do
 		fi
 	done
 done
-
