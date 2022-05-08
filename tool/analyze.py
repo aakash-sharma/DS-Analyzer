@@ -98,10 +98,32 @@ def process_json2(model, instance, batch, json_path):
         batch_map[batch].append(instance)
 
     stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
+    stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
+
+    if "RUN0" in dagJson:
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch][
+                                                                      "INTERCONNECT_STALL_TIME"] / \
+                                                                  stats[model][instance][batch][
+                                                                      "TRAIN_TIME_INGESTION"] * 100
+    else:
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
+
+    if instance == "p3.16xlarge" and "V100-4_2" in stats[model]:
+        if batch in stats[model]["V100-4_2"]:
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+        else:
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = 0
+            stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = 0
+
+    if "RUN2" not in dagJson or "RUN3" not in dagJson:
+        return
+
     stats[model][instance][batch]["TRAIN_SPEED_DISK"] = dagJson["SPEED_DISK"]
     stats[model][instance][batch]["TRAIN_SPEED_CACHED"] = dagJson["SPEED_CACHED"]
     stats[model][instance][batch]["DISK_THR"] = dagJson["DISK_THR"]
-    stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
     stats[model][instance][batch]["TRAIN_TIME_DISK"] = dagJson["RUN2"]["TRAIN"]
     stats[model][instance][batch]["TRAIN_TIME_CACHED"] = dagJson["RUN3"]["TRAIN"]
     stats[model][instance][batch]["MEM_DISK"] = dagJson["RUN2"]["MEM"]
@@ -122,7 +144,6 @@ def process_json2(model, instance, batch, json_path):
     stats[model][instance][batch]["GPU_MEM_UTIL_DISK_PCT"] = dagJson["RUN2"]["GPU_MEM_UTIL"]
     stats[model][instance][batch]["GPU_MEM_UTIL_CACHED_PCT"] = dagJson["RUN3"]["GPU_MEM_UTIL"]
 
-    stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
     stats[model][instance][batch]["COMPUTE_TIME"] = dagJson["RUN3"]["COMPUTE"]
     stats[model][instance][batch]["COMPUTE_BWD_TIME"] = dagJson["RUN3"]["COMPUTE_BWD"]
     stats[model][instance][batch]["COMPUTE_FWD_TIME"] = stats[model][instance][batch]["COMPUTE_TIME"] - stats[model][instance][batch]["COMPUTE_BWD_TIME"]
@@ -138,31 +159,21 @@ def process_json2(model, instance, batch, json_path):
     stats[model][instance][batch]["IO_WAIT_LIST_DISK"] = dagJson["RUN2"]["IO_WAIT_LIST"]
     stats[model][instance][batch]["IO_WAIT_LIST_CACHED"] = dagJson["RUN3"]["IO_WAIT_LIST"]
 
-    stats[model][instance][batch]["PREP_STALL_TIME"] = (dagJson["RUN3"]["TRAIN"] / synthetic_div_map[instance]) - dagJson["RUN1"]["TRAIN"]
-    stats[model][instance][batch]["FETCH_STALL_TIME"] = (dagJson["RUN2"]["TRAIN"] / synthetic_div_map[instance])- stats[model][instance][batch]["PREP_STALL_TIME"]
-    if "RUN0" in dagJson:
-        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
-    else:
-        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
+    div_factor = dagJson["RUN3"]["SAMPLES"] / dagJson["RUN1"]["SAMPLES"]
+    stats[model][instance][batch]["PREP_STALL_TIME"] = (dagJson["RUN3"]["TRAIN"] / div_factor) - dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["FETCH_STALL_TIME"] = (dagJson["RUN2"]["TRAIN"] / div_factor) - stats[model][instance][batch]["PREP_STALL_TIME"]
 
     stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
     stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
-    stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
-        
-    if instance == "p3.16xlarge" and "V100-4_2" in stats[model]:
-        if batch in stats[model]["V100-4_2"]:
-            stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["V100-4_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
-            stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["V100-4_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
-        else:
-            stats[model]["V100-4_2"][batch]["NETWORK_STALL_TIME"] = 0
-            stats[model]["V100-4_2"][batch]["NETWORK_STALL_PCT"] = 0
 
 
 
 
 def process_csv(model, instance, batch, csv_path):
 
-    gpu = gpu_map[instance]
+    if "TRAIN_SPEED_DISK" not in stats[model][instance][batch]:
+        return
+
     stats[model][instance][batch]["DATA_TIME_LIST"] = []
     stats[model][instance][batch]["COMPUTE_TIME_LIST"] = []
     stats[model][instance][batch]["COMPUTE_TIME_FWD_LIST"] = []
@@ -531,8 +542,6 @@ def compare_instances(result_dir):
 
 def compare_models(result_dir):
 
-    models = list(stats.keys())
-
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read/Write", "IOWait"]
     X_BAT = ['Batch-'+ batch for batch in BATCH_SIZES]
@@ -541,7 +550,7 @@ def compare_models(result_dir):
 
     X_BAT_axis = np.arange(len(BATCH_SIZES))
 
-    for model in models:
+    for model in ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0', 'resnet50', 'vgg11']:
 
         fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
         fig4, axs4 = plt.subplots(1, 2, figsize=(30, 20))
@@ -804,8 +813,6 @@ def compare_models(result_dir):
         for i in range(len(instances)):
             if instances[i] not in batch_map[batch]:
                 continue
-            print(instances[i])
-            print(Y_GPU_UTIL_CACHED_PCT_LIST[i])
             axs3[0].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
             add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
             axs3[1].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
