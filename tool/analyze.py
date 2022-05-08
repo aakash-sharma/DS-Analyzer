@@ -37,6 +37,16 @@ cost_map = {
     "p3.8xlarge_2" : 24.48,
     "p3.16xlarge" : 24.48}
 
+synthetic_div_map = {
+    "p2.xlarge": 2,
+    "p2.8xlarge": 2,
+    "p2.8xlarge_2": 2,
+    "p2.16xlarge": 2,
+    "p3.2xlarge": 10,
+    "p3.8xlarge": 6,
+    "p3.8xlarge_2": 3,
+    "p3.16xlarge": 3}
+
 instances = []
 batch_map = {}
 
@@ -128,8 +138,8 @@ def process_json2(model, instance, batch, json_path):
     stats[model][instance][batch]["IO_WAIT_LIST_DISK"] = dagJson["RUN2"]["IO_WAIT_LIST"]
     stats[model][instance][batch]["IO_WAIT_LIST_CACHED"] = dagJson["RUN3"]["IO_WAIT_LIST"]
 
-    stats[model][instance][batch]["PREP_STALL_TIME"] = dagJson["RUN3"]["TRAIN"] - dagJson["RUN1"]["TRAIN"]
-    stats[model][instance][batch]["FETCH_STALL_TIME"] = dagJson["RUN2"]["TRAIN"] - stats[model][instance][batch]["PREP_STALL_TIME"]
+    stats[model][instance][batch]["PREP_STALL_TIME"] = (dagJson["RUN3"]["TRAIN"] / synthetic_div_map[instance]) - dagJson["RUN1"]["TRAIN"]
+    stats[model][instance][batch]["FETCH_STALL_TIME"] = (dagJson["RUN2"]["TRAIN"] / synthetic_div_map[instance])- stats[model][instance][batch]["PREP_STALL_TIME"]
     if "RUN0" in dagJson:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
     else:
@@ -997,8 +1007,8 @@ def dump_to_excel(result_dir):
                         worksheet.write(item, i, value)
                 i += 1
         print(batch, flag)
-        if found:
-            workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
+        #if found:
+         #   workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
 
 
 
