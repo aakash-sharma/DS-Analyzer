@@ -218,7 +218,8 @@ def compare_instances(result_dir):
 
     X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
     X_large = ['resnet50', 'vgg11']
-    desc = ["-Large_models", "-Small_models"]
+    X_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
+    desc = ["-Large_models", "-Small_models", "-Interconnect_models"]
     desc_i = 0
 
     font = {'family': 'normal',
@@ -231,8 +232,7 @@ def compare_instances(result_dir):
     plt.xticks(fontsize=FONTSIZE)
     plt.yticks(fontsize=FONTSIZE)
 
-    for X in [X_large, X_small]:
-
+    for X in [X_large, X_small, X_interconnect]:
 
         X_axis = np.arange(len(X))
 
@@ -254,8 +254,6 @@ def compare_instances(result_dir):
                 if instance not in batch_map[batch]:
                     continue
 
-                gpu = gpu_map[instance]
-                
                 Y_PREP_STALL_PCT = [stats[model][instance][batch]["PREP_STALL_PCT"]
                                     if "PREP_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
                 Y_FETCH_STALL_PCT = [stats[model][instance][batch]["FETCH_STALL_PCT"]
@@ -560,25 +558,6 @@ def compare_models(result_dir):
         Y_COST_DISK_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_COST_CACHED_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
 
-        """
-        Y_GPU_UTIL_CACHED_PCT_LIST = []
-        Y_GPU_MEM_UTIL_CACHED_PCT_LIST = []
-        Y_COST_DISK_LIST = []
-        Y_COST_CACHED_LIST = []
-
-        for i in range(len(instances)):
-            batches = []
-            for j in range(len(BATCH_SIZES)):
-                if instances[i] not in batch_map[BATCH_SIZES[j]]:
-                    continue
-                batches.append(None)
-            
-            Y_GPU_UTIL_CACHED_PCT_LIST.append(batches.copy())
-            Y_GPU_MEM_UTIL_CACHED_PCT_LIST.append(batches.copy())
-            Y_COST_DISK_LIST.append(batches.copy())
-            Y_COST_CACHED_LIST.append(batches.copy())
-        """
-
         batch_i = 0
 
         for batch in BATCH_SIZES:
@@ -721,15 +700,6 @@ def compare_models(result_dir):
                 axs2[2,0].bar(X_metrics_io_axis - BAR_MARGIN + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
                 axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
-                #axs3[0].plot(X_itrs_axis, Y_DATA_TIME_LIST, style, alpha=overlapping, label = instance)
-                #axs3[1].plot(X_itrs_axis, Y_COMPUTE_TIME_FWD_LIST, style, alpha=overlapping, label = instance)
-                #axs3[2].plot(X_itrs_axis, Y_COMPUTE_TIME_BWD_LIST, style, alpha=overlapping, label = instance)
-
-
-                #axs3.bar(X_itrs_axis - BAR_MARGIN + diff, Y_DATA_TIME_LIST, 0.2, color = color[0])
-                #axs3.bar(X_itrs_axis - BAR_MARGIN + diff, Y_COMPUTE_TIME_FWD_LIST, 0.2, bottom = Y_DATA_TIME_LIST, color = color[1])
-                #axs3.bar(X_itrs_axis - BAR_MARGIN + diff, Y_COMPUTE_TIME_BWD_LIST, 0.2, bottom = Y_COMPUTE_TIME_FWD_LIST, color = color[2])
-
                 diff += 0.2
                 idx += 1
 
@@ -871,30 +841,34 @@ def is_number(s):
 
 def dump_to_excel(result_dir):
 
-    header_metrics = []
-    header_list_metrics = []
+    header_metrics = set()
+    header_list_metrics = set()
     for model in stats:
         for instance in stats[model]:
             for batch in stats[model][instance]:
                 for metric in stats[model][instance][batch].keys():
                     if "LIST" in metric:
-                        header_list_metrics.append(metric)
+                        header_list_metrics.add(metric)
                     else:
-                        header_metrics.append(metric)
-                break
-            break
-        break
+                        header_metrics.add(metric)
+                #break
+            #break
+        #break
 
     style = xlwt.XFStyle()
     style.num_format_str = '#,###0.00'
+    models = ['alexnet', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0',
+              'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
 
-    for model in stats:
+    for model in models:
+        if model not in stats:
+            continue
         workbook = xlwt.Workbook()
         for instance in stats[model]:
             row_list = []
-            row_list.append(["Metric"] + header_metrics)
+            row_list.append(["Metric"] + list(header_metrics))
             row_list2 = []
-            row_list2.append(["Metric"] + header_list_metrics)
+            row_list2.append(["Metric"] + list(header_list_metrics))
 
             for batch in sorted(stats[model][instance], key=int):
                 row = []
@@ -933,15 +907,19 @@ def dump_to_excel(result_dir):
                 i += 1
         workbook.save(result_dir + '/data_dump/' + model + '.xls')
 
-    models = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0', 'resnet50', 'vgg11']
 
     for instance in instances:
         workbook = xlwt.Workbook()
         for model in models:
+            print(model, instance)
+            if model not in stats:
+                continue
+            print(model)
             if instance not in stats[model]:
                 continue
+            print(model)
             row_list = []
-            row_list.append(["Metric"] + header_metrics)
+            row_list.append(["Metric"] + list(header_metrics))
             for batch in sorted(stats[model][instance], key=int):
                 row = []
                 row.append('batch-' + batch)
@@ -970,25 +948,24 @@ def dump_to_excel(result_dir):
 
         workbook.save(result_dir + '/data_dump/' + instance + '.xls')
 
-    found = False
     for batch in BATCH_SIZES:
         workbook = xlwt.Workbook()
+        found = False
         flag = False
-        for model in stats:
+        for model in models:
+            if model not in stats:
+                continue
             row_list = []
-            row_list.append(["Metric"] + header_metrics)
+            row_list.append(["Metric"] + list(header_metrics))
             for instance in stats[model]:
-                print(batch)
-                print(stats[model][instance].keys())
                 if batch not in stats[model][instance]:
                     flag = True
-                    print("break")
                     break
                 else:
                     found = True
 
                 row = []
-                row.append('instance-' + instance)
+                row.append(instance)
                 for key in header_metrics:
                     if key not in stats[model][instance][batch]:
                         row.append(0)
@@ -1013,9 +990,8 @@ def dump_to_excel(result_dir):
                     else:
                         worksheet.write(item, i, value)
                 i += 1
-        print(batch, flag)
-        #if found:
-         #   workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
+        if found:
+            workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
 
 
 
@@ -1061,8 +1037,17 @@ def main():
                             process_csv(model, instance, batch, csv_path)
         itr += 1
 
+    print("=========================================")
+    print("Dumping to excel")
+    print("=========================================")
     dump_to_excel(result_dir)
+    print("=========================================")
+    print("Comparing instances")
+    print("=========================================")
     compare_instances(result_dir)
+    print("=========================================")
+    print("Comparing models")
+    print("=========================================")
     compare_models(result_dir)
 
 
