@@ -11,7 +11,7 @@ import xlwt
 import xlrd
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-BATCH_SIZES = ['32', '64', '80', '128', '256']
+BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
 FONTSIZE = 20
 BAR_MARGIN = 0
 TEXT_MARGIN = 0.01
@@ -247,7 +247,8 @@ def compare_instances(result_dir):
             fig6, axs6 = plt.subplots(3, 1, figsize=(30, 20))
             fig7, axs7 = plt.subplots(figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
-            fig9, axs9 = plt.subplots(2, 1, figsize=(30, 20))
+            fig9, axs9 = plt.subplots(figsize=(30, 20))
+            fig10, axs10 = plt.subplots(figsize=(30, 20))
 
             for instance in instances:
 
@@ -314,10 +315,10 @@ def compare_instances(result_dir):
                 add_text(X_axis-TEXT_MARGIN + diff, Y_FETCH_STALL_PCT, axs1[1])
 
 #                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                axs9[0].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
-                axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
-                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs9[1])
+                axs9.bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
+                axs10.bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
+                add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9)
+                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10)
 
                 axs2[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
                 axs2[1].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
@@ -512,22 +513,25 @@ def compare_instances(result_dir):
             fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
-            axs9[0].set_xticks(X_axis)
-            axs9[0].set_xticklabels(X, fontsize=FONTSIZE)
-            axs9[0].set_xlabel("Models", fontsize=FONTSIZE)
-            axs9[0].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs9[0].set_title("Interconnect stall comparison", fontsize=FONTSIZE)
-            axs9[0].legend(fontsize=FONTSIZE)
+            axs9.set_xticks(X_axis)
+            axs9.set_xticklabels(X, fontsize=FONTSIZE)
+            axs9.set_xlabel("Models", fontsize=FONTSIZE)
+            axs9.set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs9.set_title("Interconnect stall comparison", fontsize=FONTSIZE)
+            axs9.legend(fontsize=FONTSIZE)
 
-            axs9[1].set_xticks(X_axis)
-            axs9[1].set_xticklabels(X, fontsize=FONTSIZE)
-            axs9[1].set_xlabel("Models", fontsize=FONTSIZE)
-            axs9[1].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs9[1].set_title("Network stall comparison", fontsize=FONTSIZE)
-            axs9[1].legend(fontsize=FONTSIZE)
+            fig9.suptitle("Interconnect Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
+            fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + desc[desc_i])
+
+            axs10.set_xticks(X_axis)
+            axs10.set_xticklabels(X, fontsize=FONTSIZE)
+            axs10.set_xlabel("Models", fontsize=FONTSIZE)
+            axs10.set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs10.set_title("Network stall comparison", fontsize=FONTSIZE)
+            axs10.legend(fontsize=FONTSIZE)
 
             fig9.suptitle("Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
-            fig9.savefig(result_dir + "/figures/stall_comparison2_batch-" + batch + desc[desc_i])
+            fig9.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i])
 
 
 
