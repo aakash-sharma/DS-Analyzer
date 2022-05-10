@@ -16,7 +16,7 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.models as models
 
-sys.path.append('/i3c/hpcl/sms821/Research/stallAnalysis/DS-Analyzer/vision')
+sys.path.append('/home/ubuntu/DS-Analyzer/vision')
 from mytorchvision.models import myResnet
 
 sys.path.append(os.path.abspath(os.getcwd()))
