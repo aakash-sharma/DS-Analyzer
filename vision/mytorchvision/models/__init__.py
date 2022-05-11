@@ -20,3 +20,5 @@
 #from . import video
 #from ._api import get_weight
 from .myResnet import *
+from .noBN_resnet import *
+from .resnet import *

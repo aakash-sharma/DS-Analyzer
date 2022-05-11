@@ -17,7 +17,8 @@ import torch.utils.data.distributed
 import torchvision.models as models
 
 sys.path.append('/i3c/hpcl/sms821/Research/stallAnalysis/DS-Analyzer/vision')
-from mytorchvision.models import myResnet
+from mytorchvision.models import myResnet, noBN_resnet
+from mytorchvision.models import resnet as resnet_extended
 
 sys.path.append(os.path.abspath(os.getcwd()))
 from profiler_utils import DataStallProfiler
@@ -45,8 +46,12 @@ except ImportError:
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
-model_names += ['noResidue_resnet18', 'noResidue_resnet34', 'noResidue_resnet50', \
+model_names += ['resnet10', 'resnet12', 'resnet16']
+model_names += ['noResidue_resnet10', 'noResidue_resnet12', 'noResidue_resnet16', \
+        'noResidue_resnet18', 'noResidue_resnet34', 'noResidue_resnet50', \
         'noResidue_resnet101', 'noResidue_resnet152']
+model_names += ['noBN_resnet10', 'noBN_resnet12', 'noBN_resnet16', 'noBN_resnet18', \
+        'noBN_resnet34', 'noBN_resnet50', 'noBN_resnet101', 'noBN_resnet152']
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training using DALI')
 parser.add_argument('data', metavar='DIR', nargs='*',
@@ -298,10 +303,18 @@ def main():
         elif "resnet" in args.arch and "noResidue" in args.arch:
             model = myResnet.__dict__[args.arch[10:]](num_classes=args.classes)
             print("[INFO]: Reading resnet without residual connections.")
+        elif "resnet" in args.arch and "noBN" in args.arch:
+            model = noBN_resnet.__dict__[args.arch[5:]](num_classes=args.classes)
+            print("[INFO]: Reading resnet without BN layers.")
+        elif "resnet" in args.arch and ("10" in args.arch or "12" in args.arch or \
+                "16" in args.arch):
+            model = resnet_extended.__dict__[args.arch](num_classes=args.classes)
+            print("[INFO]: Reading {}.".format(args.arch))
         else:
             model = models.__dict__[args.arch](num_classes=args.classes)
 
     model = model.cuda()
+    print(model)
     #print("Reading resnet")
 
     if args.fp16:

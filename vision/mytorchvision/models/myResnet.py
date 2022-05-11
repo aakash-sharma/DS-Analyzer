@@ -24,6 +24,9 @@ __all__ = [
     "ResNeXt101_64X4D_Weights",
     "Wide_ResNet50_2_Weights",
     "Wide_ResNet101_2_Weights",
+    "resnet10",
+    "resnet12",
+    "resnet16",
     "resnet18",
     "resnet34",
     "resnet50",
@@ -569,6 +572,17 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         },
     )
     DEFAULT = IMAGENET1K_V2
+
+
+def resnet10(*, weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    return _resnet(BasicBlock, [1, 1, 1, 1], weights, progress, **kwargs)
+
+def resnet12(*, weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    return _resnet(BasicBlock, [1, 1, 1, 2], weights, progress, **kwargs)
+
+def resnet16(*, weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    return _resnet(BasicBlock, [1, 2, 2, 2], weights, progress, **kwargs)
+
 
 
 @handle_legacy_interface(weights=("pretrained", ResNet18_Weights.IMAGENET1K_V1))
