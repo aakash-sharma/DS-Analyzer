@@ -16,9 +16,14 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.models as models
 
+<<<<<<< HEAD
 sys.path.append('/i3c/hpcl/sms821/Research/stallAnalysis/DS-Analyzer/vision')
 from mytorchvision.models import myResnet, noBN_resnet
 from mytorchvision.models import resnet as resnet_extended
+=======
+#sys.path.append('/home/ubuntu/DS-Analyzer/vision')
+#from mytorchvision.models import myResnet
+>>>>>>> 6347f30f5e3bb4988cfc9f43a8e82aae5e011a27
 
 sys.path.append(os.path.abspath(os.getcwd()))
 from profiler_utils import DataStallProfiler
