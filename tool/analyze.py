@@ -34,6 +34,7 @@ cost_map = {
     "p2.16xlarge" : 14.4,
     "p3.2xlarge" : 3.06,
     "p3.8xlarge" : 12.24,
+    "p3.8xlarge_noResidue" : 12.24,
     "p3.8xlarge_2" : 24.48,
     "p3.16xlarge" : 24.48}
 
@@ -49,6 +50,11 @@ synthetic_div_map = {
 
 instances = []
 batch_map = {}
+
+models_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
+models_large = ['resnet50', 'vgg11']
+models_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
+
 
 def process_json(model, instance, batch, json_path):
 
@@ -87,7 +93,6 @@ def process_json(model, instance, batch, json_path):
 
 def process_json2(model, instance, batch, json_path):
 
-    gpu = gpu_map[instance]
     with open(json_path) as fd:
         dagJson = json.load(fd)
 
@@ -97,8 +102,26 @@ def process_json2(model, instance, batch, json_path):
     elif instance not in batch_map[batch]:
         batch_map[batch].append(instance)
 
-    stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
+
+    if "RUN0" in dagJson:
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
+        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch][
+                                                                      "INTERCONNECT_STALL_TIME"] / \
+                                                                  stats[model][instance][batch][
+                                                                      "TRAIN_TIME_INGESTION"] * 100
+    else:
+        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
+
+    if instance == "p3.16xlarge" and "p3.8xlarge_2" in stats[model]:
+        if batch in stats[model]["p3.8xlarge_2"]:
+            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["p3.8xlarge_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
+            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["p3.8xlarge_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+        else:
+            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = 0
+            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = 0
+
+    stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
 
     if "RUN2" not in dagJson or "RUN3" not in dagJson:
@@ -148,23 +171,6 @@ def process_json2(model, instance, batch, json_path):
 
     stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
     stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
-
-    if "RUN0" in dagJson:
-        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
-        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch][
-                                                                      "INTERCONNECT_STALL_TIME"] / \
-                                                                  stats[model][instance][batch][
-                                                                      "TRAIN_TIME_INGESTION"] * 100
-    else:
-        stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
-
-    if instance == "p3.16xlarge" and "p3.8xlarge_2" in stats[model]:
-        if batch in stats[model]["p3.8xlarge_2"]:
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["p3.8xlarge_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["p3.8xlarge_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
-        else:
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = 0
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = 0
 
 
 
@@ -216,9 +222,6 @@ def add_text(X, Y, axs):
 
 def compare_instances(result_dir):
 
-    X_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
-    X_large = ['resnet50', 'vgg11']
-    X_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
     desc = ["-Large_models", "-Small_models", "-Interconnect_models"]
     desc_i = 0
 
@@ -232,7 +235,8 @@ def compare_instances(result_dir):
     plt.xticks(fontsize=FONTSIZE)
     plt.yticks(fontsize=FONTSIZE)
 
-    for X in [X_large, X_small, X_interconnect]:
+   # for X in [models_large, models_small, models_interconnect]:
+    for X in [models_interconnect]:
 
         X_axis = np.arange(len(X))
 
@@ -549,10 +553,11 @@ def compare_models(result_dir):
     X_BAT = ['Batch-'+ batch for batch in BATCH_SIZES]
     styles = ['r--', 'b--', 'g--', 'c--']
     colors = [['green', 'red', 'blue'], ['orange', 'cyan', 'purple'], ['green', 'red', 'blue']]
-
+    
     X_BAT_axis = np.arange(len(BATCH_SIZES))
 
-    for model in ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0', 'resnet50', 'vgg11']:
+#    for model in ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0', 'resnet50', 'vgg11']:
+    for model in models_interconnect:
 
         fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
         fig4, axs4 = plt.subplots(1, 2, figsize=(30, 20))
@@ -571,7 +576,7 @@ def compare_models(result_dir):
 
             for instance in instances:
 
-                gpu = gpu_map[instance]
+#                gpu = gpu_map[instance]
                 if instance not in stats[model]:
                     del stats[model]
                     continue
@@ -605,7 +610,7 @@ def compare_models(result_dir):
 
             for instance in instances:
 
-                gpu = gpu_map[instance]
+#                gpu = gpu_map[instance]
                 if instance not in stats[model]:
                     stats[model][instance][batch] = {}
 
@@ -861,8 +866,9 @@ def dump_to_excel(result_dir):
 
     style = xlwt.XFStyle()
     style.num_format_str = '#,###0.00'
-    models = ['alexnet', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0',
-              'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
+
+    #models = models_small + models_large + models_interconnect
+    models = [model for model in models_interconnect if "res" in model]
 
     for model in models:
         if model not in stats:
@@ -952,7 +958,8 @@ def dump_to_excel(result_dir):
 
         workbook.save(result_dir + '/data_dump/' + instance + '.xls')
 
-    for batch in BATCH_SIZES:
+    #for batch in BATCH_SIZES:
+    for batch in ['32', '80']:
         workbook = xlwt.Workbook()
         found = False
         flag = False
@@ -996,7 +1003,6 @@ def dump_to_excel(result_dir):
                 i += 1
         if found:
             workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
-
 
 
 def main():
