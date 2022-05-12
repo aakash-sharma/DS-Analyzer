@@ -966,7 +966,6 @@ def dump_to_excel(result_dir):
                     flag = True
                     break
                 else:
-                    print(model, instance, batch)
                     found = True
 
                 row = []
@@ -978,7 +977,7 @@ def dump_to_excel(result_dir):
                         row.append(stats[model][instance][batch][key])
 
                 row_list.append(row.copy())
-            if flag:
+            if row_list == []:
                 break
 
             worksheet = workbook.add_sheet(model)
