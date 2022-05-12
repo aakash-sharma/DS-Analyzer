@@ -54,6 +54,10 @@ batch_map = {}
 models_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
 models_large = ['resnet50', 'vgg11']
 models_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
+models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
+        'resnet34', 'resnet50', 'resnet101', 'resnet152']
+
+models = models_large + models_small
 
 
 def process_json(model, instance, batch, json_path):
@@ -240,7 +244,7 @@ def compare_instances(result_dir):
 
 
     for X in [models_large, models_small]:
-    #    for X in [models_interconnect]:
+#    for X in [models_synthetic]:
 
         X_axis = np.arange(len(X))
 
@@ -257,6 +261,9 @@ def compare_instances(result_dir):
             fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
             fig9, axs9 = plt.subplots(figsize=(30, 20))
             fig10, axs10 = plt.subplots(figsize=(30, 20))
+
+            if batch not in batch_map:
+                continue
 
             for instance in instances:
 
@@ -560,9 +567,6 @@ def compare_models(result_dir):
     
     X_BAT_axis = np.arange(len(BATCH_SIZES))
 
-    models = models_large + models_small
-
-#    for model in ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0', 'resnet50', 'vgg11']:
     for model in models:
 
         fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
@@ -576,13 +580,14 @@ def compare_models(result_dir):
         batch_i = 0
 
         for batch in BATCH_SIZES:
+            if batch not in batch_map:
+                continue
             max_dstat_len = 0
             max_nvidia_len = 0
             max_itrs = 0
 
             for instance in instances:
 
-#                gpu = gpu_map[instance]
                 if instance not in stats[model]:
                     del stats[model]
                     continue
@@ -616,23 +621,10 @@ def compare_models(result_dir):
 
             for instance in instances:
 
-#                gpu = gpu_map[instance]
                 if instance not in stats[model]:
-                    stats[model][instance][batch] = {}
-
+                    stats[model][instance][batch] = {}   # add continue instead??
 
                 style = styles[idx]
-                #color = colors[idx]
-
-                """
-                if instance == "p2.xlarge":
-                    style = 'r--'
-                    color = ['green', 'red', 'blue']
-                elif instance == "p3.2xlarge":
-                    style = 'b--'
-                    color = ['orange', 'cyan', 'purple']
-                """
-
                 overlapping = 0.50
         
                 Y_METRICS_DISK = []
@@ -796,7 +788,7 @@ def compare_models(result_dir):
 
         diff = 0
         for i in range(len(instances)):
-            if instances[i] not in batch_map[batch]:
+            if instances[i] not in stats[model]:
                 continue
             axs3[0].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], 0.2, label=instances[i])
             add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
@@ -866,16 +858,9 @@ def dump_to_excel(result_dir):
                         header_list_metrics.add(metric)
                     else:
                         header_metrics.add(metric)
-                #break
-            #break
-        #break
 
     style = xlwt.XFStyle()
     style.num_format_str = '#,###0.00'
-
-    #models = models_small + models_large + models_interconnect
-    #models = [model for model in models_interconnect if "res" in model]
-    models = models_small + models_large
 
     for model in models:
         if model not in stats:
@@ -928,13 +913,10 @@ def dump_to_excel(result_dir):
     for instance in instances:
         workbook = xlwt.Workbook()
         for model in models:
-            print(model, instance)
             if model not in stats:
                 continue
-            print(model)
             if instance not in stats[model]:
                 continue
-            print(model)
             row_list = []
             row_list.append(["Metric"] + list(header_metrics))
             for batch in sorted(stats[model][instance], key=int):
@@ -964,12 +946,16 @@ def dump_to_excel(result_dir):
                 i += 1
 
         workbook.save(result_dir + '/data_dump/' + instance + '.xls')
-    """
+
     for batch in BATCH_SIZES:
-#    for batch in ['32', '80']:
-        workbook = xlwt.Workbook()
         found = False
         flag = False
+
+        if batch not in batch_map:
+            continue
+
+        workbook = xlwt.Workbook()
+
         for model in models:
             if model not in stats:
                 continue
@@ -980,6 +966,7 @@ def dump_to_excel(result_dir):
                     flag = True
                     break
                 else:
+                    print(model, instance, batch)
                     found = True
 
                 row = []
@@ -1010,7 +997,6 @@ def dump_to_excel(result_dir):
                 i += 1
         if found:
             workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
-    """
 
 def main():
 
