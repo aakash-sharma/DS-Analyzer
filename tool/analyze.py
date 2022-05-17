@@ -8,7 +8,6 @@ import csv
 import statistics
 import glob
 import xlwt
-import xlrd
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
@@ -57,7 +56,7 @@ models_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet1
 models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
         'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
-models = models_large + models_small
+MODELS = models_synthetic
 
 
 def process_json(model, instance, batch, json_path):
@@ -228,6 +227,7 @@ def add_text(X, Y, axs):
 def compare_instances(result_dir):
 
     desc = ["-Large_models", "-Small_models", "-Interconnect_models"]
+    desc = ["-Interconnect_models"]
     desc_i = 0
 
     font = {'family': 'normal',
@@ -243,8 +243,9 @@ def compare_instances(result_dir):
 #    for X in [models_large, models_small, models_interconnect]:
 
 
-    for X in [models_large, models_small]:
+#    for X in [models_large, models_small]:
 #    for X in [models_synthetic]:
+    for X in [MODELS]:
 
         X_axis = np.arange(len(X))
 
@@ -259,8 +260,8 @@ def compare_instances(result_dir):
             fig6, axs6 = plt.subplots(3, 1, figsize=(30, 20))
             fig7, axs7 = plt.subplots(figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
-            fig9, axs9 = plt.subplots(figsize=(30, 20))
-            fig10, axs10 = plt.subplots(figsize=(30, 20))
+            fig9, axs9 = plt.subplots(2, 1, figsize=(30, 20))
+            fig10, axs10 = plt.subplots(2, 1, figsize=(30, 20))
 
             if batch not in batch_map:
                 continue
@@ -278,8 +279,14 @@ def compare_instances(result_dir):
                 Y_INTERCONNECT_STALL_PCT = [stats[model][instance][batch]["INTERCONNECT_STALL_PCT"]
                                             if "INTERCONNECT_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
 
+                Y_INTERCONNECT_STALL_TIME = [stats[model][instance][batch]["INTERCONNECT_STALL_TIME"]
+                                            if "INTERCONNECT_STALL_TIME" in stats[model][instance][batch] else 0 for model in X]
+
                 Y_NETWORK_STALL_PCT = [stats[model][instance][batch]["NETWORK_STALL_PCT"]
                                             if "NETWORK_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
+
+                Y_NETWORK_STALL_TIME = [stats[model][instance][batch]["NETWORK_STALL_TIME"]
+                                       if "NETWORK_STALL_TIME" in stats[model][instance][batch] else 0 for model in X]
 
                 Y_TRAIN_TIME_DISK = [stats[model][instance][batch]["TRAIN_TIME_DISK"]
                                      if "TRAIN_TIME_DISK" in stats[model][instance][batch] else 0 for model in X]
@@ -330,10 +337,15 @@ def compare_instances(result_dir):
                 add_text(X_axis-TEXT_MARGIN + diff, Y_FETCH_STALL_PCT, axs1[1])
 
 #                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                axs9.bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
-                axs10.bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10)
+                axs9[0].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
+                axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, 0.2, label=instance)
+                add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
+                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs9[1])
+
+                axs10[0].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
+                axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, 0.2, label=instance)
+                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10[0])
+                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs10[1])
 
                 axs2[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
                 axs2[1].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
@@ -528,22 +540,36 @@ def compare_instances(result_dir):
             fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
 
-            axs9.set_xticks(X_axis)
-            axs9.set_xticklabels(X, fontsize=FONTSIZE)
-            axs9.set_xlabel("Models", fontsize=FONTSIZE)
-            axs9.set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs9.set_title("Interconnect stall comparison", fontsize=FONTSIZE)
-            axs9.legend(fontsize=FONTSIZE)
+            axs9[0].set_xticks(X_axis)
+            axs9[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs9[0].set_xlabel("Models", fontsize=FONTSIZE)
+            axs9[0].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs9[0].set_title("Interconnect stall comparison", fontsize=FONTSIZE)
+            axs9[0].legend(fontsize=FONTSIZE)
+
+            axs9[1].set_xticks(X_axis)
+            axs9[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs9[1].set_xlabel("Models", fontsize=FONTSIZE)
+            axs9[1].set_ylabel("Time", fontsize=FONTSIZE)
+            axs9[1].set_title("Interconnect stall comparison", fontsize=FONTSIZE)
+            axs9[1].legend(fontsize=FONTSIZE)
 
             fig9.suptitle("Interconnect Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + desc[desc_i])
 
-            axs10.set_xticks(X_axis)
-            axs10.set_xticklabels(X, fontsize=FONTSIZE)
-            axs10.set_xlabel("Models", fontsize=FONTSIZE)
-            axs10.set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs10.set_title("Network stall comparison", fontsize=FONTSIZE)
-            axs10.legend(fontsize=FONTSIZE)
+            axs10[0].set_xticks(X_axis)
+            axs10[0].set_xticklabels(X, fontsize=FONTSIZE)
+            axs10[0].set_xlabel("Models", fontsize=FONTSIZE)
+            axs10[0].set_ylabel("Percentage", fontsize=FONTSIZE)
+            axs10[0].set_title("Network stall comparison", fontsize=FONTSIZE)
+            axs10[0].legend(fontsize=FONTSIZE)
+
+            axs10[1].set_xticks(X_axis)
+            axs10[1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs10[1].set_xlabel("Models", fontsize=FONTSIZE)
+            axs10[1].set_ylabel("Time", fontsize=FONTSIZE)
+            axs10[1].set_title("Network stall comparison", fontsize=FONTSIZE)
+            axs10[1].legend(fontsize=FONTSIZE)
 
             fig10.suptitle("Network Stall comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i])
@@ -567,7 +593,7 @@ def compare_models(result_dir):
     
     X_BAT_axis = np.arange(len(BATCH_SIZES))
 
-    for model in models:
+    for model in MODELS:
 
         fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
         fig4, axs4 = plt.subplots(1, 2, figsize=(30, 20))
@@ -862,7 +888,7 @@ def dump_to_excel(result_dir):
     style = xlwt.XFStyle()
     style.num_format_str = '#,###0.00'
 
-    for model in models:
+    for model in MODELS:
         if model not in stats:
             continue
         workbook = xlwt.Workbook()
@@ -912,7 +938,7 @@ def dump_to_excel(result_dir):
 
     for instance in instances:
         workbook = xlwt.Workbook()
-        for model in models:
+        for model in MODELS:
             if model not in stats:
                 continue
             if instance not in stats[model]:
@@ -956,7 +982,7 @@ def dump_to_excel(result_dir):
 
         workbook = xlwt.Workbook()
 
-        for model in models:
+        for model in MODELS:
             if model not in stats:
                 continue
             row_list = []
