@@ -31,5 +31,3 @@ if [[ $NODE_RANK == 0 ]]; then
 fi
 
 scp -o "StrictHostKeyChecking no" ${INSTANCE}-rank${NODE_RANK}.tar.gz $MASTER:~/DS-Analyzer/tool/${PREFIX}/
-
-'
