@@ -11,9 +11,9 @@ import xlwt
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
-FONTSIZE = 30
+FONTSIZE = 10
 BAR_MARGIN = 0
-TEXT_MARGIN = 0.01
+TEXT_MARGIN = 0.00
 
 gpu_map = {
         "p2.xlarge" : "K80-1",
@@ -73,7 +73,8 @@ plt.rc('legend', fontsize=FONTSIZE//2)
 # Set the font size of the figure title
 plt.rc('figure', titlesize=FONTSIZE)
 # Set style
-plt.style.use('ggplot')
+#plt.style.use('ggplot')
+plt.style.use('fivethirtyeight')
 
 
 def process_json(model, instance, batch, json_path):
@@ -239,7 +240,8 @@ def process_csv(model, instance, batch, csv_path):
 
 def add_text(X, Y, axs):
     for idx, value in enumerate(X):
-        axs.text(value - (0.1 * value), Y[idx] + (0.01 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE//2)
+        #axs.text(value - (0.1 * value), Y[idx] + (0.02 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE//2)
+        axs.text(value - 0.1, Y[idx] + (0.02 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE//2)
 
 def compare_instances(result_dir):
 
@@ -267,18 +269,18 @@ def compare_instances(result_dir):
         X_axis = np.arange(len(X))
 
         for batch in BATCH_SIZES:
-            diff = 0
+            diff = -0.2
 
-            fig1, axs1 = plt.subplots(2, 1, figsize=(30, 20))
-            fig2, axs2 = plt.subplots(2, 1, figsize=(30, 20))
-            fig3, axs3 = plt.subplots(3, 1, figsize=(30, 20))
-            fig4, axs4 = plt.subplots(3, 1, figsize=(30, 20))
-            fig5, axs5 = plt.subplots(3, 1, figsize=(30, 20))
-            fig6, axs6 = plt.subplots(3, 1, figsize=(30, 20))
-            fig7, axs7 = plt.subplots(figsize=(30, 20))
-            fig8, axs8 = plt.subplots(2, 1, figsize=(30, 20))
-            fig9, axs9 = plt.subplots(2, 1, figsize=(30, 20))
-            fig10, axs10 = plt.subplots(2, 1, figsize=(30, 20))
+            fig1, axs1 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig2, axs2 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig3, axs3 = plt.subplots(3, 1) #, figsize=(30, 20))
+            fig4, axs4 = plt.subplots(3, 1) #, figsize=(30, 20))
+            fig5, axs5 = plt.subplots(3, 1) #, figsize=(30, 20))
+            fig6, axs6 = plt.subplots(3, 1) #, figsize=(30, 20))
+            fig7, axs7 = plt.subplots() #figsize=(30, 20))
+            fig8, axs8 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig9, axs9 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig10, axs10 = plt.subplots(2, 1) #, figsize=(30, 20))
 
             if batch not in batch_map:
                 continue
@@ -586,8 +588,6 @@ def compare_instances(result_dir):
             fig10.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i])
 
-
-
 #            plt.show()
             plt.close('all')
 
@@ -607,8 +607,8 @@ def compare_models(result_dir):
 
     for model in MODELS:
 
-        fig3, axs3 = plt.subplots(1, 2, figsize=(30, 20))
-        fig4, axs4 = plt.subplots(1, 2, figsize=(30, 20))
+        fig3, axs3 = plt.subplots(1, 2) #, figsize=(30, 20))
+        fig4, axs4 = plt.subplots(1, 2) #, figsize=(30, 20))
 
         Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
@@ -647,8 +647,8 @@ def compare_models(result_dir):
                 max_nvidia_len = max(max_nvidia_len, len(stats[model][instance][batch]["GPU_UTIL_CACHED_LIST"]))
                 max_itrs = max(max_itrs, len(stats[model][instance][batch]["DATA_TIME_LIST"]))
 
-            fig1, axs1 = plt.subplots(3, 2, figsize=(30,20))
-            fig2, axs2 = plt.subplots(3, 2, figsize=(30,20))
+            fig1, axs1 = plt.subplots(3, 2) #, figsize=(30,20))
+            fig2, axs2 = plt.subplots(3, 2) #, figsize=(30,20))
 
             X_dstat_axis = np.arange(max_dstat_len)
             X_nvidia_axis = np.arange(max_nvidia_len)
