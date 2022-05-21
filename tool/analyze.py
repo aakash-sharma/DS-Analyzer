@@ -10,7 +10,6 @@ import glob
 import xlwt
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
 FONTSIZE = 10
 BAR_MARGIN = 0
 TEXT_MARGIN = 0.00
@@ -56,7 +55,14 @@ models_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet1
 models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
         'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
-MODELS = models_large + models_small
+models_128 = ['mobilenet_v2', 'resnet18']
+models_256 = ['alexnet', 'shufflenet_v2_x0_5', 'squeezenet1_0']
+models_80 = ['resnet50', 'vgg11']
+
+#MODELS = models_80 + models_128 + models_256
+MODELS = models_small
+#BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
+BATCH_SIZES = ['32', '64', '96', '128']
 
 # Set the default text font size
 plt.rc('font', size=FONTSIZE)
@@ -274,9 +280,10 @@ def compare_instances(result_dir):
 #    for X in [models_large, models_small, models_interconnect]:
 
 
-    for X in [models_large, models_small]:
+#    for X in [models_80, models_128, models_256]:
+#    for X in [models_large, models_small]:
 #    for X in [models_synthetic]:
-#    for X in [MODELS]:
+    for X in [MODELS]:
 
         X_axis = np.arange(len(X))
 
@@ -285,10 +292,10 @@ def compare_instances(result_dir):
 
             fig1, axs1 = plt.subplots(2, 1) #, figsize=(30, 20))
             fig2, axs2 = plt.subplots(2, 1) #, figsize=(30, 20))
-            fig3, axs3 = plt.subplots(3, 1) #, figsize=(30, 20))
-            fig4, axs4 = plt.subplots(3, 1) #, figsize=(30, 20))
-            fig5, axs5 = plt.subplots(3, 1) #, figsize=(30, 20))
-            fig6, axs6 = plt.subplots(3, 1) #, figsize=(30, 20))
+            fig3, axs3 = plt.subplots(3, 1, figsize=(6.4, 7))
+            fig4, axs4 = plt.subplots(3, 1, figsize=(6.4, 7))
+            fig5, axs5 = plt.subplots(3, 1, figsize=(6.4, 7))
+            fig6, axs6 = plt.subplots(3, 1, figsize=(6.4, 7))
             fig7, axs7 = plt.subplots() #figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1) #, figsize=(30, 20))
             fig9, axs9 = plt.subplots(2, 1) #, figsize=(30, 20))
@@ -617,8 +624,8 @@ def compare_models(result_dir):
 
     for model in MODELS:
 
-        fig3, axs3 = plt.subplots(1, 2) #, figsize=(30, 20))
-        fig4, axs4 = plt.subplots(1, 2) #, figsize=(30, 20))
+        fig3, axs3 = plt.subplots(1, 2, figsize=(6.4, 5.2))
+        fig4, axs4 = plt.subplots(1, 2, figsize=(6.5, 5.2))
 
         Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
@@ -657,8 +664,8 @@ def compare_models(result_dir):
                 max_nvidia_len = max(max_nvidia_len, len(stats[model][instance][batch]["GPU_UTIL_CACHED_LIST"]))
                 max_itrs = max(max_itrs, len(stats[model][instance][batch]["DATA_TIME_LIST"]))
 
-            fig1, axs1 = plt.subplots(3, 2) #, figsize=(30,20))
-            fig2, axs2 = plt.subplots(3, 2) #, figsize=(30,20))
+   #         fig1, axs1 = plt.subplots(2, 2, figsize=(6.4, 7))
+            fig2, axs2 = plt.subplots(3, 2, figsize=(6.4, 9))
 
             X_dstat_axis = np.arange(max_dstat_len)
             X_nvidia_axis = np.arange(max_nvidia_len)
@@ -741,45 +748,49 @@ def compare_models(result_dir):
                 if len(Y_COMPUTE_TIME_BWD_LIST) < max_itrs:
                     Y_COMPUTE_TIME_BWD_LIST.extend([0] * (max_itrs - len(Y_COMPUTE_TIME_BWD_LIST)))
 
-                axs1[0,0].bar(X_metrics_axis - BAR_MARGIN + diff, Y_METRICS_CACHED, 0.2, label = instance)
-                axs1[0,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
-                axs1[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
-                axs1[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
-                axs1[2,0].bar(X_metrics_io_axis - BAR_MARGIN + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
-                axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
+                """
+                axs1[0,0].bar(X_metrics_axis - BAR_MARGIN + diff, Y_METRICS_DISK, 0.2, label = instance)
+                axs1[0,1].bar(X_metrics_axis - BAR_MARGIN + diff, Y_METRICS_CACHED, 0.2, label = instance)
+                axs1[1,0].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs1[1,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+#                axs1[2,0].bar(X_metrics_io_axis - BAR_MARGIN + diff, Y_METRICS_IO_CACHED, 0.2, label = instance)
+#                axs1[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_CACHED, style, alpha=overlapping, label = instance)
+                """
 
-                axs2[0,0].bar(X_metrics_axis - BAR_MARGIN + diff, Y_METRICS_DISK, 0.2, label = instance)
-                axs2[0,1].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
-                axs2[1,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
-                axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
-                axs2[2,0].bar(X_metrics_io_axis - BAR_MARGIN + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
-                axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
+                axs2[0,0].plot(X_nvidia_axis, Y_GPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs2[0,1].plot(X_nvidia_axis, Y_GPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+                axs2[1,0].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs2[1,1].plot(X_nvidia_axis, Y_GPU_MEM_UTIL_CACHED, style, alpha=overlapping, label = instance)
+                axs2[2,0].plot(X_dstat_axis, Y_CPU_UTIL_DISK, style, alpha=overlapping, label = instance)
+                axs2[2,1].plot(X_dstat_axis, Y_CPU_UTIL_CACHED, style, alpha=overlapping, label = instance)
+
+#                axs2[2,0].bar(X_metrics_io_axis - BAR_MARGIN + diff, Y_METRICS_IO_DISK, 0.2, label = instance)
+#                axs2[2,1].plot(X_dstat_axis, Y_IO_WAIT_LIST_DISK, style, alpha=overlapping, label = instance)
 
                 diff += 0.2
                 idx += 1
 
-            X_labels = list(map(filter_labels, X))
-
+            """
             axs1[0,0].set_xticks(X_metrics_axis)
-            axs1[0,0].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs1[0,0].set_xlabel("Metrics", fontsize=FONTSIZE)
+            axs1[0,0].set_xticklabels(X, fontsize=FONTSIZE)
             axs1[0,0].set_ylabel("Values", fontsize=FONTSIZE)
-            axs1[0,0].set_title("Metric comparison cached", fontsize=FONTSIZE)
+            axs1[0,0].set_title("Cold Cache", fontsize=FONTSIZE)
             axs1[0,0].legend()#fontsize=FONTSIZE)
 
-            axs1[0,1].set_xlabel("Time", fontsize=FONTSIZE)
-            axs1[0,1].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs1[0,1].set_title("CPU utilization comparison cached", fontsize=FONTSIZE)
-            axs1[0,1].legend()
+            axs1[0,1].set_xticks(X_metrics_axis)
+            axs1[0,1].set_xticklabels(X, fontsize=FONTSIZE)
+            axs1[0,1].set_ylabel("Values", fontsize=FONTSIZE)
+            axs1[0,1].set_title("Hot Cache", fontsize=FONTSIZE)
+            axs1[0,1].legend()#fontsize=FONTSIZE)
 
             axs1[1,0].set_xlabel("Time", fontsize=FONTSIZE)
-            axs1[1,0].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs1[1,0].set_title("GPU utilization comparison cached", fontsize=FONTSIZE)
+            axs1[1,0].set_ylabel("CPU Util %", fontsize=FONTSIZE)
+            axs1[1,0].set_title("Cold Cache", fontsize=FONTSIZE)
             axs1[1,0].legend()
 
             axs1[1,1].set_xlabel("Time", fontsize=FONTSIZE)
-            axs1[1,1].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs1[1,1].set_title("GPU memory utilization comparison cached", fontsize=FONTSIZE)
+            axs1[1,1].set_ylabel("CPU Util %", fontsize=FONTSIZE)
+            axs1[1,1].set_title("Hot Cache", fontsize=FONTSIZE)
             axs1[1,1].legend()
 
             axs1[2,0].set_xticks(X_metrics_io_axis)
@@ -793,32 +804,42 @@ def compare_models(result_dir):
             axs1[2,1].set_ylabel("Percentage", fontsize=FONTSIZE)
             axs1[2,1].set_title("IO wait percentage cached", fontsize=FONTSIZE)
             axs1[2,1].legend()
+            """
 
-            fig1.suptitle("Cached comparison- " + model, fontsize=FONTSIZE, fontweight ="bold")
-            fig1.savefig(result_dir + "/figures/cached_comparison-" + model + "_batch-" + batch)
+#            fig1.suptitle("Metric_CPU_timeline-" + model, fontsize=FONTSIZE, fontweight ="bold")
+#            fig1.savefig(result_dir + "/figures/metric_cpu_timeline" + model + "_batch-" + batch)
 
-            axs2[0,0].set_xticks(X_metrics_axis)
-            axs2[0,0].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs2[0,0].set_xlabel("Metrics", fontsize=FONTSIZE)
-            axs2[0,0].set_ylabel("Values", fontsize=FONTSIZE)
-            axs2[0,0].set_title("Metric comparison cached", fontsize=FONTSIZE)
+            axs2[0,0].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[0,0].set_ylabel("GPU Compute Util %", fontsize=FONTSIZE)
+            axs2[0,0].set_title("Cold Cache", fontsize=FONTSIZE)
             axs2[0,0].legend()
 
             axs2[0,1].set_xlabel("Time", fontsize=FONTSIZE)
-            axs2[0,1].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs2[0,1].set_title("CPU utilization comparison cached", fontsize=FONTSIZE)
+            axs2[0,1].set_ylabel("GPU Compute Util %", fontsize=FONTSIZE)
+            axs2[0,1].set_title("Hot Cache", fontsize=FONTSIZE)
             axs2[0,1].legend()
 
             axs2[1,0].set_xlabel("Time", fontsize=FONTSIZE)
-            axs2[1,0].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs2[1,0].set_title("GPU utilization comparison cached", fontsize=FONTSIZE)
+            axs2[1,0].set_ylabel("GPU Memory Util %", fontsize=FONTSIZE)
+#            axs2[1,0].set_title("Cold Cache", fontsize=FONTSIZE)
             axs2[1,0].legend()
 
             axs2[1,1].set_xlabel("Time", fontsize=FONTSIZE)
-            axs2[1,1].set_ylabel("Percentage", fontsize=FONTSIZE)
-            axs2[1,1].set_title("GPU memory utilization comparison cached", fontsize=FONTSIZE)
+            axs2[1,1].set_ylabel("GPU Memory Util %", fontsize=FONTSIZE)
+ #           axs2[1,1].set_title("Hot Cache", fontsize=FONTSIZE)
             axs2[1,1].legend()
 
+            axs2[2,0].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[2,0].set_ylabel("CPU Util %", fontsize=FONTSIZE)
+ #          axs2[2,0].set_title("Cold Cache", fontsize=FONTSIZE)
+            axs2[2,0].legend()
+
+            axs2[2,1].set_xlabel("Time", fontsize=FONTSIZE)
+            axs2[2,1].set_ylabel("CPU Util %", fontsize=FONTSIZE)
+ #           axs2[2,1].set_title("Hot Cache", fontsize=FONTSIZE)
+            axs2[2,1].legend()
+
+            """
             axs2[2,0].set_xticks(X_metrics_io_axis)
             axs2[2,0].set_xticklabels(X_IO, fontsize=FONTSIZE)
             axs2[2,0].set_xlabel("Metrics", fontsize=FONTSIZE)
@@ -830,9 +851,10 @@ def compare_models(result_dir):
             axs2[2,1].set_ylabel("Percentage", fontsize=FONTSIZE)
             axs2[2,1].set_title("io wait percentage disk", fontsize=FONTSIZE)
             axs2[2,1].legend()
+            """
 
-            fig2.suptitle("Disk comparison - " + model, fontsize=FONTSIZE, fontweight ="bold")
-            fig2.savefig(result_dir + "/figures/disk_comparison-" + model + "_batch-" + batch)
+            fig2.suptitle("GPU and CPU Utilization (batch-" + batch + ") " + model, fontsize=FONTSIZE, fontweight ="bold")
+            fig2.savefig(result_dir + "/figures/gpu_cpu_util-" + model + "_batch-" + batch)
 
             batch_i += 1
 
@@ -852,16 +874,15 @@ def compare_models(result_dir):
 
             diff += 0.2
 
-        X_labels = list(map(filter_labels, X_BAT))
         axs3[0].set_xticks(X_BAT_axis)
-        axs3[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
+        axs3[0].set_xticklabels(X_BAT, fontsize=FONTSIZE)
         axs3[0].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs3[0].set_ylabel("Percentage", fontsize=FONTSIZE)
         axs3[0].set_title("GPU Compute Util %", fontsize=FONTSIZE)
         axs3[0].legend()#fontsize=FONTSIZE)
 
         axs3[1].set_xticks(X_BAT_axis)
-        axs3[1].set_xticklabels(X_labels, fontsize=FONTSIZE)
+        axs3[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
         axs3[1].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs3[1].set_ylabel("Percentage", fontsize=FONTSIZE)
         axs3[1].set_title("GPU Memory Util %", fontsize=FONTSIZE)
@@ -871,20 +892,20 @@ def compare_models(result_dir):
         fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model)
 
         axs4[0].set_xticks(X_BAT_axis)
-        axs4[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
+        axs4[0].set_xticklabels(X_BAT, fontsize=FONTSIZE)
         axs4[0].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs4[0].set_ylabel("Training Cost (dollar)", fontsize=FONTSIZE)
         axs4[0].set_title("Cold Cache", fontsize=FONTSIZE)
         axs4[0].legend()#fontsize=FONTSIZE)
 
         axs4[1].set_xticks(X_BAT_axis)
-        axs4[1].set_xticklabels(X_labels, fontsize=FONTSIZE)
+        axs4[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
         axs4[1].set_xlabel("Batch size", fontsize=FONTSIZE)
         axs4[1].set_ylabel("Training Cost (dollar)", fontsize=FONTSIZE)
         axs4[1].set_title("Hot Cache", fontsize=FONTSIZE)
         axs4[1].legend()#fontsize=FONTSIZE)
 
-        fig4.suptitle(model, fontsize=FONTSIZE, fontweight="bold")
+        fig4.suptitle(filter_labels(model), fontsize=FONTSIZE, fontweight="bold")
         fig4.savefig(result_dir + "/figures/training_cost_batch_compare-" + model)
 
         plt.close('all')
@@ -1093,7 +1114,7 @@ def main():
     print("=========================================")
     print("Dumping to excel")
     print("=========================================")
-    #dump_to_excel(result_dir)
+    dump_to_excel(result_dir)
     print("=========================================")
     print("Comparing instances")
     print("=========================================")
