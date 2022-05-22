@@ -264,7 +264,9 @@ def filter_labels(x):
 def compare_instances(result_dir):
 
     desc = ["-Large_models", "-Small_models", "-Interconnect_models"]
-    #desc = ["-Interconnect_models"]
+    desc = ["-Interconnect_models"]
+    desc = ["-Large_models"]
+    desc = ["-Small_models"]
     desc_i = 0
 
     font = {'family': 'normal',
@@ -445,7 +447,8 @@ def compare_instances(result_dir):
 
             fig1.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i])
-    
+            fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i] + ".pdf")
+
             axs2[0].set_xticks(X_axis)
             axs2[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
             axs2[0].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
@@ -468,6 +471,7 @@ def compare_instances(result_dir):
 
             fig2.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig2.savefig(result_dir + "/figures/training_time_batch-" + batch + desc[desc_i])
+            fig2.savefig(result_dir + "/figures/training_time_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs8[0].set_xticks(X_axis)
             axs8[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -483,6 +487,7 @@ def compare_instances(result_dir):
 
             fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i])
+            fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs3[0].set_xticks(X_axis)
             axs3[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -504,6 +509,7 @@ def compare_instances(result_dir):
 
             fig3.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig3.savefig(result_dir + "/figures/training_speed_batch-" + batch + desc[desc_i])
+            fig3.savefig(result_dir + "/figures/training_speed_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs4[0].set_xticks(X_axis)
             axs4[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -525,6 +531,7 @@ def compare_instances(result_dir):
 
             fig4.suptitle("Batch size - " + batch + " (Cold cache)", fontsize=FONTSIZE, fontweight ="bold")
             fig4.savefig(result_dir + "/figures/cpu_gpu_util_disk_batch-" + batch + desc[desc_i])
+            fig4.savefig(result_dir + "/figures/cpu_gpu_util_disk_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs5[0].set_xticks(X_axis)
             axs5[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -546,6 +553,7 @@ def compare_instances(result_dir):
 
             fig5.suptitle("Batch size - " + batch + " (Hot cache)", fontsize=FONTSIZE, fontweight ="bold")
             fig5.savefig(result_dir + "/figures/cpu_gpu_util_cached_batch-" + batch + desc[desc_i])
+            fig5.savefig(result_dir + "/figures/cpu_gpu_util_cached_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs6[0].set_xticks(X_axis)
             axs6[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -567,6 +575,7 @@ def compare_instances(result_dir):
 
             fig6.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig6.savefig(result_dir + "/figures/memcpy_compute_time_comparison_batch-" + batch + desc[desc_i])
+            fig6.savefig(result_dir + "/figures/memcpy_compute_time_comparison_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs7.set_xticks(X_axis)
             axs7.set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -577,6 +586,7 @@ def compare_instances(result_dir):
 
             fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
+            fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs9[0].set_xticks(X_axis)
             axs9[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -590,6 +600,7 @@ def compare_instances(result_dir):
 
             fig9.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + desc[desc_i])
+            fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs10[0].set_xticks(X_axis)
             axs10[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -604,6 +615,7 @@ def compare_instances(result_dir):
 
             fig10.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i])
+            fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i] + ".pdf")
 
 #            plt.show()
             plt.close('all')
