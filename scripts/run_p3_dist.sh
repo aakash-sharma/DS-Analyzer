@@ -11,6 +11,8 @@ NODE_RANK=$8
 SAMPLES=1281166
 NUM_GPUS=$((GPU * NNODES))
 
+echo $NUM_GPUS
+
 cd ~/DS-Analyzer/tool
 
 for arch in 'alexnet' 'resnet18' 'shufflenet_v2_x0_5' 'mobilenet_v2' 'squeezenet1_0'; do
@@ -53,3 +55,12 @@ for arch in 'resnet50' 'vgg11'; do
 	done
 done
 
+cd ${PREFIX}
+tar -czvf ${INSTANCE}-rank${NODE_RANK}.tar.gz ${INSTANCE}
+
+
+if [[ $NODE_RANK == 0 ]]; then
+    exit
+fi
+
+scp -o "StrictHostKeyChecking no" ${INSTANCE}-rank${NODE_RANK}.tar.gz $MASTER:~/DS-Analyzer/tool/${PREFIX}/
