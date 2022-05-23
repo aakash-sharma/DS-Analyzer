@@ -61,7 +61,9 @@ models_80 = ['resnet50', 'vgg11']
 
 #MODELS = models_80 + models_128 + models_256
 MODELS = models_small
+
 #BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
+#BATCH_SIZES = ['32', '64', '80',]
 BATCH_SIZES = ['32', '64', '96', '128']
 
 # Set the default text font size
@@ -71,11 +73,11 @@ plt.rc('axes', titlesize=FONTSIZE)
 # Set the axes labels font size
 plt.rc('axes', labelsize=FONTSIZE)
 # Set the font size for x tick labels
-plt.rc('xtick', labelsize=FONTSIZE)
+plt.rc('xtick', labelsize=FONTSIZE*2)
 # Set the font size for y tick labels
-plt.rc('ytick', labelsize=FONTSIZE//2)
+plt.rc('ytick', labelsize=FONTSIZE)
 # Set the legend font size
-plt.rc('legend', fontsize=FONTSIZE//2)
+plt.rc('legend', fontsize=FONTSIZE)
 # Set the font size of the figure title
 plt.rc('figure', titlesize=FONTSIZE)
 # Set style
@@ -112,7 +114,7 @@ def process_json(model, instance, batch, json_path):
     if "RUN0" in dagJson:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
 
-    stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
+    stats[model][instance][batch]["PREP_STALL_PCT"] = max(0, (stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100))
     stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
     stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
 
@@ -140,15 +142,24 @@ def process_json2(model, instance, batch, json_path):
     else:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
 
-    if instance == "p3.16xlarge" and "p3.8xlarge_2" in stats[model]:
-        if batch in stats[model]["p3.8xlarge_2"]:
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["p3.8xlarge_2"][batch]["TRAIN_TIME_INGESTION"] - stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["p3.8xlarge_2"][batch]["INTERCONNECT_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 10
+    if (instance == "p3.16xlarge" and "p3.8xlarge_2" in stats[model]) or (instance == "p2.16xlarge" and "p2.8xlarge_2" in stats[model]):
+        if "p3.8xlarge_2" in stats[model]:
+            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["p3.8xlarge_2"][batch]["TRAIN_TIME_INGESTION"] - \
+                                                                        stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
+            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] \
+                                                                       / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+        else:
+            stats[model]["p2.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = stats[model]["p2.8xlarge_2"][batch]["TRAIN_TIME_INGESTION"] - \
+                                                                        stats[model][instance][batch]["TRAIN_TIME_INGESTION"]
+            stats[model]["p2.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["p2.8xlarge_2"][batch]["NETWORK_STALL_TIME"] \
+                                                                       / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
+
         """
         else:
             stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = 0
             stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = 0
         """
+    
     stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
 
@@ -197,7 +208,7 @@ def process_json2(model, instance, batch, json_path):
     stats[model][instance][batch]["PREP_STALL_TIME"] = (dagJson["RUN3"]["TRAIN"] / div_factor) - dagJson["RUN1"]["TRAIN"]
     stats[model][instance][batch]["FETCH_STALL_TIME"] = (dagJson["RUN2"]["TRAIN"] / div_factor) - stats[model][instance][batch]["PREP_STALL_TIME"]
 
-    stats[model][instance][batch]["PREP_STALL_PCT"] = stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100
+    stats[model][instance][batch]["PREP_STALL_PCT"] = max(0, (stats[model][instance][batch]["PREP_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_CACHED"] * 100))
     stats[model][instance][batch]["FETCH_STALL_PCT"] = stats[model][instance][batch]["FETCH_STALL_TIME"] / stats[model][instance][batch]["TRAIN_TIME_DISK"] * 100
 
 
@@ -244,10 +255,11 @@ def process_csv(model, instance, batch, csv_path):
         stats[model][instance][batch]["COMPUTE_TIME_FWD_LIST"].append(statistics.mean(compute_fwd_time))
         stats[model][instance][batch]["COMPUTE_TIME_BWD_LIST"].append(statistics.mean(compute_bwd_time))
 
-def add_text(X, Y, axs):
+def add_text(X, Y, axs, height=.02):
     for idx, value in enumerate(X):
         #axs.text(value - (0.1 * value), Y[idx] + (0.02 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE//2)
-        axs.text(value - 0.1, Y[idx] + (0.02 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE//2)
+        #axs.text(value - 0.1, Y[idx] + (height * Y[idx]), "{:.2f}".format(Y[idx]), rotation=90, fontsize=FONTSIZE)
+        axs.text(value - 0.1, Y[idx] + (height * Y[idx]), int(Y[idx]), fontsize=FONTSIZE*3//2)
 
 def filter_labels(x):
     if x == "mobilenet_v2":
@@ -265,7 +277,7 @@ def compare_instances(result_dir):
 
     desc = ["-Large_models", "-Small_models", "-Interconnect_models"]
     desc = ["-Interconnect_models"]
-    desc = ["-Large_models"]
+#    desc = ["-Large_models"]
     desc = ["-Small_models"]
     desc_i = 0
 
@@ -278,6 +290,8 @@ def compare_instances(result_dir):
 
     plt.xticks(fontsize=FONTSIZE)
     plt.yticks(fontsize=FONTSIZE)
+
+    network = False
 
 #    for X in [models_large, models_small, models_interconnect]:
 
@@ -300,13 +314,16 @@ def compare_instances(result_dir):
             fig6, axs6 = plt.subplots(3, 1, figsize=(6.4, 7))
             fig7, axs7 = plt.subplots() #figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1) #, figsize=(30, 20))
-            fig9, axs9 = plt.subplots(2, 1) #, figsize=(30, 20))
-            fig10, axs10 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig9, axs9 = plt.subplots(2, 1, figsize=(7.5, 4.8))
+            fig10, axs10 = plt.subplots(2, 1, figsize=(7.5, 4.8))
 
             if batch not in batch_map:
                 continue
 
             for instance in instances:
+
+                if '_' in instance:
+                    network = True
 
                 if instance not in batch_map[batch]:
                     continue
@@ -315,17 +332,17 @@ def compare_instances(result_dir):
                                     if "PREP_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
                 Y_FETCH_STALL_PCT = [stats[model][instance][batch]["FETCH_STALL_PCT"]
                                      if "FETCH_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
-#                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                Y_INTERCONNECT_STALL_PCT = [stats[model][instance][batch]["INTERCONNECT_STALL_PCT"]
+                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
+                    Y_INTERCONNECT_STALL_PCT = [stats[model][instance][batch]["INTERCONNECT_STALL_PCT"]
                                             if "INTERCONNECT_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_INTERCONNECT_STALL_TIME = [stats[model][instance][batch]["INTERCONNECT_STALL_TIME"]
+                    Y_INTERCONNECT_STALL_TIME = [stats[model][instance][batch]["INTERCONNECT_STALL_TIME"]
                                             if "INTERCONNECT_STALL_TIME" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_NETWORK_STALL_PCT = [stats[model][instance][batch]["NETWORK_STALL_PCT"]
+                    Y_NETWORK_STALL_PCT = [stats[model][instance][batch]["NETWORK_STALL_PCT"]
                                             if "NETWORK_STALL_PCT" in stats[model][instance][batch] else 0 for model in X]
 
-                Y_NETWORK_STALL_TIME = [stats[model][instance][batch]["NETWORK_STALL_TIME"]
+                    Y_NETWORK_STALL_TIME = [stats[model][instance][batch]["NETWORK_STALL_TIME"]
                                        if "NETWORK_STALL_TIME" in stats[model][instance][batch] else 0 for model in X]
 
                 Y_TRAIN_TIME_DISK = [stats[model][instance][batch]["TRAIN_TIME_DISK"]
@@ -376,16 +393,16 @@ def compare_instances(result_dir):
                 add_text(X_axis-TEXT_MARGIN + diff, Y_PREP_STALL_PCT, axs1[0])
                 add_text(X_axis-TEXT_MARGIN + diff, Y_FETCH_STALL_PCT, axs1[1])
 
-#                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                axs9[0].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
-                axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, 0.2, label=instance)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
-                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs9[1])
+                if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
+                    axs9[0].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, 0.2, label=instance)
+                    axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, 0.2, label=instance)
+                    add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
+                    add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, axs9[1])
 
-                axs10[0].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
-                axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, 0.2, label=instance)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10[0])
-                add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs10[1])
+                    axs10[0].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, 0.2, label=instance)
+                    axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, 0.2, label=instance)
+                    add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10[0])
+                    add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs10[1])
 
                 axs2[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
                 axs2[1].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
@@ -445,7 +462,7 @@ def compare_instances(result_dir):
             axs1[1].set_ylabel("Disk stall %", fontsize=FONTSIZE)
             axs1[1].legend()#fontsize=FONTSIZE)
 
-            fig1.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+        #    fig1.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i])
             fig1.savefig(result_dir + "/figures/stall_comparison_batch-" + batch + desc[desc_i] + ".pdf")
 
@@ -590,32 +607,36 @@ def compare_instances(result_dir):
 
             axs9[0].set_xticks(X_axis)
             axs9[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs9[0].set_ylabel("Interconnect Stall %", fontsize=FONTSIZE)
+#            if not network:
+            axs9[0].set_ylabel("I/C Stall %", fontsize=FONTSIZE)
+#           else:
+#               axs9[0].set_ylabel("N/W Stall %", fontsize=FONTSIZE)
+
             axs9[0].legend()#fontsize=FONTSIZE)
 
             axs9[1].set_xticks(X_axis)
             axs9[1].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs9[1].set_ylabel("Interconnect Stall Time (Seconds)", fontsize=FONTSIZE)
+            axs9[1].set_ylabel("I/C Stall (Seconds)", fontsize=FONTSIZE)
             axs9[1].legend()#fontsize=FONTSIZE)
 
-            fig9.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+#            fig9.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + desc[desc_i])
             fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs10[0].set_xticks(X_axis)
             axs10[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs10[0].set_ylabel("Network Stall %", fontsize=FONTSIZE)
+            axs10[0].set_ylabel("N/W Stall %", fontsize=FONTSIZE)
             axs10[0].legend()#fontsize=FONTSIZE)
 
             axs10[1].set_xticks(X_axis)
             axs10[1].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs10[1].set_ylabel("Network Stall Time (Seconds)", fontsize=FONTSIZE)
-            axs10[1].set_title("Network stall comparison", fontsize=FONTSIZE)
+            axs10[1].set_ylabel("N/W Stall (Seconds)", fontsize=FONTSIZE)
+        #    axs10[1].set_title("Network stall comparison", fontsize=FONTSIZE)
             axs10[1].legend()#fontsize=FONTSIZE)
 
-            fig10.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
-            fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i])
-            fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i] + ".pdf")
+#            fig10.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+            fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i], bbox_inches='tight')
+            fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + desc[desc_i] + ".pdf", bbox_inches='tight')
 
 #            plt.show()
             plt.close('all')
