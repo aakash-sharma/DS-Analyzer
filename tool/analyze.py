@@ -405,16 +405,14 @@ def compare_instances(result_dir):
                     add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs10[1])
 
                 axs2[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_DISK, 0.2, label=instance)
-                axs2[1].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
-                #axs2[2].bar(X_axis-BAR_MARGIN + diff, Y_DISK_THR, 0.2, label=instance)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_DISK, axs2[0])
-                add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_CACHED, axs2[1])
-                #add_text(X_axis-TEXT_MARGIN + diff, Y_DISK_THR, axs2[2])
+                axs2[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_DISK, 0.2, label=instance)
+                #add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_DISK, axs2[0])
+                add_text(X_axis-TEXT_MARGIN + diff, Y_COST_DISK, axs2[1])
 
-                axs8[0].bar(X_axis-BAR_MARGIN + diff, Y_COST_DISK, 0.2, label=instance)
+                axs8[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, 0.2, label=instance)
                 axs8[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_CACHED, 0.2, label=instance)
-                add_text(X_axis-TEXT_MARGIN + diff, Y_COST_DISK, axs2[0])
-                add_text(X_axis-TEXT_MARGIN + diff, Y_COST_CACHED, axs2[1])
+                #add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_CACHED, axs8[0])
+                add_text(X_axis-TEXT_MARGIN + diff, Y_COST_CACHED, axs8[1])
 
                 axs3[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_SPEED_INGESTION, 0.2, label = instance)
                 axs3[1].bar(X_axis-BAR_MARGIN + diff , Y_TRAIN_SPEED_DISK, 0.2, label = instance)
@@ -469,40 +467,28 @@ def compare_instances(result_dir):
             axs2[0].set_xticks(X_axis)
             axs2[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
             axs2[0].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
-            axs2[0].set_title("Cold cache", fontsize=FONTSIZE)
             axs2[0].legend()#fontsize=FONTSIZE)
 
             axs2[1].set_xticks(X_axis)
             axs2[1].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs2[1].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
-            axs2[1].set_title("Hot cache", fontsize=FONTSIZE)
+            axs2[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
             axs2[1].legend()#fontsize=FONTSIZE)
 
-            """
-            axs2[2].set_xticks(X_axis)
-            axs2[2].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs2[2].set_ylabel("Throughput", fontsize=FONTSIZE)
-            axs2[2].set_title("Disk throughput comparison", fontsize=FONTSIZE)
-            axs2[2].legend(fontsize=FONTSIZE)
-            """
-
             fig2.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
-            fig2.savefig(result_dir + "/figures/training_time_batch-" + batch + desc[desc_i])
-            fig2.savefig(result_dir + "/figures/training_time_batch-" + batch + desc[desc_i] + ".pdf")
+            fig2.savefig(result_dir + "/figures/training_time_cost_disk_batch-" + batch + desc[desc_i])
 
             axs8[0].set_xticks(X_axis)
             axs8[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs8[0].set_ylabel("Dollar cost", fontsize=FONTSIZE)
-            axs8[0].set_title("Cold cache", fontsize=FONTSIZE)
+            axs8[0].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
             axs8[0].legend()#fontsize=FONTSIZE)
 
             axs8[1].set_xticks(X_axis)
             axs8[1].set_xticklabels(X_labels, fontsize=FONTSIZE)
-            axs8[1].set_ylabel("Dollar cost", fontsize=FONTSIZE)
-            axs8[1].set_title("Hot cache", fontsize=FONTSIZE)
+            axs8[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
             axs8[1].legend()#fontsize=FONTSIZE)
 
             fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+            fig8.savefig(result_dir + "/figures/training_time_cost__cached_batch-" + batch + desc[desc_i])
             fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i])
             fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i] + ".pdf")
 
