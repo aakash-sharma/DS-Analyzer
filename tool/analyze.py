@@ -479,7 +479,7 @@ def compare_instances(result_dir):
             axs8[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
             axs8[1].legend()#fontsize=FONTSIZE)
 
-            fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+        #    fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig8.savefig(result_dir + "/figures/training_time_cost_cached_batch-" + batch + desc[desc_i])
             fig8.savefig(result_dir + "/figures/training_time_cost_cached_batch-" + batch + desc[desc_i] + ".pdf")
 
@@ -501,7 +501,7 @@ def compare_instances(result_dir):
             axs3[2].set_title("Hot cache", fontsize=FONTSIZE)
             axs3[2].legend()#fontsize=FONTSIZE)
 
-            fig3.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+        #    fig3.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig3.savefig(result_dir + "/figures/training_speed_batch-" + batch + desc[desc_i])
             fig3.savefig(result_dir + "/figures/training_speed_batch-" + batch + desc[desc_i] + ".pdf")
 
@@ -523,7 +523,7 @@ def compare_instances(result_dir):
 #            axs4[2].set_title("GPU memory utilization comparison", fontsize=FONTSIZE)
             axs4[2].legend()#fontsize=FONTSIZE)
 
-            fig4.suptitle("Batch size - " + batch + " (Cold cache)", fontsize=FONTSIZE, fontweight ="bold")
+#            fig4.suptitle("Batch size - " + batch + " (Cold cache)", fontsize=FONTSIZE, fontweight ="bold")
             fig4.savefig(result_dir + "/figures/cpu_gpu_util_disk_batch-" + batch + desc[desc_i])
             fig4.savefig(result_dir + "/figures/cpu_gpu_util_disk_batch-" + batch + desc[desc_i] + ".pdf")
 
@@ -545,7 +545,7 @@ def compare_instances(result_dir):
             axs5[2].set_title("GPU memory utilization comparison", fontsize=FONTSIZE)
             axs5[2].legend()#fontsize=FONTSIZE)
 
-            fig5.suptitle("Batch size - " + batch + " (Hot cache)", fontsize=FONTSIZE, fontweight ="bold")
+#            fig5.suptitle("Batch size - " + batch + " (Hot cache)", fontsize=FONTSIZE, fontweight ="bold")
             fig5.savefig(result_dir + "/figures/cpu_gpu_util_cached_batch-" + batch + desc[desc_i])
             fig5.savefig(result_dir + "/figures/cpu_gpu_util_cached_batch-" + batch + desc[desc_i] + ".pdf")
 
@@ -567,7 +567,7 @@ def compare_instances(result_dir):
             axs6[2].set_title("Bwd propogation compute time", fontsize=FONTSIZE)
             axs6[2].legend()#fontsize=FONTSIZE)
 
-            fig6.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+#            fig6.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig6.savefig(result_dir + "/figures/memcpy_compute_time_comparison_batch-" + batch + desc[desc_i])
             fig6.savefig(result_dir + "/figures/memcpy_compute_time_comparison_batch-" + batch + desc[desc_i] + ".pdf")
 
@@ -578,7 +578,7 @@ def compare_instances(result_dir):
             leg = ["Memcpy Time", "Fwd Propogation Time", "Bwd Propogation Time"]
             axs7.legend()#leg, fontsize=FONTSIZE)
 
-            fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
+#            fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i])
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + desc[desc_i] + ".pdf")
 
