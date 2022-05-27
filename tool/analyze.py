@@ -36,16 +36,6 @@ cost_map = {
     "p3.8xlarge_2" : 24.48,
     "p3.16xlarge" : 24.48}
 
-synthetic_div_map = {
-    "p2.xlarge": 2,
-    "p2.8xlarge": 2,
-    "p2.8xlarge_2": 2,
-    "p2.16xlarge": 2,
-    "p3.2xlarge": 10,
-    "p3.8xlarge": 6,
-    "p3.8xlarge_2": 3,
-    "p3.16xlarge": 3}
-
 instances = []
 batch_map = {}
 
@@ -63,8 +53,9 @@ models_80 = ['resnet50', 'vgg11']
 MODELS = models_small
 
 #BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
-#BATCH_SIZES = ['32', '64', '80',]
 BATCH_SIZES = ['32', '64', '96', '128']
+#BATCH_SIZES = ['32', '64', '128', '256']
+#BATCH_SIZES = ['32', '64', '80']
 
 # Set the default text font size
 plt.rc('font', size=FONTSIZE)
@@ -73,7 +64,7 @@ plt.rc('axes', titlesize=FONTSIZE)
 # Set the axes labels font size
 plt.rc('axes', labelsize=FONTSIZE)
 # Set the font size for x tick labels
-plt.rc('xtick', labelsize=FONTSIZE*2)
+plt.rc('xtick', labelsize=FONTSIZE+15)
 # Set the font size for y tick labels
 plt.rc('ytick', labelsize=FONTSIZE)
 # Set the legend font size
@@ -277,7 +268,7 @@ def compare_instances(result_dir):
 
     desc = ["-Large_models", "-Small_models", "-Interconnect_models"]
     desc = ["-Interconnect_models"]
-#    desc = ["-Large_models"]
+    desc = ["-Large_models"]
     desc = ["-Small_models"]
     desc_i = 0
 
@@ -474,8 +465,9 @@ def compare_instances(result_dir):
             axs2[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
             axs2[1].legend()#fontsize=FONTSIZE)
 
-            fig2.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
+        #    fig2.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig2.savefig(result_dir + "/figures/training_time_cost_disk_batch-" + batch + desc[desc_i])
+            fig2.savefig(result_dir + "/figures/training_time_cost_disk_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs8[0].set_xticks(X_axis)
             axs8[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
@@ -488,9 +480,8 @@ def compare_instances(result_dir):
             axs8[1].legend()#fontsize=FONTSIZE)
 
             fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
-            fig8.savefig(result_dir + "/figures/training_time_cost__cached_batch-" + batch + desc[desc_i])
-            fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i])
-            fig8.savefig(result_dir + "/figures/training_cost_batch-" + batch + desc[desc_i] + ".pdf")
+            fig8.savefig(result_dir + "/figures/training_time_cost_cached_batch-" + batch + desc[desc_i])
+            fig8.savefig(result_dir + "/figures/training_time_cost_cached_batch-" + batch + desc[desc_i] + ".pdf")
 
             axs3[0].set_xticks(X_axis)
             axs3[0].set_xticklabels(X_labels, fontsize=FONTSIZE)
