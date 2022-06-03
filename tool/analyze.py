@@ -11,7 +11,7 @@ import glob
 import xlwt
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-FONTSIZE = 12
+FONTSIZE = 13
 BAR_MARGIN = 0
 TEXT_MARGIN = 0.00
 BAR_WIDTH = 0.1
@@ -52,19 +52,18 @@ models_256 = ['alexnet', 'shufflenet_v2_x0_5', 'squeezenet1_0']
 models_80 = ['resnet50', 'vgg11']
 
 #MODELS = models_80 + models_128 + models_256
-MODELS = models_small
+MODELS = models_large
 
 #BATCH_SIZES = ['32', '48', '64', '80', '128', '256']
-BATCH_SIZES = ['32', '64', '96', '128']
+#BATCH_SIZES = ['32', '64', '96', '128']
 #BATCH_SIZES = ['32', '64', '128', '256']
-#BATCH_SIZES = ['32', '48', '64', '80']
+BATCH_SIZES = ['32', '48', '64', '80']
 #BATCH_SIZES = ['32', '64', '128']
 
 DESC = ["-Large_models", "-Small_models", "-Interconnect_models"]
 DESC = ["-Interconnect_models"]
 DESC = ["-Large_models"]
-DESC = ["-Small_models"]
-
+#DESC = ["-Small_models"]
 
 
 # Set the default text font size
@@ -303,8 +302,9 @@ def compare_instances(result_dir):
             fig6, axs6 = plt.subplots(3, 1)#, figsize=(6.4, 7))
             fig7, axs7 = plt.subplots() #figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1) #, figsize=(30, 20))
-            fig9, axs9 = plt.subplots(2, 1)#, figsize=(7.5, 4.8))
-            fig10, axs10 = plt.subplots(2, 1)#, figsize=(7.5, 4.8))
+            fig9, axs9 = plt.subplots(2, 1)#, figsize=(6.4, 2.4))
+            #fig10, axs10 = plt.subplots(2, 1, figsize=(3.2, 4.8))
+            fig10, axs10 = plt.subplots(figsize=(3.2, 2.4))
             fig11, axs11 = plt.subplots() #figsize=(30, 20))
             fig12, axs12 = plt.subplots(2, 1) #figsize=(30, 20))
 
@@ -394,8 +394,9 @@ def compare_instances(result_dir):
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, axs9[1])
 
-                    axs10[0].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, BAR_WIDTH, label=label_instance)
-                    axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, BAR_WIDTH, label=label_instance)
+                if instance == "p2.8xlarge_2" or instance == "p3.8xlarge_2":
+                    axs10.bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, BAR_WIDTH, label=label_instance)
+                    ##axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, BAR_WIDTH, label=label_instance)
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10[0])
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs10[1])
 
@@ -465,12 +466,12 @@ def compare_instances(result_dir):
             axs2[0].set_xticks(X_axis)
             axs2[0].set_xticklabels(X_labels)
             #axs2[0].set_yscale('log')
-            axs2[0].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
+            axs2[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
             axs2[0].legend()#fontsize=FONTSIZE)
 
             axs2[1].set_xticks(X_axis)
             axs2[1].set_xticklabels(X_labels)
-            axs2[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
+            axs2[1].set_ylabel("Cost (Dollars)", fontsize=FONTSIZE)
 #            axs2[1].legend()#fontsize=FONTSIZE)
 
         #    fig2.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
@@ -480,12 +481,12 @@ def compare_instances(result_dir):
             axs12[0].set_xticks(X_axis)
             axs12[0].set_xticklabels(X_labels)
             #axs12[0].set_yscale('log')
-            axs12[0].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
+            axs12[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
             axs12[0].legend()#fontsize=FONTSIZE)
 
             axs12[1].set_xticks(X_axis)
             axs12[1].set_xticklabels(X_labels)
-            axs12[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
+            axs12[1].set_ylabel("Cost (Dollars)", fontsize=FONTSIZE)
 
             fig12.savefig(result_dir + "/figures/training_time_cost_ingestion_batch-" + batch + DESC[desc_i])
             fig12.savefig(result_dir + "/figures/training_time_cost_ingestion_batch-" + batch + DESC[desc_i] + ".pdf", bbox_inches='tight', pad_inches=0)
@@ -493,12 +494,12 @@ def compare_instances(result_dir):
             axs8[0].set_xticks(X_axis)
             #axs8[0].set_yscale('log')
             axs8[0].set_xticklabels(X_labels)
-            axs8[0].set_ylabel("Training time (Seconds)", fontsize=FONTSIZE)
+            axs8[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
             axs8[0].legend()#fontsize=FONTSIZE)
 
             axs8[1].set_xticks(X_axis)
             axs8[1].set_xticklabels(X_labels)
-            axs8[1].set_ylabel("Training cost (Dollars)", fontsize=FONTSIZE)
+            axs8[1].set_ylabel("Cost (Dollars)", fontsize=FONTSIZE)
         #    axs8[1].legend()#fontsize=FONTSIZE)
 
         #    fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
@@ -534,19 +535,19 @@ def compare_instances(result_dir):
 
             axs4[0].set_xticks(X_axis)
             axs4[0].set_xticklabels(X_labels)
-            axs4[0].set_ylabel("Average CPU utilization", fontsize=FONTSIZE)
+            axs4[0].set_ylabel("Avg CPU util", fontsize=FONTSIZE)
 #            axs4[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
             axs4[0].legend()#fontsize=FONTSIZE)
 
             axs4[1].set_xticks(X_axis)
             axs4[1].set_xticklabels(X_labels)
-            axs4[1].set_ylabel("Average GPU utilization", fontsize=FONTSIZE)
+            axs4[1].set_ylabel("Avg GPU Compute Util", fontsize=FONTSIZE)
 #            axs4[1].set_title("GPU utilization comparison", fontsize=FONTSIZE)
         #    axs4[1].legend()#fontsize=FONTSIZE)
 
             axs4[2].set_xticks(X_axis)
             axs4[2].set_xticklabels(X_labels)
-            axs4[2].set_ylabel("Average GPU memory utilization", fontsize=FONTSIZE)
+            axs4[2].set_ylabel("Avg GPU Memory Util", fontsize=FONTSIZE)
 #            axs4[2].set_title("GPU memory utilization comparison", fontsize=FONTSIZE)
         #    axs4[2].legend()#fontsize=FONTSIZE)
 
@@ -556,19 +557,19 @@ def compare_instances(result_dir):
 
             axs5[0].set_xticks(X_axis)
             axs5[0].set_xticklabels(X_labels)
-            axs5[0].set_ylabel("Average CPU utilization", fontsize=FONTSIZE)
-            axs5[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
+            axs5[0].set_ylabel("Avg CPU Util", fontsize=FONTSIZE)
+#            axs5[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
             axs5[0].legend()#fontsize=FONTSIZE)
 
             axs5[1].set_xticks(X_axis)
             axs5[1].set_xticklabels(X_labels)
-            axs5[1].set_ylabel("Average GPU utilization", fontsize=FONTSIZE)
+            axs5[1].set_ylabel("Avg GPU Util", fontsize=FONTSIZE)
             axs5[1].set_title("GPU utilization comparison", fontsize=FONTSIZE)
         #    axs5[1].legend()#fontsize=FONTSIZE)
 
             axs5[2].set_xticks(X_axis)
             axs5[2].set_xticklabels(X_labels)
-            axs5[2].set_ylabel("Average GPU memory utilization", fontsize=FONTSIZE)
+            axs5[2].set_ylabel("Avg GPU Memory Util", fontsize=FONTSIZE)
             axs5[2].set_title("GPU memory utilization comparison", fontsize=FONTSIZE)
         #    axs5[2].legend()#fontsize=FONTSIZE)
 
@@ -627,14 +628,14 @@ def compare_instances(result_dir):
             fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + DESC[desc_i])
             fig9.savefig(result_dir + "/figures/stall_comparison_interconnect_batch-" + batch + DESC[desc_i] + ".pdf", bbox_inches='tight', pad_inches=0)
 
-            axs10[0].set_xticks(X_axis)
-            axs10[0].set_xticklabels(X_labels)
-            axs10[0].set_ylabel("N/W Stall %", fontsize=FONTSIZE)
-            axs10[0].legend()#fontsize=FONTSIZE)
+            axs10.set_xticks(X_axis)
+            axs10.set_xticklabels(X_labels)
+            axs10.set_ylabel("Percentage", fontsize=FONTSIZE)
+            #axs10[0].legend()#fontsize=FONTSIZE)
 
-            axs10[1].set_xticks(X_axis)
-            axs10[1].set_xticklabels(X_labels)
-            axs10[1].set_ylabel("N/W Stall (Seconds)", fontsize=FONTSIZE)
+            #axs10[1].set_xticks(X_axis)
+            #axs10[1].set_xticklabels(X_labels)
+            #axs10[1].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
         #    axs10[1].set_title("Network stall comparison", fontsize=FONTSIZE)
         #    axs10[1].legend()#fontsize=FONTSIZE)
 
@@ -661,13 +662,15 @@ def compare_models(result_dir):
 
     for model in MODELS:
 
-        fig3, axs3 = plt.subplots(1, 2, figsize=(6.4, 5.2))
-        fig4, axs4 = plt.subplots(1, 2, figsize=(6.5, 5.2))
+        fig3, axs3 = plt.subplots(1, 2)#, figsize=(6.4, 5.2))
+        fig4, axs4 = plt.subplots(1, 2) #, figsize=(6.5, 5.2))
+        fig1, axs1 = plt.subplots()
 
         Y_GPU_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_GPU_MEM_UTIL_CACHED_PCT_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_COST_DISK_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
         Y_COST_CACHED_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
+        Y_NW_STALL_LIST = [[None for i in range(len(BATCH_SIZES))] for j in range(len(instances))]
 
         batch_i = 0
 
@@ -761,6 +764,7 @@ def compare_models(result_dir):
 
                 Y_COST_DISK_LIST[idx][batch_i] = stats[model][instance][batch]["COST_DISK"] if "COST_DISK" in stats[model][instance][batch] else 0
                 Y_COST_CACHED_LIST[idx][batch_i] = stats[model][instance][batch]["COST_CACHED"] if "COST_CACHED" in stats[model][instance][batch] else 0
+                Y_NW_STALL_LIST[idx][batch_i] = stats[model][instance][batch]["NETWORK_STALL_PCT"] if "NETWORK_STALL_PCT" in stats[model][instance][batch] else 0
 
                 if len(Y_CPU_UTIL_DISK) < max_dstat_len:
                     Y_CPU_UTIL_DISK.extend([0] * (max_dstat_len - len(Y_CPU_UTIL_DISK)))
@@ -887,6 +891,10 @@ def compare_models(result_dir):
             axs4[1].bar(X_BAT_axis -BAR_MARGIN + diff, Y_COST_CACHED_LIST[i], BAR_WIDTH, label=instances[i])
             #add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_COST_CACHED_LIST[i], axs4[1])
 
+            if instances[i] == "p2.8xlarge_2" or instances[i] == "p3.8xlarge_2":
+                print(Y_NW_STALL_LIST[i])
+                axs1.bar(X_BAT_axis - BAR_MARGIN + diff, Y_NW_STALL_LIST[i], BAR_WIDTH, label=instances[i])
+
             diff += BAR_WIDTH
 
         axs3[0].set_xticks(X_BAT_axis)
@@ -924,6 +932,14 @@ def compare_models(result_dir):
         #fig4.suptitle(filter_labels(model), fontsize=FONTSIZE, fontweight="bold")
         fig4.savefig(result_dir + "/figures/training_cost_batch_compare-" + model)
         fig4.savefig(result_dir + "/figures/training_cost_batch_compare-" + model + '.pdf', bbox_inches='tight', pad_inches=0)
+
+        axs1.set_xticks(X_BAT_axis)
+        axs1.set_xticklabels(X_BAT)
+        axs1.set_xlabel("Batch size")
+        axs1.set_ylabel("Slowdown %")
+
+        fig1.savefig(result_dir + "/figures/nw_slowdown-" + model)
+        fig1.savefig(result_dir + "/figures/nw_slowdown-" + model + '.pdf', bbox_inches='tight', pad_inches=0)
 
         plt.close('all')
         #plt.show()
@@ -1090,6 +1106,17 @@ def main():
 
     if len(sys.argv) <= 1:
         return
+
+    """
+    size = sys.argv[1]
+
+    if size == "large":
+        MODELS = models_large
+        DESC = ["-Large_models"]
+    else:
+        MODELS = models_small
+        DESC = ["-Small_models"]
+    """
 
     result_dir = sys.argv[1]
 
