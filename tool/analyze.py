@@ -892,7 +892,6 @@ def compare_models(result_dir):
             #add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_COST_CACHED_LIST[i], axs4[1])
 
             if instances[i] == "p2.8xlarge_2" or instances[i] == "p3.8xlarge_2":
-                print(Y_NW_STALL_LIST[i])
                 axs1.bar(X_BAT_axis - BAR_MARGIN + diff, Y_NW_STALL_LIST[i], BAR_WIDTH, label=instances[i])
 
             diff += BAR_WIDTH
@@ -1107,21 +1106,29 @@ def main():
     if len(sys.argv) <= 1:
         return
 
-    """
-    size = sys.argv[1]
+    global MODELS
+    global DESC
+    global BATCH_SIZES
 
-    if size == "large":
-        MODELS = models_large
-        DESC = ["-Large_models"]
-    else:
+    family = sys.argv[1]
+    model_size = sys.argv[2]
+
+    if family == "p2":
+        BATCH_SIZES = ['32', '64', '96', '128']
         MODELS = models_small
-        DESC = ["-Small_models"]
-    """
+    if family == "p3":
+        if model_size == "small:":
+            BATCH_SIZES = ['32', '64', '128', '256']
+            MODELS = models_small
+        else:
+            BATCH_SIZES = ['32', '48', '64', '80']
+            MODELS = models_large
 
-    result_dir = sys.argv[1]
+    result_dir = sys.argv[3]
 
     itr = 0
-    for instance in sys.argv[2:]:
+    for instance in sys.argv[4:]:
+
         instances.append(instance)
         result_path1 = result_dir + "/" + instance + "/" + "dali-gpu"
         result_path2 = result_dir + "/" + instance + "/" + "dali-cpu"
