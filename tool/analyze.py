@@ -43,7 +43,9 @@ batch_map = {}
 
 models_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
 models_large = ['resnet50', 'vgg11']
-models_interconnect = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
+models_resnet_vgg = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
+models_resnet = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+models_vgg = ['vgg11', 'vgg13', 'vgg16', 'vgg19']
 models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
         'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
@@ -287,8 +289,8 @@ def compare_instances(result_dir):
     plt.xticks(fontsize=FONTSIZE)
     plt.yticks(fontsize=FONTSIZE)
 
-    for X in [MODELS]:
-
+    for X in MODELS:
+        print(X)
         X_axis = np.arange(len(X))
 
         for batch in BATCH_SIZES:
@@ -1111,18 +1113,25 @@ def main():
     global BATCH_SIZES
 
     family = sys.argv[1]
-    model_size = sys.argv[2]
+    model_type = sys.argv[2]
 
     if family == "p2":
         BATCH_SIZES = ['32', '64', '96', '128']
         MODELS = models_small
+        DESC = ["-Small_models"]
     if family == "p3":
-        if model_size == "small:":
+        if model_type == "small":
             BATCH_SIZES = ['32', '64', '128', '256']
             MODELS = models_small
+            DESC = ["-Small_models"]
+        elif model_type == "resnet-vgg":
+            BATCH_SIZES = ['32', '80']
+            MODELS = [models_resnet, models_vgg]
+            DESC = ["-resnet_models", "vgg-models"]
         else:
             BATCH_SIZES = ['32', '48', '64', '80']
             MODELS = models_large
+            DESC = ["-Large_models"]
 
     result_dir = sys.argv[3]
 
@@ -1165,7 +1174,7 @@ def main():
     print("=========================================")
     print("Dumping to excel")
     print("=========================================")
-    dump_to_excel(result_dir)
+#    dump_to_excel(result_dir)
     print("=========================================")
     print("Comparing instances")
     print("=========================================")
