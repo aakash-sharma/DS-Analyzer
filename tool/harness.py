@@ -146,7 +146,7 @@ def run_synthetic_singleGPU(root_log_path):
 
         args.use_precreate = True
 
-    processes = []
+    utils.start_resource_profiling()
 
     # spawn the processes
     if args.use_env:
@@ -187,9 +187,10 @@ def run_synthetic_singleGPU(root_log_path):
 #    log_path = os.getcwd() + "/" + args.prefix + "/" + args.arch + "/jobs-1" + "/gpus-1" + "/cpus-" + str(args.workers) + "/run0-synthetic_singleGPU/"
     log_path = root_log_path + "/rank-" + str(args.node_rank) + "/run0-synthetic_singleGPU/"
 
+    res_dstat, res_free, res_nvidia = utils.stop_resource_profiling()
     utils.move_logs(log_path)
     print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
-    return log_path
+    return log_path, res_dstat, res_free, res_nvidia
 
 def run_synthetic(root_log_path, delay_allreduce=True):
     # world size in terms of number of processes
@@ -218,6 +219,8 @@ def run_synthetic(root_log_path, delay_allreduce=True):
 
 
     processes = []
+
+    utils.start_resource_profiling()
 
     for local_rank in range(0, args.nproc_per_node):
         # each process's rank
@@ -274,10 +277,11 @@ def run_synthetic(root_log_path, delay_allreduce=True):
     #log_path = os.getcwd() + "/" + args.prefix + "/" +  args.arch + "/batch_size-" + str(args.batch_size) + "/gpus-" + str(dist_world_size) + "/cpus-" + str(args.workers) + "/rank-" + str(args.node_rank) + "/run1-synthetic/"
     log_path = root_log_path + "/rank-" + str(args.node_rank) + "/run1-synthetic/"
 
-    
+
+    res_dstat, res_free, res_nvidia = utils.stop_resource_profiling()
     utils.move_logs(log_path)
     print("FINISHED STEP 1 : SYNTHETIC WORKLOAD")
-    return log_path
+    return log_path, res_dstat, res_free, res_nvidia
 
 
 def run_with_data(root_log_path, cached=False):
@@ -399,6 +403,9 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
         args.stats["SPEED_INGESTION"] = args.stats["RUN0"]["SPEED"]
         args.stats["TRAIN_MIN"] = max_map["TRAIN"]
         args.stats["TRAIN_MAX"] = max_map["TRAIN"]
+        
+        if os.path.isfile(run0_path + 'all-utils.csv'):
+            populate_run_stats("RUN0", run0_path)
 
         for value in list(stddev_map.values()):
             if value > 1:
@@ -425,6 +432,8 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
         args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
         args.stats["RUN1"]["TRAIN_MIN"] = min_map["TRAIN"]
         args.stats["RUN1"]["TRAIN_MAX"] = max_map["TRAIN"]
+        if os.path.isfile(run0_path + 'all-utils.csv'):
+            populate_run_stats("RUN1", run1_path)
 
         for value in list(stddev_map.values()):
             if value > 1:
@@ -564,7 +573,11 @@ def main():
         print("STEP 0 already done. Continuing to step 1")
 
     else:
-        log_path = run_synthetic_singleGPU(root_log_path)
+        log_path, res_dstat, res_free, res_nvidia = run_synthetic_singleGPU(root_log_path)
+        idle, wait, read, write, recv, send= res_dstat
+        pmem, shm,page_cache, total = res_free
+        gpu_util, gpu_mem_util = res_nvidia
+
         print("Parsing Step 0 results ...")
         run0_stats = []
         json_file = log_path + 'profile-0.json'
@@ -573,6 +586,10 @@ def main():
         args.stats["RUN0"], stddev_map, min_map, max_map = aggregate_run1_maps(run0_stats)
         args.stats["RUN0"]["SPEED"] = args.stats["RUN0"]["SAMPLES"] / args.stats["RUN0"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN0"]["SPEED"]
+        args.stats["RUN0"]["CPU"] = 100 - idle
+        args.stats["RUN0"]["MEM"] = pmem + shm
+        args.stats["RUN0"]["PCACHE"] = page_cache
+        args.stats["RUN0"]["GPU_UTIL"] = gpu_util
 
         print_as_table(args.stats["RUN0"])
 
@@ -584,14 +601,18 @@ def main():
         print("STEP 1 already done. Continuing to step 2")
 
     else:
-        log_path = run_synthetic(root_log_path)
+        log_path, res_dstat, res_free, res_nvidia = run_synthetic(root_log_path)
+        idle, wait, read, write, recv, send= res_dstat
+        pmem, shm,page_cache, total = res_free
+        gpu_util, gpu_mem_util = res_nvidia
+
         print("Parsing Step 1 results ...")
         run1_stats = []
         local_gpus = args.nproc_per_node
         print('LOCAL GPUs ',local_gpus)
 
         for i in range(0,local_gpus):
-            json_file =  log_path + 'profile-' + str(i) + '.json'
+            json_file = log_path + 'profile-' + str(i) + '.json'
             run1_stats.append(json.load(open(json_file)))
             
         if len(run1_stats) != local_gpus:
@@ -601,6 +622,14 @@ def main():
         args.stats["RUN1"], stddev_map, min_map, max_map = aggregate_run1_maps(run1_stats)
         args.stats["RUN1"]["SPEED"] = args.stats["RUN1"]["SAMPLES"]/args.stats["RUN1"]["COMPUTE"]
         args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
+        args.stats["RUN1"]["RECV"] = recv
+        args.stats["RUN1"]["SEND"] = send
+        args.stats["RUN1"]["READ"] = read
+        args.stats["RUN1"]["CPU"] = 100 - idle
+        args.stats["RUN1"]["MEM"] = pmem + shm
+        args.stats["RUN1"]["PCACHE"] = page_cache
+        args.stats["RUN1"]["GPU_UTIL"] = gpu_util
+        args.stats["RUN1"]["GPU_MEM_UTIL"] = gpu_mem_util
 
         for value in list(stddev_map.values()):
             if value > 1:
