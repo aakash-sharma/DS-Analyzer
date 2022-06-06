@@ -412,7 +412,7 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
                 print("High STDDEV in values. Run for more minibatches for stable results")
                 # sys.exit(1)
 
-        print_as_table(args.stats["RUN0"])
+        #print_as_table(args.stats["RUN0"])
 
     if "RUN1" in steps:
         run1_stats = []
@@ -440,7 +440,7 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
                 print("High STDDEV in values. Run for more minibatches for stable results")
                 # sys.exit(1)
 
-        print_as_table(args.stats["RUN1"])
+        #print_as_table(args.stats["RUN1"])
 
     if "RUN2" in steps:
         run2_stats = []
