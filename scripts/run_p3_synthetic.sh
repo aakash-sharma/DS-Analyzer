@@ -31,7 +31,7 @@ done
 
 
 for arch in 'resnet34' 'resnet101' 'resnet152' 'vgg13' 'vgg16' 'vgg19'; do
-	for run in 0 1 2; do
+	for repeat in 0 1 2; do
 		d=`date`
 		echo "==============================================="
 	    echo " $batch $arch $repeat $d"
