@@ -5,12 +5,19 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 from collections import defaultdict
+from collections import Counter
 import csv
 import statistics
 import glob
 import xlwt
 
 stats = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+
+stats0 = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+stats1 = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+stats2 = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+REPEATS = 0
+
 FONTSIZE = 13
 BAR_MARGIN = 0
 TEXT_MARGIN = 0.00
@@ -44,8 +51,9 @@ batch_map = {}
 models_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
 models_large = ['resnet50', 'vgg11']
 models_resnet_vgg = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
-models_resnet = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+models_resnet = ['resnet10', 'resnet12', 'resnet16'] # 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
 models_vgg = ['vgg11', 'vgg13', 'vgg16', 'vgg19']
+models_noResidue = ['noResidue_resnet10',  'noResidue_resnet12',  'noResidue_resnet16']
 models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
         'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
@@ -123,7 +131,7 @@ def process_json(model, instance, batch, json_path):
 
 
 
-def process_json2(model, instance, batch, json_path):
+def process_json2(model, instance, batch, json_path, stats):
 
     with open(json_path) as fd:
         dagJson = json.load(fd)
@@ -134,6 +142,7 @@ def process_json2(model, instance, batch, json_path):
     elif instance not in batch_map[batch]:
         batch_map[batch].append(instance)
 
+    #print(model, instance, batch, stats)
     stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
 #    print(model, instance, batch, stats[model][instance][batch]["TRAIN_TIME_INGESTION"])
 
@@ -219,7 +228,7 @@ def process_json2(model, instance, batch, json_path):
 
 
 
-def process_csv(model, instance, batch, csv_path):
+def process_csv(model, instance, batch, csv_path, stats):
 
     if "TRAIN_SPEED_DISK" not in stats[model][instance][batch]:
         return
@@ -260,6 +269,26 @@ def process_csv(model, instance, batch, csv_path):
         stats[model][instance][batch]["COMPUTE_TIME_FWD_LIST"].append(statistics.mean(compute_fwd_time))
         stats[model][instance][batch]["COMPUTE_TIME_BWD_LIST"].append(statistics.mean(compute_bwd_time))
 
+def avg_stats():
+
+    global stats
+    global stats0
+    global stats1
+    global stats2
+
+    #stats = Counter(stats0) + Counter(stats1) + Counter(stats2)
+
+    for model in stats1:
+        for instance in stats1[model]:
+            for batch in stats1[model][instance]:
+                for k in stats1[model][instance][batch]:
+                    print(model, instance, batch, k)
+                    stats[model][instance][batch][k] = (stats0[model][instance][batch][k] +
+                                                        stats1[model][instance][batch][k] +
+                                                        stats2[model][instance][batch][k]) / 3
+
+
+
 def add_text(X, Y, axs, height=.02):
     for idx, value in enumerate(X):
         #axs.text(value - (0.1 * value), Y[idx] + (0.02 * Y[idx]), "{:.2f}".format(Y[idx]), fontsize=FONTSIZE//2)
@@ -290,7 +319,6 @@ def compare_instances(result_dir):
     plt.yticks(fontsize=FONTSIZE)
 
     for X in MODELS:
-        print(X)
         X_axis = np.arange(len(X))
 
         for batch in BATCH_SIZES:
@@ -304,7 +332,8 @@ def compare_instances(result_dir):
             fig6, axs6 = plt.subplots(3, 1)#, figsize=(6.4, 7))
             fig7, axs7 = plt.subplots() #figsize=(30, 20))
             fig8, axs8 = plt.subplots(2, 1) #, figsize=(30, 20))
-            fig9, axs9 = plt.subplots(2, 1)#, figsize=(6.4, 2.4))
+            #fig9, axs9 = plt.subplots(2, 1)#, figsize=(6.4, 2.4))
+            fig9, axs9 = plt.subplots(2, 1) #figsize=(6.4, 2.4))
             #fig10, axs10 = plt.subplots(2, 1, figsize=(3.2, 4.8))
             fig10, axs10 = plt.subplots(figsize=(3.2, 2.4))
             fig11, axs11 = plt.subplots() #figsize=(30, 20))
@@ -469,7 +498,8 @@ def compare_instances(result_dir):
             axs2[0].set_xticklabels(X_labels)
             #axs2[0].set_yscale('log')
             axs2[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
-            axs2[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs2[0].legend()#fontsize=FONTSIZE)
 
             axs2[1].set_xticks(X_axis)
             axs2[1].set_xticklabels(X_labels)
@@ -484,7 +514,8 @@ def compare_instances(result_dir):
             axs12[0].set_xticklabels(X_labels)
             #axs12[0].set_yscale('log')
             axs12[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
-            axs12[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs12[0].legend()#fontsize=FONTSIZE)
 
             axs12[1].set_xticks(X_axis)
             axs12[1].set_xticklabels(X_labels)
@@ -497,7 +528,8 @@ def compare_instances(result_dir):
             #axs8[0].set_yscale('log')
             axs8[0].set_xticklabels(X_labels)
             axs8[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
-            axs8[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs8[0].legend()#fontsize=FONTSIZE)
 
             axs8[1].set_xticks(X_axis)
             axs8[1].set_xticklabels(X_labels)
@@ -513,7 +545,8 @@ def compare_instances(result_dir):
             axs3[0].set_yscale('log')
             axs3[0].set_ylabel("Samples/sec", fontsize=FONTSIZE)
             axs3[0].set_title("Synthetic data", fontsize=FONTSIZE)
-            axs3[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs3[0].legend()#fontsize=FONTSIZE)
 
             axs3[1].set_xticks(X_axis)
             axs3[1].set_xticklabels(X_labels)
@@ -530,7 +563,8 @@ def compare_instances(result_dir):
             axs11.set_xticklabels(X_labels)
 #            axs11.set_yscale('log')
             axs11.set_ylabel("Samples/sec", fontsize=FONTSIZE)
-            axs11.legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs11.legend()#fontsize=FONTSIZE)
 
             fig11.savefig(result_dir + "/figures/training_speed_batch-" + batch + DESC[desc_i])
             fig11.savefig(result_dir + "/figures/training_speed_batch-" + batch + DESC[desc_i] + ".pdf", bbox_inches='tight', pad_inches=0)
@@ -539,7 +573,8 @@ def compare_instances(result_dir):
             axs4[0].set_xticklabels(X_labels)
             axs4[0].set_ylabel("Avg CPU util", fontsize=FONTSIZE)
 #            axs4[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
-            axs4[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs4[0].legend()#fontsize=FONTSIZE)
 
             axs4[1].set_xticks(X_axis)
             axs4[1].set_xticklabels(X_labels)
@@ -561,7 +596,8 @@ def compare_instances(result_dir):
             axs5[0].set_xticklabels(X_labels)
             axs5[0].set_ylabel("Avg CPU Util", fontsize=FONTSIZE)
 #            axs5[0].set_title("CPU utilization comparison", fontsize=FONTSIZE)
-            axs5[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs5[0].legend()#fontsize=FONTSIZE)
 
             axs5[1].set_xticks(X_axis)
             axs5[1].set_xticklabels(X_labels)
@@ -583,7 +619,8 @@ def compare_instances(result_dir):
             axs6[0].set_xticklabels(X_labels)
             axs6[0].set_ylabel("Avg Total Time (Seconds)", fontsize=FONTSIZE)
             axs6[0].set_title("Memcpy time", fontsize=FONTSIZE)
-            axs6[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs6[0].legend()#fontsize=FONTSIZE)
 
             axs6[1].set_xticks(X_axis)
             axs6[1].set_xticklabels(X_labels)
@@ -606,7 +643,8 @@ def compare_instances(result_dir):
             axs7.set_ylabel("Avg Total Time (Seconds)", fontsize=FONTSIZE)
             axs7.set_title("Stacked time comparison", fontsize=FONTSIZE)
             leg = ["Memcpy Time", "Fwd Propogation Time", "Bwd Propogation Time"]
-            axs7.legend()#leg, fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs7.legend()#leg, fontsize=FONTSIZE)
 
 #            fig7.suptitle("Time comparison - batch " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + DESC[desc_i])
@@ -614,12 +652,9 @@ def compare_instances(result_dir):
 
             axs9[0].set_xticks(X_axis)
             axs9[0].set_xticklabels(X_labels)
-#            if not network:
             axs9[0].set_ylabel("I/C Stall %", fontsize=FONTSIZE)
-#           else:
-#               axs9[0].set_ylabel("N/W Stall %", fontsize=FONTSIZE)
-
-            axs9[0].legend()#fontsize=FONTSIZE)
+            if len(instances) > 1:
+                axs9.legend()#fontsize=FONTSIZE)
 
             axs9[1].set_xticks(X_axis)
             axs9[1].set_xticklabels(X_labels)
@@ -651,7 +686,6 @@ def compare_instances(result_dir):
         desc_i += 1
 
 
-
 def compare_models(result_dir):
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
@@ -662,7 +696,9 @@ def compare_models(result_dir):
     
     X_BAT_axis = np.arange(len(BATCH_SIZES))
 
-    for model in MODELS:
+    MODELS2 = [model for sublist in MODELS for model in sublist]
+
+    for model in MODELS2:
 
         fig3, axs3 = plt.subplots(1, 2)#, figsize=(6.4, 5.2))
         fig4, axs4 = plt.subplots(1, 2) #, figsize=(6.5, 5.2))
@@ -1111,6 +1147,11 @@ def main():
     global MODELS
     global DESC
     global BATCH_SIZES
+    global stats
+    global stats0
+    global stats1
+    global stats2
+    global REPEATS
 
     family = sys.argv[1]
     model_type = sys.argv[2]
@@ -1124,52 +1165,110 @@ def main():
             BATCH_SIZES = ['32', '64', '128', '256']
             MODELS = models_small
             DESC = ["-Small_models"]
-        elif model_type == "resnet-vgg":
-            BATCH_SIZES = ['32', '80']
-            MODELS = [models_resnet, models_vgg]
-            DESC = ["-resnet_models", "vgg-models"]
-        else:
+        elif model_type == "large":
             BATCH_SIZES = ['32', '48', '64', '80']
             MODELS = models_large
             DESC = ["-Large_models"]
+        elif model_type == "resnet-vgg":
+            BATCH_SIZES = ['32', '80']
+            MODELS = [models_resnet, models_vgg]
+            DESC = ["-resnet_models", "-vgg_models"]
+        else:
+            BATCH_SIZES = ['32']
+            MODELS = [models_resnet, models_noResidue]#, models_synthetic, models_vgg]
+            DESC = ["-resnet_models", "-noResidue_models"]
 
-    result_dir = sys.argv[3]
+    REPEATS = sys.argv[3]
+    result_dir = sys.argv[4]
 
-    itr = 0
-    for instance in sys.argv[4:]:
+    if int(REPEATS) <= 1:
 
-        instances.append(instance)
-        result_path1 = result_dir + "/" + instance + "/" + "dali-gpu"
-        result_path2 = result_dir + "/" + instance + "/" + "dali-cpu"
+        for instance in sys.argv[5:]:
 
-        for result_path in [result_path1, result_path2]:
-            try:
-                model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
-            except:
-                continue
+            instances.append(instance)
+            result_path1 = result_dir + "/" + instance + "/" + "dali-gpu"
+            result_path2 = result_dir + "/" + instance + "/" + "dali-cpu"
 
-            for model_path in model_paths:
-                model = model_path.split('/')[-1]
-                batch_paths = [os.path.join(model_path, o) for o in os.listdir(model_path) if os.path.isdir(os.path.join(model_path,o))]
-                for batch_path in batch_paths:
-                    batch = batch_path.split('-')[-1]
-                    gpu_paths = [os.path.join(batch_path, o) for o in os.listdir(batch_path) if os.path.isdir(os.path.join(batch_path,o))]
-                    for gpu_path in gpu_paths:
-                        #gpu = gpu_path.split('/')[-1] + str(itr)
-                        gpu = gpu_path.split('/')[-1] 
-                        cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
-                        for cpu_path in cpu_paths:
-                            json_path = cpu_path + "/MODEL.json"
-                            json_path2 = cpu_path + "/MODEL2.json"
-                            if not os.path.isfile(json_path2):
-                                continue
+            for result_path in [result_path1, result_path2]:
+                try:
+                    model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
+                except:
+                    continue
 
-                            #process_json(model, gpu, json_path)
-                            process_json2(model, instance, batch, json_path2)
+                for model_path in model_paths:
+                    model = model_path.split('/')[-1]
+                    batch_paths = [os.path.join(model_path, o) for o in os.listdir(model_path) if os.path.isdir(os.path.join(model_path,o))]
+                    for batch_path in batch_paths:
+                        batch = batch_path.split('-')[-1]
+                        gpu_paths = [os.path.join(batch_path, o) for o in os.listdir(batch_path) if os.path.isdir(os.path.join(batch_path,o))]
+                        for gpu_path in gpu_paths:
+                            gpu = gpu_path.split('/')[-1]
+                            cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
+                            for cpu_path in cpu_paths:
+                                json_path = cpu_path + "/MODEL.json"
+                                json_path2 = cpu_path + "/MODEL2.json"
+                                if not os.path.isfile(json_path2):
+                                    continue
 
-                            csv_path = cpu_path + "/rank-0/run3-preprocess/"
-                            process_csv(model, instance, batch, csv_path)
-        itr += 1
+                                #process_json(model, gpu, json_path)
+                                process_json2(model, instance, batch, json_path2, stats)
+
+                                csv_path = cpu_path + "/rank-0/run3-preprocess/"
+                                process_csv(model, instance, batch, csv_path, stats)
+    else:
+        for instance in sys.argv[5:]:
+            instances.append(instance)
+
+            result_dir1 = result_dir + "/" + instance
+
+            repeat_paths = [o for o in os.listdir(result_dir1) if os.path.isdir(os.path.join(result_dir1, o))]
+            repeat_i = 0
+            print(repeat_paths)
+            for repeat in repeat_paths:
+
+                result_path1 = result_dir1 + "/" + repeat + "/" + "dali-gpu"
+                result_path2 = result_dir1 + "/" + repeat + "/" + "dali-cpu"
+
+                for result_path in [result_path1, result_path2]:
+                    try:
+                        model_paths = [os.path.join(result_path, o) for o in os.listdir(result_path) if os.path.isdir(os.path.join(result_path,o))]
+                    except:
+                        continue
+
+                    for model_path in model_paths:
+                        model = model_path.split('/')[-1]
+                        batch_paths = [os.path.join(model_path, o) for o in os.listdir(model_path) if os.path.isdir(os.path.join(model_path,o))]
+                        for batch_path in batch_paths:
+                            batch = batch_path.split('-')[-1]
+                            gpu_paths = [os.path.join(batch_path, o) for o in os.listdir(batch_path) if os.path.isdir(os.path.join(batch_path,o))]
+                            for gpu_path in gpu_paths:
+                                gpu = gpu_path.split('/')[-1]
+                                cpu_paths = [os.path.join(gpu_path, o) for o in os.listdir(gpu_path) if os.path.isdir(os.path.join(gpu_path,o))]
+                                for cpu_path in cpu_paths:
+                                    json_path = cpu_path + "/MODEL.json"
+                                    json_path2 = cpu_path + "/MODEL2.json"
+                                    if not os.path.isfile(json_path2):
+                                        continue
+
+                                    stats_repeat = None
+                                    print(repeat_i)
+                                    if repeat_i == 0:
+                                        stats_repeat = stats0
+                                    if repeat_i == 1:
+                                        stats_repeat = stats1
+                                    if repeat_i == 2:
+                                        stats_repeat = stats2
+
+
+                                    #process_json(model, gpu, json_path)
+                                    process_json2(model, instance, batch, json_path2, stats_repeat)
+
+                                    csv_path = cpu_path + "/rank-0/run3-preprocess/"
+                                    process_csv(model, instance, batch, csv_path, stats_repeat)
+                repeat_i += 1
+        avg_stats()
+
+
 
     print("=========================================")
     print("Dumping to excel")
