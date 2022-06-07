@@ -50,10 +50,14 @@ batch_map = {}
 
 models_small = ['alexnet', 'resnet18', 'shufflenet_v2_x0_5', 'mobilenet_v2', 'squeezenet1_0']
 models_large = ['resnet50', 'vgg11']
-models_resnet_vgg = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
-models_resnet = ['resnet10', 'resnet12', 'resnet16'] # 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+models_resnet_vgg = ['resnet10', 'resnet12', 'resnet16','resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', \
+                     'vgg11', 'vgg13', 'vgg16', 'vgg19']
+models_resnet = ['resnet10', 'resnet12', 'resnet16', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
 models_vgg = ['vgg11', 'vgg13', 'vgg16', 'vgg19']
-models_noResidue = ['noResidue_resnet10',  'noResidue_resnet12',  'noResidue_resnet16']
+models_noResidue = ['noResidue_resnet10',  'noResidue_resnet12',  'noResidue_resnet16', 'noResidue_resnet18', 'noResidue_resnet34', \
+                    'noResidue_resnet50', 'noResidue_resnet101', 'noResidue_resnet152']
+models_noBn = ['noBN_resnet10', 'noBN_resnet12', 'noBN_resnet16', 'noBN_resnet18', 'noBN_resnet34',\
+               'noBN_resnet50', 'noBN_resnet101', 'noBN_resnet152']
 models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
         'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
@@ -282,10 +286,10 @@ def avg_stats():
         for instance in stats1[model]:
             for batch in stats1[model][instance]:
                 for k in stats1[model][instance][batch]:
-                    print(model, instance, batch, k)
+                    #print(model, instance, batch, k)
                     stats[model][instance][batch][k] = (stats0[model][instance][batch][k] +
                                                         stats1[model][instance][batch][k] +
-                                                        stats2[model][instance][batch][k]) / 3
+                                                        stats2[model][instance][batch][k]) / 1
 
 
 
@@ -307,7 +311,18 @@ def filter_labels(x):
 
     return x
 
-def compare_instances(result_dir):
+def filter_resnet_vgg_labels(x):
+    if "resnet" in x:
+        return x.replace('resnet', '')
+    if "vgg" in x:
+        return x.replace('vgg', '')
+    if "noResidue" in x:
+        return x.replace('noResidue_resnet', '')
+    if "noBN" in x:
+        return x.replace('noBN_resnet', '')
+
+
+def compare_instances(result_dir, synthetic=False):
 
     desc_i = 0
 
@@ -478,7 +493,10 @@ def compare_instances(result_dir):
 
                 diff += BAR_WIDTH
 
-            X_labels = list(map(filter_labels, X))
+            if not synthetic:
+                X_labels = list(map(filter_labels, X))
+            else:
+                X_labels = list(map(filter_resnet_vgg_labels, list(map(filter_labels, X))))
 
             axs1[0].set_xticks(X_axis)
             axs1[0].set_xticklabels(X_labels)
@@ -686,7 +704,7 @@ def compare_instances(result_dir):
         desc_i += 1
 
 
-def compare_models(result_dir):
+def compare_models(result_dir, synthetic=False):
 
     X = ["Disk Throughput", "Train speed", "Memory", "Page cache"]
     X_IO = ["Read/Write", "IOWait"]
@@ -1155,6 +1173,7 @@ def main():
 
     family = sys.argv[1]
     model_type = sys.argv[2]
+    synthetic = False
 
     if family == "p2":
         BATCH_SIZES = ['32', '64', '96', '128']
@@ -1170,13 +1189,22 @@ def main():
             MODELS = models_large
             DESC = ["-Large_models"]
         elif model_type == "resnet-vgg":
-            BATCH_SIZES = ['32', '80']
+            BATCH_SIZES = ['32']
             MODELS = [models_resnet, models_vgg]
             DESC = ["-resnet_models", "-vgg_models"]
-        else:
+            synthetic = True
+        elif model_type == "resnet-noResidue":
             BATCH_SIZES = ['32']
-            MODELS = [models_resnet, models_noResidue]#, models_synthetic, models_vgg]
-            DESC = ["-resnet_models", "-noResidue_models"]
+            MODELS = [models_noResidue]
+            DESC = ["-resnet_noResidue_models"]
+            synthetic = True
+        elif model_type == "resnet-noBn":
+            BATCH_SIZES = ['32']
+            MODELS = [models_noBn]
+            DESC = ["-resnet_noBn_models"]
+            synthetic = True
+        else:
+            exit()
 
     REPEATS = sys.argv[3]
     result_dir = sys.argv[4]
@@ -1251,7 +1279,6 @@ def main():
                                         continue
 
                                     stats_repeat = None
-                                    print(repeat_i)
                                     if repeat_i == 0:
                                         stats_repeat = stats0
                                     if repeat_i == 1:
@@ -1277,7 +1304,7 @@ def main():
     print("=========================================")
     print("Comparing instances")
     print("=========================================")
-    compare_instances(result_dir)
+    compare_instances(result_dir, synthetic)
     print("=========================================")
     print("Comparing models")
     print("=========================================")
