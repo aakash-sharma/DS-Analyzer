@@ -672,7 +672,7 @@ def compare_instances(result_dir, synthetic=False):
             axs9[0].set_xticklabels(X_labels)
             axs9[0].set_ylabel("I/C Stall %", fontsize=FONTSIZE)
             if len(instances) > 1:
-                axs9.legend()#fontsize=FONTSIZE)
+                axs9[0].legend()#fontsize=FONTSIZE)
 
             axs9[1].set_xticks(X_axis)
             axs9[1].set_xticklabels(X_labels)
@@ -1022,140 +1022,145 @@ def dump_to_excel(result_dir):
     style = xlwt.XFStyle()
     style.num_format_str = '#,###0.00'
 
-    for model in MODELS:
-        if model not in stats:
-            continue
-        workbook = xlwt.Workbook()
-        for instance in stats[model]:
-            row_list = []
-            row_list.append(["Metric"] + list(header_metrics))
-            row_list2 = []
-            row_list2.append(["Metric"] + list(header_list_metrics))
+    models_i = 0
+    for models in MODELS:
 
-            for batch in sorted(stats[model][instance], key=int):
-                row = []
-                row2 = []
-                row.append('batch-' + batch)
-
-                """
-                for key in header_list_metrics:
-                    if key not in stats[model][instance][batch]:
-                        row2.append(0)
-                    else:
-                        row2.append(stats[model][instance][batch][key])
-                """
-
-                for key in header_metrics:
-                    if key not in stats[model][instance][batch]:
-                        row.append(0)
-                    else:
-                        row.append(stats[model][instance][batch][key])
-
-                row_list.append(row.copy())
-
-            worksheet = workbook.add_sheet(instance)
-            i = 0
-            for column in row_list:
-                for item in range(len(column)):
-                    value = column[item]
-                    # print(value)
-                    if value == None:
-                        value = 0
-                    if is_number(value):
-                        # print(value)
-                        worksheet.write(item, i, value, style=style)
-                    else:
-                        worksheet.write(item, i, value)
-                i += 1
-        workbook.save(result_dir + '/data_dump/' + model + '.xls')
-
-
-    for instance in instances:
-        workbook = xlwt.Workbook()
-        for model in MODELS:
+        for model in models:
             if model not in stats:
                 continue
-            if instance not in stats[model]:
-                continue
-            row_list = []
-            row_list.append(["Metric"] + list(header_metrics))
-            for batch in sorted(stats[model][instance], key=int):
-                row = []
-                row.append('batch-' + batch)
-                for key in header_metrics:
-                    if key not in stats[model][instance][batch]:
-                        row.append(0)
-                    else:
-                        row.append(stats[model][instance][batch][key])
-
-                row_list.append(row.copy())
-
-            worksheet = workbook.add_sheet(model)
-            i = 0
-            for column in row_list:
-                for item in range(len(column)):
-                    value = column[item]
-                    # print(value)
-                    if value == None:
-                        value = 0
-                    if is_number(value):
-                        # print(value)
-                        worksheet.write(item, i, value, style=style)
-                    else:
-                        worksheet.write(item, i, value)
-                i += 1
-
-        workbook.save(result_dir + '/data_dump/' + instance + '.xls')
-
-    for batch in BATCH_SIZES:
-        found = False
-        flag = False
-
-        if batch not in batch_map:
-            continue
-
-        workbook = xlwt.Workbook()
-
-        for model in MODELS:
-            if model not in stats:
-                continue
-            row_list = []
-            row_list.append(["Metric"] + list(header_metrics))
+            workbook = xlwt.Workbook()
             for instance in stats[model]:
-                if batch not in stats[model][instance]:
-                    flag = True
-                    break
-                else:
-                    found = True
+                row_list = []
+                row_list.append(["Metric"] + list(header_metrics))
+                row_list2 = []
+                row_list2.append(["Metric"] + list(header_list_metrics))
 
-                row = []
-                row.append(instance)
-                for key in header_metrics:
-                    if key not in stats[model][instance][batch]:
-                        row.append(0)
-                    else:
-                        row.append(stats[model][instance][batch][key])
+                for batch in sorted(stats[model][instance], key=int):
+                    row = []
+                    row2 = []
+                    row.append('batch-' + batch)
 
-                row_list.append(row.copy())
-            if row_list == []:
-                break
+                    """
+                    for key in header_list_metrics:
+                        if key not in stats[model][instance][batch]:
+                            row2.append(0)
+                        else:
+                            row2.append(stats[model][instance][batch][key])
+                    """
 
-            worksheet = workbook.add_sheet(model)
-            i = 0
-            for column in row_list:
-                for item in range(len(column)):
-                    value = column[item]
-                    # print(value)
-                    if value == None:
-                        value = 0
-                    if is_number(value):
+                    for key in header_metrics:
+                        if key not in stats[model][instance][batch]:
+                            row.append(0)
+                        else:
+                            row.append(stats[model][instance][batch][key])
+
+                    row_list.append(row.copy())
+
+                worksheet = workbook.add_sheet(instance)
+                i = 0
+                for column in row_list:
+                    for item in range(len(column)):
+                        value = column[item]
                         # print(value)
-                        worksheet.write(item, i, value, style=style)
+                        if value == None:
+                            value = 0
+                        if is_number(value):
+                            # print(value)
+                            worksheet.write(item, i, value, style=style)
+                        else:
+                            worksheet.write(item, i, value)
+                    i += 1
+            workbook.save(result_dir + '/data_dump/' + model + DESC[models_i] + '.xls')
+
+
+        for instance in instances:
+            workbook = xlwt.Workbook()
+            for model in models:
+                if model not in stats:
+                    continue
+                if instance not in stats[model]:
+                    continue
+                row_list = []
+                row_list.append(["Metric"] + list(header_metrics))
+                for batch in sorted(stats[model][instance], key=int):
+                    row = []
+                    row.append('batch-' + batch)
+                    for key in header_metrics:
+                        if key not in stats[model][instance][batch]:
+                            row.append(0)
+                        else:
+                            row.append(stats[model][instance][batch][key])
+
+                    row_list.append(row.copy())
+
+                worksheet = workbook.add_sheet(model)
+                i = 0
+                for column in row_list:
+                    for item in range(len(column)):
+                        value = column[item]
+                        # print(value)
+                        if value == None:
+                            value = 0
+                        if is_number(value):
+                            # print(value)
+                            worksheet.write(item, i, value, style=style)
+                        else:
+                            worksheet.write(item, i, value)
+                    i += 1
+
+            workbook.save(result_dir + '/data_dump/' + instance + DESC[models_i] +  '.xls')
+
+        for batch in BATCH_SIZES:
+            found = False
+            flag = False
+
+            if batch not in batch_map:
+                continue
+
+            workbook = xlwt.Workbook()
+
+            for model in models:
+                if model not in stats:
+                    continue
+                row_list = []
+                row_list.append(["Metric"] + list(header_metrics))
+                for instance in stats[model]:
+                    if batch not in stats[model][instance]:
+                        flag = True
+                        break
                     else:
-                        worksheet.write(item, i, value)
-                i += 1
-        if found:
-            workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + '.xls')
+                        found = True
+
+                    row = []
+                    row.append(instance)
+                    for key in header_metrics:
+                        if key not in stats[model][instance][batch]:
+                            row.append(0)
+                        else:
+                            row.append(stats[model][instance][batch][key])
+
+                    row_list.append(row.copy())
+                if row_list == []:
+                    break
+
+                worksheet = workbook.add_sheet(model)
+                i = 0
+                for column in row_list:
+                    for item in range(len(column)):
+                        value = column[item]
+                        # print(value)
+                        if value == None:
+                            value = 0
+                        if is_number(value):
+                            # print(value)
+                            worksheet.write(item, i, value, style=style)
+                        else:
+                            worksheet.write(item, i, value)
+                    i += 1
+            if found:
+                workbook.save(result_dir + '/data_dump/' + 'batch-' + batch + DESC[models_i] + '.xls')
+
+        models_i += 1
 
 def main():
 
@@ -1177,16 +1182,16 @@ def main():
 
     if family == "p2":
         BATCH_SIZES = ['32', '64', '96', '128']
-        MODELS = models_small
+        MODELS = [models_small]
         DESC = ["-Small_models"]
     if family == "p3":
         if model_type == "small":
             BATCH_SIZES = ['32', '64', '128', '256']
-            MODELS = models_small
+            MODELS = [models_small]
             DESC = ["-Small_models"]
         elif model_type == "large":
             BATCH_SIZES = ['32', '48', '64', '80']
-            MODELS = models_large
+            MODELS = [models_large]
             DESC = ["-Large_models"]
         elif model_type == "resnet-vgg":
             BATCH_SIZES = ['32']
@@ -1300,7 +1305,7 @@ def main():
     print("=========================================")
     print("Dumping to excel")
     print("=========================================")
-#    dump_to_excel(result_dir)
+    dump_to_excel(result_dir)
     print("=========================================")
     print("Comparing instances")
     print("=========================================")
