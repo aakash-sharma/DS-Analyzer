@@ -16,7 +16,7 @@ for arch in 'resnet10' 'resnet12' 'resnet16' 'noResidue_resnet10' 'noResidue_res
 		done
 done
 
-for arch in 'resnet10' 'resnet12' 'resnet16' 'resnet18' 'resnet34' 'resnet101' 'resnet152' 'vgg13' 'vgg16' 'vgg19'; do
+for arch in 'resnet10' 'resnet12' 'resnet16' 'resnet18' 'resnet34' 'resnet50' 'resnet101' 'resnet152' 'vgg11' 'vgg13' 'vgg16' 'vgg19'; do
     for repeat in 'repeat-0' 'repeat-1' 'repeat-2'; do
         d=`date`
         echo "==============================================="
