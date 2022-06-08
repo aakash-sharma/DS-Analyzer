@@ -346,9 +346,11 @@ def compare_instances(result_dir, synthetic=False):
             fig5, axs5 = plt.subplots(3, 1)#, figsize=(6.4, 7))
             fig6, axs6 = plt.subplots(3, 1)#, figsize=(6.4, 7))
             fig7, axs7 = plt.subplots() #figsize=(30, 20))
-            fig8, axs8 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig8, axs8 = plt.subplots()#, figsize=(30, 20))   # cost
+            axs8_2 = axs8.twinx()
             #fig9, axs9 = plt.subplots(2, 1)#, figsize=(6.4, 2.4))
-            fig9, axs9 = plt.subplots(2, 1) #figsize=(6.4, 2.4))
+            fig9, axs9 = plt.subplots(figsize=(6.4, 2.4))           # IC stall
+            axs9_2 = axs9.twinx()
             #fig10, axs10 = plt.subplots(2, 1, figsize=(3.2, 4.8))
             fig10, axs10 = plt.subplots(figsize=(3.2, 2.4))
             fig11, axs11 = plt.subplots() #figsize=(30, 20))
@@ -435,8 +437,9 @@ def compare_instances(result_dir, synthetic=False):
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_FETCH_STALL_PCT, axs1[1])
 
                 if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
-                    axs9[0].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, BAR_WIDTH, label=label_instance)
-                    axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, BAR_WIDTH, label=label_instance)
+                    axs9.bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, BAR_WIDTH, label=label_instance)
+                    axs9_2.plot(X_axis + diff, Y_INTERCONNECT_STALL_TIME, label=label_instance)
+                    #axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, BAR_WIDTH, label=label_instance)
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, axs9[1])
 
@@ -454,8 +457,9 @@ def compare_instances(result_dir, synthetic=False):
                 axs12[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_INGESTION, BAR_WIDTH, label=label_instance)
                 axs12[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_INGESTION, BAR_WIDTH, label=label_instance)
 
-                axs8[0].bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, BAR_WIDTH, label=label_instance)
-                axs8[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_CACHED, BAR_WIDTH, label=label_instance)
+                axs8.bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, BAR_WIDTH, label=label_instance)
+                axs8_2.plot(X_axis + diff, Y_COST_CACHED, label=label_instance)
+                #axs8[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_CACHED, BAR_WIDTH, label=label_instance)
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_CACHED, axs8[0])
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_COST_CACHED, axs8[1])
 
@@ -542,16 +546,16 @@ def compare_instances(result_dir, synthetic=False):
             fig12.savefig(result_dir + "/figures/training_time_cost_ingestion_batch-" + batch + DESC[desc_i])
             fig12.savefig(result_dir + "/figures/training_time_cost_ingestion_batch-" + batch + DESC[desc_i] + ".pdf", bbox_inches='tight', pad_inches=0)
 
-            axs8[0].set_xticks(X_axis)
+            axs8.set_xticks(X_axis)
             #axs8[0].set_yscale('log')
-            axs8[0].set_xticklabels(X_labels)
-            axs8[0].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
+            axs8.set_xticklabels(X_labels)
+            axs8.set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
             if len(instances) > 1:
-                axs8[0].legend()#fontsize=FONTSIZE)
+                axs8.legend()#fontsize=FONTSIZE)
 
-            axs8[1].set_xticks(X_axis)
-            axs8[1].set_xticklabels(X_labels)
-            axs8[1].set_ylabel("Cost (Dollars)", fontsize=FONTSIZE)
+            axs8_2.set_xticks(X_axis)
+            axs8_2.set_xticklabels(X_labels)
+            axs8_2.set_ylabel("Cost (Dollars)", fontsize=FONTSIZE)
         #    axs8[1].legend()#fontsize=FONTSIZE)
 
         #    fig8.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
@@ -668,15 +672,18 @@ def compare_instances(result_dir, synthetic=False):
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + DESC[desc_i])
             fig7.savefig(result_dir + "/figures/stacked_time_comparison_batch-" + batch + DESC[desc_i] + ".pdf", bbox_inches='tight', pad_inches=0)
 
-            axs9[0].set_xticks(X_axis)
-            axs9[0].set_xticklabels(X_labels)
-            axs9[0].set_ylabel("I/C Stall %", fontsize=FONTSIZE)
+            axs9.set_xticks(X_axis)
+            axs9.set_xticklabels(X_labels)
+            axs9.set_ylabel("I/C Stall %", fontsize=FONTSIZE)
             if len(instances) > 1:
-                axs9[0].legend()#fontsize=FONTSIZE)
+                axs9.legend()
 
-            axs9[1].set_xticks(X_axis)
-            axs9[1].set_xticklabels(X_labels)
-            axs9[1].set_ylabel("I/C Stall (Seconds)", fontsize=FONTSIZE)
+            if synthetic:
+                axs9.set_xlabel("Number of Layers")
+
+            axs9_2.set_xticks(X_axis)
+            axs9_2.set_xticklabels(X_labels)
+            axs9_2.set_ylabel("I/C Stall (Seconds)", fontsize=FONTSIZE)
         #    axs9[1].legend()#fontsize=FONTSIZE)
 
 #            fig9.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
@@ -1108,7 +1115,7 @@ def dump_to_excel(result_dir):
                             worksheet.write(item, i, value)
                     i += 1
 
-            workbook.save(result_dir + '/data_dump/' + instance + DESC[models_i] +  '.xls')
+            workbook.save(result_dir + '/data_dump/' + instance + DESC[models_i] + '.xls')
 
         for batch in BATCH_SIZES:
             found = False
