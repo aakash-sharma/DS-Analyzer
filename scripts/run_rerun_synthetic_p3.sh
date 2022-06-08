@@ -11,7 +11,7 @@ for arch in 'resnet10' 'resnet12' 'resnet16' 'noResidue_resnet10' 'noResidue_res
 				echo "==============================================="
 				echo "$repeat $arch"
 				echo "==============================================="
-					python3 -u harness.py --nproc_per_node=8 -j 32 -a $arch --nnodes=1 -b 32 --steps RUN0 RUN1 --resume_dir results/results-p3-synthetic/p3.16xlarge/$repeat/dali-gpu/  image_classification/pytorch-imagenet-dali-mp.py 
+					python3 -u harness.py --nproc_per_node=4 -j 16 -a $arch --nnodes=2 -b 32 --steps RUN0 RUN1 --resume_dir results/results-p3-synthetic/p3.8xlarge_2/$repeat/dali-gpu/  image_classification/pytorch-imagenet-dali-mp.py 
 
 		done
 done
@@ -22,7 +22,7 @@ for arch in 'resnet10' 'resnet12' 'resnet16' 'resnet18' 'resnet34' 'resnet50' 'r
         echo "==============================================="
         echo " $batch $arch $repeat $d"
         echo "==============================================="
-					python3 -u harness.py --nproc_per_node=8 -j 32 -a $arch --nnodes=1 -b 32 --steps RUN0 RUN1 --resume_dir results/results-p3-synthetic/p3.16xlarge/$repeat/dali-gpu/  image_classification/pytorch-imagenet-dali-mp.py 
+					python3 -u harness.py --nproc_per_node=4 -j 16 -a $arch --nnodes=2 -b 32 --steps RUN0 RUN1 --resume_dir results/results-p3-synthetic/p3.8xlarge_2/$repeat/dali-gpu/  image_classification/pytorch-imagenet-dali-mp.py 
 
     done
 done
