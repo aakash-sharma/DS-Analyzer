@@ -56,7 +56,7 @@ models_resnet = ['resnet10', 'resnet12', 'resnet16', 'resnet18', 'resnet34', 're
 models_vgg = ['vgg11', 'vgg13', 'vgg16', 'vgg19']
 models_noResidue = ['noResidue_resnet10',  'noResidue_resnet12',  'noResidue_resnet16', 'noResidue_resnet18', 'noResidue_resnet34', \
                     'noResidue_resnet50', 'noResidue_resnet101', 'noResidue_resnet152']
-models_noBn = ['noBN_resnet10', 'noBN_resnet12', 'noBN_resnet16', 'noBN_resnet18', 'noBN_resnet34',\
+models_noBN = ['noBN_resnet10', 'noBN_resnet12', 'noBN_resnet16', 'noBN_resnet18', 'noBN_resnet34',\
                'noBN_resnet50', 'noBN_resnet101', 'noBN_resnet152']
 models_synthetic = ['resnet10', 'resnet12', 'resnet16', 'resnet18', \
         'resnet34', 'resnet50', 'resnet101', 'resnet152']
@@ -152,10 +152,10 @@ def process_json2(model, instance, batch, json_path, stats):
 
     if "RUN0" in dagJson:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
-        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = stats[model][instance][batch][
+        stats[model][instance][batch]["INTERCONNECT_STALL_PCT"] = max(0, stats[model][instance][batch][
                                                                       "INTERCONNECT_STALL_TIME"] / \
                                                                   stats[model][instance][batch][
-                                                                      "TRAIN_TIME_INGESTION"] * 100
+                                                                      "TRAIN_TIME_INGESTION"] * 100)
     else:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = 0
 
@@ -301,13 +301,16 @@ def add_text(X, Y, axs, height=.02):
 
 def filter_labels(x):
     if x == "mobilenet_v2":
-       x = "mobilenet"
+       x = "mobile"
 
     if x == "shufflenet_v2_x0_5":
-       x = "shufflenet"
+       x = "shuffle"
 
     if x == "squeezenet1_0":
-       x = "squeezenet"
+       x = "squeeze"
+
+    if x == "alexnet":
+        x = "alex"
 
     return x
 
@@ -339,7 +342,7 @@ def compare_instances(result_dir, synthetic=False):
         for batch in BATCH_SIZES:
             diff = -BAR_WIDTH
 
-            fig1, axs1 = plt.subplots(2, 1) #, figsize=(30, 20))
+            fig1, axs1 = plt.subplots(1, 2, figsize=(11, 2.4))    # cpu and disk stall small
             fig2, axs2 = plt.subplots(2, 1) #, figsize=(30, 20))
             fig3, axs3 = plt.subplots(2, 1)#, figsize=(6.4, 7))
             fig4, axs4 = plt.subplots(3, 1)#, figsize=(6.4, 7))
@@ -349,7 +352,7 @@ def compare_instances(result_dir, synthetic=False):
             fig8, axs8 = plt.subplots()#, figsize=(30, 20))   # cost
             axs8_2 = axs8.twinx()
             #fig9, axs9 = plt.subplots(2, 1)#, figsize=(6.4, 2.4))
-            fig9, axs9 = plt.subplots(figsize=(6.4, 2.4))           # IC stall
+            fig9, axs9 = plt.subplots(figsize=(6.4, 5))           # IC stall
             axs9_2 = axs9.twinx()
             #fig10, axs10 = plt.subplots(2, 1, figsize=(3.2, 4.8))
             fig10, axs10 = plt.subplots(figsize=(3.2, 2.4))
@@ -438,13 +441,14 @@ def compare_instances(result_dir, synthetic=False):
 
                 if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
                     axs9.bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, BAR_WIDTH, label=label_instance)
-                    axs9_2.plot(X_axis + diff, Y_INTERCONNECT_STALL_TIME, label=label_instance)
+                    axs9_2.plot(X_axis + diff, Y_INTERCONNECT_STALL_TIME, marker='x', markerfacecolor='black', markersize=12, label=label_instance)
                     #axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, BAR_WIDTH, label=label_instance)
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, axs9[1])
 
                 if instance == "p2.8xlarge_2" or instance == "p3.8xlarge_2":
-                    axs10.bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_PCT, BAR_WIDTH, label=label_instance)
+                    axs10.plot(X_axis + diff, Y_NETWORK_STALL_PCT, marker='x', markerfacecolor='black', markersize=12, \
+                               label=label_instance)
                     ##axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, BAR_WIDTH, label=label_instance)
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10[0])
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_TIME, axs10[1])
@@ -458,7 +462,7 @@ def compare_instances(result_dir, synthetic=False):
                 axs12[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_INGESTION, BAR_WIDTH, label=label_instance)
 
                 axs8.bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, BAR_WIDTH, label=label_instance)
-                axs8_2.plot(X_axis + diff, Y_COST_CACHED, label=label_instance)
+                axs8_2.plot(X_axis + diff, Y_COST_CACHED, marker='x', markerfacecolor='black', markersize=12, label=label_instance)
                 #axs8[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_CACHED, BAR_WIDTH, label=label_instance)
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_CACHED, axs8[0])
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_COST_CACHED, axs8[1])
@@ -1200,6 +1204,16 @@ def main():
             BATCH_SIZES = ['32', '48', '64', '80']
             MODELS = [models_large]
             DESC = ["-Large_models"]
+        elif model_type == "resnet":
+            BATCH_SIZES = ['32']
+            MODELS = [models_resnet]
+            DESC = ["-resnet_models"]
+            synthetic = True
+        elif model_type == "vgg":
+            BATCH_SIZES = ['32']
+            MODELS = [models_vgg]
+            DESC = ["-vgg_models"]
+            synthetic = True
         elif model_type == "resnet-vgg":
             BATCH_SIZES = ['32']
             MODELS = [models_resnet, models_vgg]
@@ -1207,12 +1221,12 @@ def main():
             synthetic = True
         elif model_type == "resnet-noResidue":
             BATCH_SIZES = ['32']
-            MODELS = [models_noResidue]
+            MODELS = [models_synthetic]
             DESC = ["-resnet_noResidue_models"]
             synthetic = True
-        elif model_type == "resnet-noBn":
+        elif model_type == "resnet-noBN":
             BATCH_SIZES = ['32']
-            MODELS = [models_noBn]
+            MODELS = [models_synthetic]
             DESC = ["-resnet_noBn_models"]
             synthetic = True
         else:
