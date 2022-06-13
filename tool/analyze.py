@@ -146,9 +146,9 @@ def process_json2(model, instance, batch, json_path, stats):
     elif instance not in batch_map[batch]:
         batch_map[batch].append(instance)
 
-    #print(model, instance, batch, stats)
+    print(model, instance, batch)
     stats[model][instance][batch]["TRAIN_TIME_INGESTION"] = dagJson["RUN1"]["TRAIN"]
-#    print(model, instance, batch, stats[model][instance][batch]["TRAIN_TIME_INGESTION"])
+    stats[model][instance][batch]["RUN1_SAMPLES"] = dagJson["RUN1"]["SAMPLES"]
 
     if "RUN0" in dagJson:
         stats[model][instance][batch]["INTERCONNECT_STALL_TIME"] = dagJson["RUN1"]["TRAIN"] - dagJson["RUN0"]["TRAIN"]
@@ -171,12 +171,41 @@ def process_json2(model, instance, batch, json_path, stats):
                 stats[model]["p2.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = stats[model]["p2.8xlarge_2"][batch]["NETWORK_STALL_TIME"] \
                                                                        / stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * 100
 
-        """
-        else:
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_TIME"] = 0
-            stats[model]["p3.8xlarge_2"][batch]["NETWORK_STALL_PCT"] = 0
-        """
-    
+
+
+    if instance == "resnet" and "16x" in stats[model]:
+        mul_factor = stats[model]["16x"][batch]["RUN1_SAMPLES"] / dagJson["RUN1"]["SAMPLES"]
+
+        stats[model][instance][batch]["NETWORK_STALL_TIME"] = (stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * mul_factor) - \
+                                                              stats[model]["16x"][batch]["TRAIN_TIME_INGESTION"]
+        stats[model][instance][batch]["NETWORK_STALL_PCT"] = stats[model][instance][batch]["NETWORK_STALL_TIME"] \
+                                                               / stats[model]["16x"][batch]["TRAIN_TIME_INGESTION"] * 100
+
+    if instance == "resnet-noBN" and "16x" in stats[model]:
+        mul_factor = stats[model]["16x-noResidue"][batch]["RUN1_SAMPLES"] / dagJson["RUN1"]["SAMPLES"]
+
+        stats[model][instance][batch]["NETWORK_STALL_TIME"] = (stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * mul_factor) - \
+                                                              stats[model]["16x-noBN"][batch]["TRAIN_TIME_INGESTION"]
+        stats[model][instance][batch]["NETWORK_STALL_PCT"] = stats[model][instance][batch]["NETWORK_STALL_TIME"] \
+                                                             / stats[model]["16x-noBN"][batch]["TRAIN_TIME_INGESTION"] * 100
+
+    if instance == "resnet-noResidue" and "16x" in stats[model]:
+        mul_factor = stats[model]["16x-noResidue"][batch]["RUN1_SAMPLES"] / dagJson["RUN1"]["SAMPLES"]
+
+        stats[model][instance][batch]["NETWORK_STALL_TIME"] = (stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * mul_factor) - \
+                                                              stats[model]["16x-noResidue"][batch]["TRAIN_TIME_INGESTION"]
+        stats[model][instance][batch]["NETWORK_STALL_PCT"] = stats[model][instance][batch]["NETWORK_STALL_TIME"] \
+                                                             / stats[model]["16x-noResidue"][batch]["TRAIN_TIME_INGESTION"] * 100
+
+    if instance == "vgg" and "16x" in stats[model]:
+        mul_factor = stats[model]["16x"][batch]["RUN1_SAMPLES"] / dagJson["RUN1"]["SAMPLES"]
+
+        stats[model][instance][batch]["NETWORK_STALL_TIME"] = (stats[model][instance][batch]["TRAIN_TIME_INGESTION"] * mul_factor) - \
+                                                              stats[model]["16x"][batch]["TRAIN_TIME_INGESTION"]
+        stats[model][instance][batch]["NETWORK_STALL_PCT"] = stats[model][instance][batch]["NETWORK_STALL_TIME"] \
+                                                             / stats[model]["16x"][batch]["TRAIN_TIME_INGESTION"] * 100
+
+
     stats[model][instance][batch]["TRAIN_SPEED_INGESTION"] = dagJson["SPEED_INGESTION"]
     stats[model][instance][batch]["MEMCPY_TIME"] = dagJson["RUN1"]["MEMCPY"]
 
@@ -355,7 +384,8 @@ def compare_instances(result_dir, synthetic=False):
             fig9, axs9 = plt.subplots(figsize=(6.4, 5))           # IC stall
             axs9_2 = axs9.twinx()
             #fig10, axs10 = plt.subplots(2, 1, figsize=(3.2, 4.8))
-            fig10, axs10 = plt.subplots(figsize=(3.2, 2.4))
+            fig10, axs10 = plt.subplots()#figsize=(3.2, 2.4))    # NW stall
+            axs10_2 = axs10.twinx()
             fig11, axs11 = plt.subplots() #figsize=(30, 20))
             fig12, axs12 = plt.subplots(2, 1) #figsize=(30, 20))
 
@@ -441,13 +471,15 @@ def compare_instances(result_dir, synthetic=False):
 
                 if not (instance == "p2.xlarge" or instance == "p3.2xlarge"):
                     axs9.bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, BAR_WIDTH, label=label_instance)
-                    axs9_2.plot(X_axis + diff, Y_INTERCONNECT_STALL_TIME, marker='x', markerfacecolor='black', markersize=12, label=label_instance)
+                    axs9_2.plot(X_axis + diff, Y_INTERCONNECT_STALL_TIME, marker='o', markeredgewidth=1.5, markeredgecolor='black', \
+                                                markersize=12, label=label_instance)
                     #axs9[1].bar(X_axis-BAR_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, BAR_WIDTH, label=label_instance)
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_PCT, axs9[0])
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_INTERCONNECT_STALL_TIME, axs9[1])
 
-                if instance == "p2.8xlarge_2" or instance == "p3.8xlarge_2":
-                    axs10.plot(X_axis + diff, Y_NETWORK_STALL_PCT, marker='x', markerfacecolor='black', markersize=12, \
+                if instance == "p2.8xlarge_2" or instance == "p3.8xlarge_2" or "resnet" in instance or "vgg" in instance:
+                    axs10.bar(X_axis + diff, Y_NETWORK_STALL_PCT, BAR_WIDTH, label=label_instance)
+                    axs10_2.plot(X_axis + diff, Y_NETWORK_STALL_TIME, marker='o', markeredgewidth=1.5, markeredgecolor='black', markersize=12, \
                                label=label_instance)
                     ##axs10[1].bar(X_axis-BAR_MARGIN + diff, Y_NETWORK_STALL_TIME, BAR_WIDTH, label=label_instance)
                     #add_text(X_axis-TEXT_MARGIN + diff, Y_NETWORK_STALL_PCT, axs10[0])
@@ -462,7 +494,7 @@ def compare_instances(result_dir, synthetic=False):
                 axs12[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_INGESTION, BAR_WIDTH, label=label_instance)
 
                 axs8.bar(X_axis-BAR_MARGIN + diff, Y_TRAIN_TIME_CACHED, BAR_WIDTH, label=label_instance)
-                axs8_2.plot(X_axis + diff, Y_COST_CACHED, marker='x', markerfacecolor='black', markersize=12, label=label_instance)
+                axs8_2.plot(X_axis + diff, Y_COST_CACHED, marker='o', markeredgewidth=1.5, markeredgecolor='black', markersize=12, label=label_instance)
                 #axs8[1].bar(X_axis-BAR_MARGIN + diff, Y_COST_CACHED, BAR_WIDTH, label=label_instance)
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_TRAIN_TIME_CACHED, axs8[0])
                 #add_text(X_axis-TEXT_MARGIN + diff, Y_COST_CACHED, axs8[1])
@@ -696,15 +728,16 @@ def compare_instances(result_dir, synthetic=False):
 
             axs10.set_xticks(X_axis)
             axs10.set_xticklabels(X_labels)
-            axs10.set_ylabel("Percentage", fontsize=FONTSIZE)
-            #axs10[0].legend()#fontsize=FONTSIZE)
+            axs10.set_ylabel("N/W Stall %", fontsize=FONTSIZE)
+            axs10.legend()#fontsize=FONTSIZE)
 
             #axs10[1].set_xticks(X_axis)
             #axs10[1].set_xticklabels(X_labels)
-            #axs10[1].set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
+            axs10_2.set_ylabel("Time (Seconds)", fontsize=FONTSIZE)
         #    axs10[1].set_title("Network stall comparison", fontsize=FONTSIZE)
         #    axs10[1].legend()#fontsize=FONTSIZE)
-
+            if synthetic:
+                axs10.set_xlabel("Number of Layers")
 #            fig10.suptitle("Batch size - " + batch, fontsize=FONTSIZE, fontweight ="bold")
             fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + DESC[desc_i], bbox_inches='tight')
             fig10.savefig(result_dir + "/figures/stall_comparison_network_batch-" + batch + DESC[desc_i] + ".pdf", bbox_inches='tight', pad_inches=0)
@@ -729,7 +762,8 @@ def compare_models(result_dir, synthetic=False):
 
     for model in MODELS2:
 
-        fig3, axs3 = plt.subplots(1, 2)#, figsize=(6.4, 5.2))
+        fig3, axs3 = plt.subplots()#, figsize=(6.4, 5.2))
+        axs3_2 = axs3.twinx()
         fig4, axs4 = plt.subplots(1, 2) #, figsize=(6.5, 5.2))
         fig1, axs1 = plt.subplots()
 
@@ -948,9 +982,10 @@ def compare_models(result_dir, synthetic=False):
         for i in range(len(instances)):
             if instances[i] not in stats[model]:
                 continue
-            axs3[0].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], BAR_WIDTH, label=instances[i])
+            axs3.bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], BAR_WIDTH, label=instances[i])
             #add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_GPU_UTIL_CACHED_PCT_LIST[i], axs3[0])
-            axs3[1].bar(X_BAT_axis -BAR_MARGIN + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], BAR_WIDTH, label=instances[i])
+            axs3_2.plot(X_BAT_axis + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], marker='o', markeredgewidth=1.5, markeredgecolor='black', \
+                        markersize=12, label=instances[i])
             #add_text(X_BAT_axis -TEXT_MARGIN + diff, Y_GPU_MEM_UTIL_CACHED_PCT_LIST[i], axs3[1])
 
             axs4[0].bar(X_BAT_axis -BAR_MARGIN + diff, Y_COST_DISK_LIST[i], BAR_WIDTH, label=instances[i])
@@ -963,19 +998,19 @@ def compare_models(result_dir, synthetic=False):
 
             diff += BAR_WIDTH
 
-        axs3[0].set_xticks(X_BAT_axis)
-        axs3[0].set_xticklabels(X_BAT, fontsize=FONTSIZE)
-        axs3[0].set_xlabel("Batch size", fontsize=FONTSIZE)
-        axs3[0].set_ylabel("Percentage", fontsize=FONTSIZE)
-        axs3[0].set_title("GPU Compute Util %", fontsize=FONTSIZE)
-        axs3[0].legend()#fontsize=FONTSIZE)
+        axs3.set_xticks(X_BAT_axis)
+        axs3.set_xticklabels(X_BAT, fontsize=FONTSIZE)
+        axs3.set_xlabel("Batch size", fontsize=FONTSIZE)
+        axs3.set_ylabel("Compute Util %", fontsize=FONTSIZE)
+        #axs3.set_title("GPU Compute Util %", fontsize=FONTSIZE)
+        axs3.legend()#fontsize=FONTSIZE)
 
-        axs3[1].set_xticks(X_BAT_axis)
-        axs3[1].set_xticklabels(X_BAT, fontsize=FONTSIZE)
-        axs3[1].set_xlabel("Batch size", fontsize=FONTSIZE)
-        axs3[1].set_ylabel("Percentage", fontsize=FONTSIZE)
-        axs3[1].set_title("GPU Memory Util %", fontsize=FONTSIZE)
-        axs3[1].legend()#fontsize=FONTSIZE)
+        #axs3_2.set_xticks(X_BAT_axis)
+        #axs3_2.set_xticklabels(X_BAT, fontsize=FONTSIZE)
+        #axs3[1].set_xlabel("Batch size", fontsize=FONTSIZE)
+        axs3_2.set_ylabel("Memory Util %", fontsize=FONTSIZE)
+        #axs3].set_title("GPU Memory Util %", fontsize=FONTSIZE)
+        #axs3[1].legend()#fontsize=FONTSIZE)
 
         #fig3.suptitle(model, fontsize=FONTSIZE, fontweight="bold")
         fig3.savefig(result_dir + "/figures/gpu_util_batch_compare-" + model)
@@ -1195,6 +1230,10 @@ def main():
         BATCH_SIZES = ['32', '64', '96', '128']
         MODELS = [models_small]
         DESC = ["-Small_models"]
+    if family == "p2_p3":
+            BATCH_SIZES = ['32', '64', '128']
+            MODELS = [models_small]
+            DESC = ["-Small_models"]
     if family == "p3":
         if model_type == "small":
             BATCH_SIZES = ['32', '64', '128', '256']
