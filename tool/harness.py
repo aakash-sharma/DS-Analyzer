@@ -135,7 +135,8 @@ args = parse_args()
 def run_synthetic_singleGPU(root_log_path):
     current_env = os.environ.copy()
     # world size in terms of number of processes
-    dist_world_size = args.nproc_per_node * args.nnodes
+    dist_world_size = 1
+    current_env["WORLD_SIZE"] = str(dist_world_size)
 
     if args.precreate:
         print("Precreating tensors in {}".format(args.tensor_path))

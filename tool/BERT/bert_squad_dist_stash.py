@@ -20,10 +20,10 @@ from transformers import AdamW
 from transformers import BertForQuestionAnswering
 from transformers import BertTokenizer, BertTokenizerFast
 
-sys.path.append('/Users/aakashsharma/work/DS-Analyzer/tool')
+sys.path.append('/home/ubuntu/DS-Analyzer/tool')
 from profiler_utils import DataStallProfiler
 
-squad_path = '/Users/aakashsharma/work/BERT-squad-distributed/examples/pytorch/data/squad/v2.0'
+squad_path = '/home/ubuntu/DS-Analyzer/tool/BERT/data/squad/v2.0'
 
 parser = argparse.ArgumentParser(description='PyTorch BERT')
 
@@ -329,6 +329,7 @@ def main():
     start = time.time()
 
     args.gpu = 0
+    args.world_size = 1
     torch.cuda.set_device(args.gpu)
 
     if args.distributed:
