@@ -49,6 +49,13 @@ from utils import aggregate_run1_maps, print_as_table, print_header
 import multiprocessing
 import json
 import statistics
+import signal
+
+def signal_handler(sig, frame):
+    utils.stop_resource_profiling()
+
+signal.signal(signal.SIGINT, signal_handler)
+
 
 def parse_args():
     """
@@ -192,7 +199,7 @@ def run_synthetic_singleGPU(root_log_path):
     print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
     return log_path, res_dstat, res_free, res_nvidia
 
-def run_synthetic(root_log_path, delay_allreduce=True):
+def run_synthetic(root_log_path):
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -246,7 +253,6 @@ def run_synthetic(root_log_path, delay_allreduce=True):
                    "--precreate",
                    "--tensor_path={}".format(args.tensor_path),
                    "--arch={}".format(args.arch),
-                   "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
                    "--epochs={}".format(args.epochs)] + args.training_script_args
 
@@ -262,7 +268,6 @@ def run_synthetic(root_log_path, delay_allreduce=True):
                    "--classes={}".format(args.classes),
                    "--num_minibatches={}".format(args.num_minibatches // args.synthetic_div_factor),
                    "--arch={}".format(args.arch),
-                   "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
                    "--epochs={}".format(args.epochs)] + args.training_script_args
 
@@ -573,7 +578,10 @@ def main():
         print("STEP 0 already done. Continuing to step 1")
 
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_synthetic_singleGPU(root_log_path)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_synthetic_singleGPU(root_log_path)
+        except:
+            utils.stop_resource_profiling()
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -601,7 +609,10 @@ def main():
         print("STEP 1 already done. Continuing to step 2")
 
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_synthetic(root_log_path)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_synthetic(root_log_path)
+        except:
+            utils.stop_resource_profiling()
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -648,7 +659,11 @@ def main():
         #Drop cache here
         utils.clear_cache()
 
-        log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path)
+        except:
+            utils.stop_resource_profiling()
+
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -689,7 +704,11 @@ def main():
         print_as_table(args.stats["RUN3"])
         print("STEP 3 already done. Continuing to step 4\n")
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path, cached = True)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path, cached = True)
+        except:
+            utils.stop_resource_profiling()
+
         idle, wait, read, write, recv, send = res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
