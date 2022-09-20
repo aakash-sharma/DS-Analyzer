@@ -583,6 +583,8 @@ def main():
             log_path, res_dstat, res_free, res_nvidia = run_synthetic_singleGPU(root_log_path)
         except:
             utils.stop_resource_profiling()
+            print("Exception in step 0")
+            sys.exit(1)
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -614,6 +616,8 @@ def main():
             log_path, res_dstat, res_free, res_nvidia = run_synthetic(root_log_path)
         except:
             utils.stop_resource_profiling()
+            print("Exception in step 1")
+            sys.exit(1)
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -664,6 +668,8 @@ def main():
             log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path)
         except:
             utils.stop_resource_profiling()
+            print("Exception in step 2")
+            sys.exit(1)
 
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
@@ -709,6 +715,8 @@ def main():
             log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path, cached = True)
         except:
             utils.stop_resource_profiling()
+            print("Exception in step 3")
+            sys.exit(1)
 
         idle, wait, read, write, recv, send = res_dstat
         pmem, shm,page_cache, total = res_free
@@ -776,7 +784,7 @@ def main():
 
     if resume and 'AVG_SAMPLE_SIZE' in args.stats:
         print("Datasets statistics already collected. Continuing to step 6\n")
-    else:
+    elif args.arch != "BERT":
         size, total_samples =  get_dataset_stats(args.training_script_args[-1])
         args.stats["AVG_SAMPLE_SIZE"] = int(size)
         args.stats["TOTAL_SAMPLES"] = int(total_samples)
