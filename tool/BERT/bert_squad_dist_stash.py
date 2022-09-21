@@ -33,8 +33,8 @@ parser.add_argument('--epochs', default=3, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=256, type=int,
-                    metavar='N', help='mini-batch size (default: 256)')
+parser.add_argument('-b', '--batch-size', default=4, type=int,
+                    metavar='N', help='mini-batch size (default: 4)')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
@@ -76,7 +76,7 @@ parser.add_argument('--noeval', action='store_true')
 parser.add_argument('--amp',action='store_true',help='Run model AMP (automatic mixed precision) mode.')
 parser.add_argument("--nnodes", default=1, type=int)
 parser.add_argument("--node_rank", default=0, type=int)
-parser.add_argument("--delay_allreduce", default=True, type=bool)
+parser.add_argument("--delay_allreduce", default=False, type=bool)
 parser.add_argument("--data", default='', type=str)
 
 #profiler
@@ -99,13 +99,9 @@ cudnn.benchmark = True
 
 args = parser.parse_args()
 
-#profile mode
-#redirect all output to a log file
-if args.data_profile:
-    args.dprof = DataStallProfiler(args)
 
 BATCH_SIZE = args.batch_size
-#args.world_size    = args.nnodes
+args.world_size    = args.nnodes
 #os.environ['WORLD_SIZE']  = str(args.world_size)
 #os.environ['MASTER_ADDR'] = 'localhost'
 #os.environ['MASTER_PORT'] = '56070'
@@ -329,7 +325,7 @@ def main():
     start = time.time()
 
     args.gpu = 0
-    args.world_size = 1
+    #args.world_size = 1
     torch.cuda.set_device(args.gpu)
 
     if args.distributed:
@@ -362,6 +358,16 @@ def main():
         num_workers = 0,
         sampler     = train_sampler,
     )
+
+    train_loader_len = int(math.ceil(len(train_loader) / args.batch_size))
+
+    if args.full_epoch:
+        args.num_minibatches = train_loader_len
+
+    #profile mode
+    #redirect all output to a log file
+    if args.data_profile:
+        args.dprof = DataStallProfiler(args)
 
     #os.environ['MASTER_ADDR'] = 'localhost'
     #os.environ['MASTER_PORT'] = '56070'
