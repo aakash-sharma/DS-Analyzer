@@ -1,0 +1,1 @@
+python harness.py --nproc_per_node=4 -j 4 -a BERT -b 4 --nnodes=2 --master_addr=$1 --master_port=11111 --node_rank=$2 --synthetic_div_factor 1 --num_minibatches 678 --steps  RUN0 RUN1 --prefix results/BERT/p3.8xlarge_2 BERT/bert_squad_dist_stash.py
