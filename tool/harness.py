@@ -438,7 +438,7 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
         args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
         args.stats["RUN1"]["TRAIN_MIN"] = min_map["TRAIN"]
         args.stats["RUN1"]["TRAIN_MAX"] = max_map["TRAIN"]
-        if os.path.isfile(run0_path + 'all-utils.csv'):
+        if os.path.isfile(run1_path + 'all-utils.csv'):
             populate_run_stats("RUN1", run1_path)
 
         for value in list(stddev_map.values()):
