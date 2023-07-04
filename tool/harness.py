@@ -49,6 +49,13 @@ from utils import aggregate_run1_maps, print_as_table, print_header
 import multiprocessing
 import json
 import statistics
+import signal
+
+def signal_handler(sig, frame):
+    utils.stop_resource_profiling()
+
+signal.signal(signal.SIGINT, signal_handler)
+
 
 def parse_args():
     """
@@ -128,7 +135,8 @@ args = parse_args()
 def run_synthetic_singleGPU(root_log_path):
     current_env = os.environ.copy()
     # world size in terms of number of processes
-    dist_world_size = args.nproc_per_node * args.nnodes
+    dist_world_size = 1
+    current_env["WORLD_SIZE"] = str(dist_world_size)
 
     if args.precreate:
         print("Precreating tensors in {}".format(args.tensor_path))
@@ -192,7 +200,7 @@ def run_synthetic_singleGPU(root_log_path):
     print("FINISHED STEP 0 : SYNTHETIC WORKLOAD ON SINGLE GPU")
     return log_path, res_dstat, res_free, res_nvidia
 
-def run_synthetic(root_log_path, delay_allreduce=True):
+def run_synthetic(root_log_path):
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -246,7 +254,6 @@ def run_synthetic(root_log_path, delay_allreduce=True):
                    "--precreate",
                    "--tensor_path={}".format(args.tensor_path),
                    "--arch={}".format(args.arch),
-                   "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
                    "--epochs={}".format(args.epochs)] + args.training_script_args
 
@@ -262,7 +269,6 @@ def run_synthetic(root_log_path, delay_allreduce=True):
                    "--classes={}".format(args.classes),
                    "--num_minibatches={}".format(args.num_minibatches // args.synthetic_div_factor),
                    "--arch={}".format(args.arch),
-                   "--delay_allreduce={}".format(delay_allreduce),
                    "--synthetic",
                    "--epochs={}".format(args.epochs)] + args.training_script_args
 
@@ -432,7 +438,7 @@ def run_stats_only(resume_path, local_gpus, num_nodes, steps):
         args.stats["SPEED_INGESTION"] = args.stats["RUN1"]["SPEED"]
         args.stats["RUN1"]["TRAIN_MIN"] = min_map["TRAIN"]
         args.stats["RUN1"]["TRAIN_MAX"] = max_map["TRAIN"]
-        if os.path.isfile(run0_path + 'all-utils.csv'):
+        if os.path.isfile(run1_path + 'all-utils.csv'):
             populate_run_stats("RUN1", run1_path)
 
         for value in list(stddev_map.values()):
@@ -573,7 +579,12 @@ def main():
         print("STEP 0 already done. Continuing to step 1")
 
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_synthetic_singleGPU(root_log_path)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_synthetic_singleGPU(root_log_path)
+        except:
+            utils.stop_resource_profiling()
+            print("Exception in step 0")
+            sys.exit(1)
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -601,7 +612,12 @@ def main():
         print("STEP 1 already done. Continuing to step 2")
 
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_synthetic(root_log_path)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_synthetic(root_log_path)
+        except:
+            utils.stop_resource_profiling()
+            print("Exception in step 1")
+            sys.exit(1)
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -648,7 +664,13 @@ def main():
         #Drop cache here
         utils.clear_cache()
 
-        log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path)
+        except:
+            utils.stop_resource_profiling()
+            print("Exception in step 2")
+            sys.exit(1)
+
         idle, wait, read, write, recv, send= res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -689,7 +711,13 @@ def main():
         print_as_table(args.stats["RUN3"])
         print("STEP 3 already done. Continuing to step 4\n")
     else:
-        log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path, cached = True)
+        try:
+            log_path, res_dstat, res_free, res_nvidia = run_with_data(root_log_path, cached = True)
+        except:
+            utils.stop_resource_profiling()
+            print("Exception in step 3")
+            sys.exit(1)
+
         idle, wait, read, write, recv, send = res_dstat
         pmem, shm,page_cache, total = res_free
         gpu_util, gpu_mem_util = res_nvidia
@@ -756,7 +784,7 @@ def main():
 
     if resume and 'AVG_SAMPLE_SIZE' in args.stats:
         print("Datasets statistics already collected. Continuing to step 6\n")
-    else:
+    elif args.arch != "BERT":
         size, total_samples =  get_dataset_stats(args.training_script_args[-1])
         args.stats["AVG_SAMPLE_SIZE"] = int(size)
         args.stats["TOTAL_SAMPLES"] = int(total_samples)
