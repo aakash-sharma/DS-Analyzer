@@ -12,7 +12,7 @@ for arch in 'alexnet' 'resnet18' 'shufflenet_v2_x0_5' 'mobilenet_v2' 'squeezenet
 done
 
 for arch in 'vgg11' 'resnet50'; do
-		for batch in 32 48 64; do
+		for batch in 32 64; do
 	    	echo "==============================================="
 		    echo "$batch $arch"
 		    echo "==============================================="

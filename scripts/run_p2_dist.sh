@@ -10,7 +10,7 @@ MASTER=$7
 NODE_RANK=$8
 
 SAMPLES=1281166
-NUM_GPUS=$((8 * NNODES))
+NUM_GPUS=$((GPU * NNODES))
 
 cd ~/DS-Analyzer/tool
 
